@@ -1,0 +1,113 @@
+//
+//  CaliberDetailView.swift
+//  Armory Inventory
+//
+//  Created by Codex on 4/2/26.
+//
+
+import SwiftUI
+import SwiftData
+
+struct CaliberDetailView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+    @State private var showingAddAmmoType = false
+    @State private var selectedAmmoForAdjustment: AmmoType?
+    let caliber: Caliber
+    let viewModel: CaliberListViewModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(caliber.name)
+                        .font(.largeTitle.weight(.bold))
+                    Text(AmmoType.roundsText(for: viewModel.totalRounds(for: caliber)))
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                }
+
+                if sortedAmmo.isEmpty {
+                    ContentUnavailableView(
+                        "No Ammo Yet",
+                        systemImage: "shippingbox",
+                        description: Text("Add a load for \(caliber.name) to start tracking your round count.")
+                    )
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 32)
+                } else {
+                    Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                        ForEach(ammoRows, id: \.self) { row in
+                            GridRow {
+                                ForEach(row) { ammo in
+                                    AmmoCardView(
+                                        ammo: ammo,
+                                        backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
+                                    )
+                                    .onTapGesture {
+                                        selectedAmmoForAdjustment = ammo
+                                    }
+                                }
+
+                                if row.count == 1 {
+                                    Color.clear
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            .padding()
+        }
+        .navigationTitle(caliber.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                Button {
+                    showingAddAmmoType = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+
+                Menu {
+                    Button(role: .destructive) {
+                        viewModel.deleteCaliber(caliber, in: context)
+                        dismiss()
+                    } label: {
+                        Label("Delete Caliber", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddAmmoType) {
+            AddAmmoTypeView(caliber: caliber, viewModel: AddAmmoTypeViewModel())
+                .presentationDetents([.large])
+        }
+        .sheet(item: $selectedAmmoForAdjustment) { ammo in
+            AdjustAmmoQuantityView(
+                ammo: ammo,
+                viewModel: AdjustAmmoQuantityViewModel(),
+                onApply: { delta, occurredAt in
+                    viewModel.adjustQuantity(for: ammo, by: delta, occurredAt: occurredAt, in: context)
+                },
+                onDelete: {
+                    selectedAmmoForAdjustment = nil
+                    viewModel.deleteAmmo(ammo, in: context)
+                }
+            )
+            .presentationDetents([.medium, .large])
+        }
+    }
+
+    private var sortedAmmo: [AmmoType] {
+        viewModel.sortedAmmo(for: caliber)
+    }
+
+    private var ammoRows: [[AmmoType]] {
+        stride(from: 0, to: sortedAmmo.count, by: 2).map { index in
+            Array(sortedAmmo[index..<min(index + 2, sortedAmmo.count)])
+        }
+    }
+}

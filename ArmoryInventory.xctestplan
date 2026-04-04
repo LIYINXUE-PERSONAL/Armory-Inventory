@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "3908C3C6-4E12-439D-9DEC-B94456DC9752",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:ArmoryInventory.xcodeproj",
+        "identifier" : "B5025AA12F7F44CC003069A9",
+        "name" : "ArmoryInventoryTests"
+      }
+    }
+  ],
+  "version" : 1
+}

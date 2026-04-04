@@ -1,0 +1,515 @@
+//
+//  AddFirearmViewModelTests.swift
+//  Armory InventoryTests
+//
+//  Created by Codex on 4/2/26.
+//
+
+import XCTest
+import SwiftData
+@testable import ArmoryInventory
+
+final class AddFirearmViewModelTests: XCTestCase {
+    func testResolutionAndValidationHandleTrimmedAndInvalidValues() {
+        let viewModel = AddFirearmViewModel()
+        let existing = [
+            Firearm(
+                brand: "Glock",
+                modelName: "19",
+                serialNumber: "ABC123",
+                purchasePriceCents: 50000,
+                type: .pistol,
+                action: .semiAuto
+            )
+        ]
+
+        XCTAssertNil(viewModel.resolvedActionDetail(selectedAction: .bolt, customAction: "Ignored"))
+        XCTAssertEqual(viewModel.resolvedActionDetail(selectedAction: .other, customAction: "  Roller-Delayed  "), "Roller-Delayed")
+        XCTAssertNil(viewModel.resolvedColorDetail(selectedColor: .black, customColor: "Ignored"))
+        XCTAssertEqual(viewModel.resolvedColorDetail(selectedColor: .other, customColor: "  Burnt Bronze  "), "Burnt Bronze")
+        XCTAssertEqual(viewModel.trimmedValue("  DANIEL DEFENSE "), "DANIEL DEFENSE")
+        XCTAssertEqual(viewModel.optionalValue("  Range Rifle "), "Range Rifle")
+        XCTAssertEqual(viewModel.normalizedSerialNumber(" ab-12 cd_34 "), "AB12CD34")
+        XCTAssertNil(viewModel.optionalSerialNumber(" - _ "))
+        XCTAssertEqual(viewModel.barrelLength(from: " 16.3 "), 16.3)
+        XCTAssertEqual(viewModel.purchasePriceCents(from: " 1299.95 "), 129995)
+        XCTAssertNil(viewModel.barrelLength(from: "-1"))
+        XCTAssertNil(viewModel.purchasePriceCents(from: ""))
+        XCTAssertTrue(viewModel.duplicateExists(serialNumber: " abc123 ", in: existing))
+        XCTAssertFalse(
+            viewModel.canAdd(
+                brand: "Glock",
+                modelName: "19",
+                serialNumber: "ABC123",
+                selectedAction: .semiAuto,
+                actionDetail: nil,
+                selectedColor: nil,
+                colorDetail: nil,
+                purchasePriceText: "bad",
+                barrelLengthText: "bad",
+                duplicateExists: false
+            )
+        )
+        XCTAssertFalse(
+            viewModel.canAdd(
+                brand: "Glock",
+                modelName: "19",
+                serialNumber: "ABC123",
+                selectedAction: .other,
+                actionDetail: nil,
+                selectedColor: nil,
+                colorDetail: nil,
+                purchasePriceText: "100",
+                barrelLengthText: "",
+                duplicateExists: false
+            )
+        )
+        XCTAssertTrue(
+            viewModel.canAdd(
+                brand: "Glock",
+                modelName: "19",
+                serialNumber: "",
+                selectedAction: .semiAuto,
+                actionDetail: nil,
+                selectedColor: nil,
+                colorDetail: nil,
+                purchasePriceText: "100",
+                barrelLengthText: "",
+                duplicateExists: false
+            )
+        )
+        XCTAssertFalse(
+            viewModel.canAdd(
+                brand: "Glock",
+                modelName: "19",
+                serialNumber: "ABC123",
+                selectedAction: .semiAuto,
+                actionDetail: nil,
+                selectedColor: .other,
+                colorDetail: nil,
+                purchasePriceText: "100",
+                barrelLengthText: "",
+                duplicateExists: false
+            )
+        )
+    }
+
+    @MainActor
+    func testRelationshipSelectionAndAvailabilityHelpersRespectAssignments() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+
+        let currentFirearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 180000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let otherFirearm = Firearm(
+            brand: "CZ",
+            modelName: "Shadow 2",
+            purchasePriceCents: 120000,
+            type: .pistol,
+            action: .semiAuto
+        )
+        let freeOptic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .picatinny,
+            purchasePriceCents: 80000
+        )
+        let currentOptic = Optic(
+            brand: "EOTech",
+            modelName: "EXPS3",
+            type: .holographic,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .picatinny,
+            purchasePriceCents: 65000,
+            firearm: currentFirearm
+        )
+        let otherOptic = Optic(
+            brand: "Trijicon",
+            modelName: "SRO",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .rmr,
+            purchasePriceCents: 55000,
+            firearm: otherFirearm
+        )
+        let freeMagazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            capacity: 30,
+            purchasePriceCents: 1500
+        )
+        let currentMagazine = Magazine(
+            brand: "Glock",
+            modelName: "OEM",
+            capacity: 17,
+            purchasePriceCents: 2500,
+            firearm: currentFirearm
+        )
+        let otherMagazine = Magazine(
+            brand: "Mec-Gar",
+            modelName: "CZ 75",
+            capacity: 16,
+            purchasePriceCents: 3200,
+            firearm: otherFirearm
+        )
+        let freeAttachment = Attachment(
+            brand: "SureFire",
+            modelName: "X300",
+            type: .light,
+            purchasePriceCents: 28000
+        )
+        let currentAttachment = Attachment(
+            brand: "BCM",
+            modelName: "KAG",
+            type: .handStop,
+            purchasePriceCents: 2000,
+            firearm: currentFirearm
+        )
+        let otherAttachment = Attachment(
+            brand: "B5",
+            modelName: "Bravo",
+            type: .stock,
+            purchasePriceCents: 5800,
+            firearm: otherFirearm
+        )
+
+        context.insert(currentFirearm)
+        context.insert(otherFirearm)
+        context.insert(freeOptic)
+        context.insert(currentOptic)
+        context.insert(otherOptic)
+        context.insert(freeMagazine)
+        context.insert(currentMagazine)
+        context.insert(otherMagazine)
+        context.insert(freeAttachment)
+        context.insert(currentAttachment)
+        context.insert(otherAttachment)
+        try context.save()
+
+        currentFirearm.optics = [currentOptic]
+        currentFirearm.magazines = [currentMagazine]
+        currentFirearm.attachments = [currentAttachment]
+
+        let selectedOpticIDs = viewModel.selectedOpticIDs(for: currentFirearm)
+        let selectedMagazineIDs = viewModel.selectedMagazineIDs(for: currentFirearm)
+        let selectedAttachmentIDs = viewModel.selectedAttachmentIDs(for: currentFirearm)
+
+        XCTAssertEqual(selectedOpticIDs, [currentOptic.persistentModelID])
+        XCTAssertEqual(selectedMagazineIDs, [currentMagazine.persistentModelID])
+        XCTAssertEqual(selectedAttachmentIDs, [currentAttachment.persistentModelID])
+
+        XCTAssertEqual(
+            Set(
+                viewModel.availableOptics(
+                    from: [freeOptic, currentOptic, otherOptic],
+                    selectedIDs: [otherOptic.persistentModelID],
+                    firearm: currentFirearm
+                )
+                .map(\.persistentModelID)
+            ),
+            [freeOptic.persistentModelID, currentOptic.persistentModelID, otherOptic.persistentModelID]
+        )
+        XCTAssertEqual(
+            Set(
+                viewModel.availableMagazines(
+                    from: [freeMagazine, currentMagazine, otherMagazine],
+                    selectedIDs: [],
+                    firearm: currentFirearm
+                )
+                .map(\.persistentModelID)
+            ),
+            [freeMagazine.persistentModelID, currentMagazine.persistentModelID]
+        )
+        XCTAssertEqual(
+            Set(
+                viewModel.availableAttachments(
+                    from: [freeAttachment, currentAttachment, otherAttachment],
+                    selectedIDs: [],
+                    firearm: currentFirearm
+                )
+                .map(\.persistentModelID)
+            ),
+            [freeAttachment.persistentModelID, currentAttachment.persistentModelID]
+        )
+
+        XCTAssertEqual(
+            viewModel.resolvedOptics(
+                from: [freeOptic, currentOptic, otherOptic],
+                selectedIDs: [freeOptic.persistentModelID, otherOptic.persistentModelID]
+            )
+            .map(\.persistentModelID),
+            [freeOptic.persistentModelID, otherOptic.persistentModelID]
+        )
+        XCTAssertEqual(
+            viewModel.resolvedMagazines(
+                from: [freeMagazine, currentMagazine, otherMagazine],
+                selectedIDs: [otherMagazine.persistentModelID]
+            )
+            .map(\.persistentModelID),
+            [otherMagazine.persistentModelID]
+        )
+        XCTAssertEqual(
+            viewModel.resolvedAttachments(
+                from: [freeAttachment, currentAttachment, otherAttachment],
+                selectedIDs: [freeAttachment.persistentModelID, currentAttachment.persistentModelID]
+            )
+            .map(\.persistentModelID),
+            [freeAttachment.persistentModelID, currentAttachment.persistentModelID]
+        )
+    }
+
+    func testPresentationHelpersReflectEditingState() {
+        let viewModel = AddFirearmViewModel()
+        let itemID = Firearm(
+            brand: "Test",
+            modelName: "ID Source",
+            purchasePriceCents: 1,
+            type: .other,
+            action: .other
+        ).persistentModelID
+
+        XCTAssertEqual(
+            viewModel.toggledSelection(
+                currentSelection: [],
+                itemID: itemID,
+                isEditing: false
+            ),
+            []
+        )
+        XCTAssertEqual(
+            viewModel.toggledSelection(
+                currentSelection: [],
+                itemID: itemID,
+                isEditing: true
+            ),
+            [itemID]
+        )
+        XCTAssertEqual(
+            viewModel.toggledSelection(
+                currentSelection: [itemID],
+                itemID: itemID,
+                isEditing: true
+            ),
+            []
+        )
+
+        XCTAssertTrue(viewModel.isReadOnly(hasFirearm: true, isEditing: false))
+        XCTAssertFalse(viewModel.isReadOnly(hasFirearm: false, isEditing: false))
+        XCTAssertFalse(viewModel.isReadOnly(hasFirearm: true, isEditing: true))
+
+        XCTAssertTrue(viewModel.showsPurchaseSection(showValueInDetails: true, isReadOnly: true))
+        XCTAssertTrue(viewModel.showsPurchaseSection(showValueInDetails: false, isReadOnly: false))
+        XCTAssertFalse(viewModel.showsPurchaseSection(showValueInDetails: false, isReadOnly: true))
+
+        XCTAssertEqual(viewModel.primaryButtonTitle(hasFirearm: false, isEditing: false), "Add")
+        XCTAssertEqual(viewModel.primaryButtonTitle(hasFirearm: true, isEditing: false), "Edit")
+        XCTAssertEqual(viewModel.primaryButtonTitle(hasFirearm: true, isEditing: true), "Save")
+    }
+
+    @MainActor
+    func testNextSortOrderUsesHighestExistingValue() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+
+        context.insert(
+            Firearm(
+                brand: "Colt",
+                modelName: "6920",
+                purchasePriceCents: 110000,
+                type: .rifle,
+                action: .semiAuto,
+                sortOrder: 2
+            )
+        )
+        context.insert(
+            Firearm(
+                brand: "Remington",
+                modelName: "870",
+                purchasePriceCents: 45000,
+                type: .shotgun,
+                action: .pump,
+                sortOrder: 7
+            )
+        )
+
+        XCTAssertEqual(viewModel.nextSortOrder(in: context), 8)
+    }
+
+    @MainActor
+    func testAddFirearmPersistsModel() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+        let purchaseDate = Date(timeIntervalSince1970: 1_234_567)
+        let caliber = Caliber(name: "9mm")
+        let optic = Optic(
+            brand: "Holosun",
+            modelName: "507C",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .rmr,
+            purchasePriceCents: 31000
+        )
+        let magazine = Magazine(
+            brand: "CZ",
+            modelName: "P-10",
+            capacity: 15,
+            purchasePriceCents: 3500
+        )
+        let attachment = Attachment(
+            brand: "Streamlight",
+            modelName: "TLR-7A",
+            type: .light,
+            purchasePriceCents: 14000
+        )
+        context.insert(caliber)
+        context.insert(optic)
+        context.insert(magazine)
+        context.insert(attachment)
+
+        let didAdd = viewModel.addFirearm(
+            brand: "  cZ  ",
+            modelName: " p-10 c ",
+            nickname: "carry gun",
+            serialNumber: " cz-999 ",
+            purchaseDate: purchaseDate,
+            purchasePriceCents: 49999,
+            type: .pistol,
+            action: .semiAuto,
+            actionDetail: nil,
+            color: .black,
+            colorDetail: nil,
+            barrelLengthInches: 4.02,
+            notes: "Optics ready",
+            caliber: caliber,
+            optics: [optic],
+            magazines: [magazine],
+            attachments: [attachment],
+            canAdd: true,
+            to: context
+        )
+
+        let firearms = try context.fetch(FetchDescriptor<Firearm>())
+
+        XCTAssertTrue(didAdd)
+        XCTAssertEqual(firearms.count, 1)
+        XCTAssertEqual(firearms.first?.brand, "cZ")
+        XCTAssertEqual(firearms.first?.modelName, "p-10 c")
+        XCTAssertEqual(firearms.first?.nickname, "carry gun")
+        XCTAssertEqual(firearms.first?.serialNumber, "CZ999")
+        XCTAssertEqual(firearms.first?.purchasePriceCents, 49999)
+        XCTAssertEqual(firearms.first?.firearmType, .pistol)
+        XCTAssertEqual(firearms.first?.firearmAction, .semiAuto)
+        XCTAssertEqual(firearms.first?.firearmColor, .black)
+        XCTAssertEqual(firearms.first?.caliber?.name, "9mm")
+        XCTAssertEqual(firearms.first?.purchaseDate, purchaseDate)
+        XCTAssertEqual(firearms.first?.optics.map(\.displayName), ["Holosun 507C"])
+        XCTAssertEqual(firearms.first?.magazines.map(\.displayName), ["CZ P-10"])
+        XCTAssertEqual(firearms.first?.attachments.map(\.displayName), ["Streamlight TLR-7A"])
+    }
+
+    @MainActor
+    func testAddFirearmReturnsFalseWhenBlocked() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+
+        let didAdd = viewModel.addFirearm(
+            brand: "Benelli",
+            modelName: "M4",
+            nickname: nil,
+            serialNumber: "",
+            purchaseDate: .now,
+            purchasePriceCents: 189900,
+            type: .shotgun,
+            action: .semiAuto,
+            actionDetail: nil,
+            color: nil,
+            colorDetail: nil,
+            barrelLengthInches: 18.5,
+            notes: nil,
+            caliber: nil,
+            optics: [],
+            magazines: [],
+            attachments: [],
+            canAdd: false,
+            to: context
+        )
+
+        let firearms = try context.fetch(FetchDescriptor<Firearm>())
+
+        XCTAssertFalse(didAdd)
+        XCTAssertTrue(firearms.isEmpty)
+    }
+
+    @MainActor
+    func testUpdateFirearmPersistsEditedValues() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let caliber = Caliber(name: ".45 ACP")
+        context.insert(caliber)
+        let firearm = Firearm(
+            brand: "Glock",
+            modelName: "19",
+            nickname: "Carry",
+            serialNumber: "ABC123",
+            purchasePriceCents: 50000,
+            type: .pistol,
+            action: .semiAuto,
+            color: .black,
+            barrelLengthInches: 4.0,
+            notes: "Old"
+        )
+        context.insert(firearm)
+
+        let viewModel = AddFirearmViewModel()
+        let didSave = viewModel.updateFirearm(
+            firearm,
+            brand: "smith & wesson",
+            modelName: "m&p 2.0",
+            nickname: "range gun",
+            serialNumber: "",
+            purchaseDate: Date(timeIntervalSince1970: 9_999),
+            purchasePriceCents: 65000,
+            type: .pistol,
+            action: .other,
+            actionDetail: "DA/SA",
+            color: .other,
+            colorDetail: "Two Tone",
+            barrelLengthInches: 4.25,
+            notes: "Updated",
+            caliber: caliber,
+            optics: [],
+            magazines: [],
+            attachments: [],
+            canSave: true,
+            in: context
+        )
+
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(firearm.brand, "smith & wesson")
+        XCTAssertEqual(firearm.modelName, "m&p 2.0")
+        XCTAssertEqual(firearm.nickname, "range gun")
+        XCTAssertNil(firearm.serialNumber)
+        XCTAssertEqual(firearm.purchasePriceCents, 65000)
+        XCTAssertEqual(firearm.firearmAction, .other)
+        XCTAssertEqual(firearm.actionDetail, "DA/SA")
+        XCTAssertEqual(firearm.firearmColor, .other)
+        XCTAssertEqual(firearm.colorDetail, "Two Tone")
+        XCTAssertEqual(firearm.caliber?.name, ".45 ACP")
+        XCTAssertEqual(firearm.notes, "Updated")
+    }
+}
