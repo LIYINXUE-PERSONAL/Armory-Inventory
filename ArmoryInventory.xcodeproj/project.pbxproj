@@ -20,6 +20,7 @@
 		B5025A932F7F44CA003069A9 /* ArmoryInventory.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ArmoryInventory.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5025AA22F7F44CC003069A9 /* ArmoryInventoryTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ArmoryInventoryTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B5025B5F2F802E70003069A9 /* ArmoryInventory.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = ArmoryInventory.xctestplan; sourceTree = "<group>"; };
+		B53E3C4D2F81A54E005F955C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -56,6 +57,7 @@
 		B5025A8A2F7F44CA003069A9 = {
 			isa = PBXGroup;
 			children = (
+				B53E3C4D2F81A54E005F955C /* README.md */,
 				B5025B5F2F802E70003069A9 /* ArmoryInventory.xctestplan */,
 				B5025A952F7F44CA003069A9 /* ArmoryInventory */,
 				B5025AA52F7F44CC003069A9 /* ArmoryInventoryTests */,
@@ -323,7 +325,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Armory Inventory/Armory Inventory.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
@@ -375,7 +377,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = "Armory Inventory/Armory Inventory.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
