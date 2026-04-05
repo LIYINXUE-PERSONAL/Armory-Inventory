@@ -75,15 +75,27 @@ struct AddFirearmView: View {
         NavigationStack {
             Form {
                 Section("Basic Info") {
-                    TextField("Brand", text: $brand)
-                        .textInputAutocapitalization(.words)
-                    TextField("Model name", text: $modelName)
-                        .textInputAutocapitalization(.words)
-                    TextField("Nick name (optional)", text: $nickname)
-                        .textInputAutocapitalization(.words)
-                    TextField("Serial number (optional)", text: $serialNumber)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
+                    LabeledContent("Brand") {
+                        TextField("", text: $brand)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Model Name") {
+                        TextField("", text: $modelName)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Nickname") {
+                        TextField("Optional", text: $nickname)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Serial Number") {
+                        TextField("Optional", text: $serialNumber)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .multilineTextAlignment(.trailing)
+                    }
                     if duplicateExists {
                         Text("That serial number already exists in your inventory.")
                             .font(.footnote)
@@ -116,8 +128,16 @@ struct AddFirearmView: View {
                         TextField("Action details", text: $customAction)
                     }
 
-                    TextField("Barrel length in inches", text: $barrelLengthText)
-                        .keyboardType(.decimalPad)
+                    LabeledContent("Barrel Length") {
+                        HStack(spacing: 6) {
+                            TextField("", text: $barrelLengthText)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+
+                            Text("in.")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
                     Picker("Color", selection: $selectedColor) {
                         Text("None").tag(nil as FirearmColor?)
