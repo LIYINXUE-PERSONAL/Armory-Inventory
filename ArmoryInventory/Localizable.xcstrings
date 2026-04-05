@@ -218,7 +218,7 @@
     "Barrel" : {
 
     },
-    "Barrel length in inches" : {
+    "Barrel Length" : {
 
     },
     "Basic Info" : {
@@ -418,6 +418,9 @@
 
     },
     "Importing a backup will replace your current inventory and managed settings." : {
+
+    },
+    "in." : {
 
     },
     "Includes the firearm plus linked optics, magazines, and attachments." : {

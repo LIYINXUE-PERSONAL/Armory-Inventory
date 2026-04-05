@@ -53,6 +53,24 @@
 		};
 /* End PBXFrameworksBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		B5A1A1003C1B100000000001 /* Update Build Number */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Update Build Number";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\n\nbuild_number=\"$(date +%Y%m%d.%H%M)\"\ninfo_plist=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n\nif ! /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion ${build_number}\" \"$info_plist\"; then\n  /usr/libexec/PlistBuddy -c \"Add :CFBundleVersion string ${build_number}\" \"$info_plist\"\nfi\n\necho \"Updated CFBundleVersion to ${build_number}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXGroup section */
 		B5025A8A2F7F44CA003069A9 = {
 			isa = PBXGroup;
@@ -84,6 +102,7 @@
 				B5025A8F2F7F44CA003069A9 /* Sources */,
 				B5025A902F7F44CA003069A9 /* Frameworks */,
 				B5025A912F7F44CA003069A9 /* Resources */,
+				B5A1A1003C1B100000000001 /* Update Build Number */,
 			);
 			buildRules = (
 			);
@@ -335,6 +354,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Armory Inventory";
@@ -387,6 +407,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Armory Inventory";
