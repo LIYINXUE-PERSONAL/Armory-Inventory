@@ -19,7 +19,7 @@ struct AddFirearmView: View {
     @State private var nickname = ""
     @State private var serialNumber = ""
     @State private var purchaseDate = Date.now
-    @State private var purchasePriceText = ""
+    @State private var purchasePriceText = "0.00"
     @State private var selectedType: FirearmType = .rifle
     @State private var selectedAction: FirearmAction = .semiAuto
     @State private var customAction = ""
@@ -155,8 +155,14 @@ struct AddFirearmView: View {
                 if showsPurchaseSection {
                     Section("Purchase") {
                         DatePicker("Purchase date", selection: $purchaseDate, displayedComponents: .date)
-                        TextField("Purchase price (USD)", text: $purchasePriceText)
-                            .keyboardType(.decimalPad)
+                        LabeledContent("Purchase Price") {
+                            SelectAllTextField(
+                                placeholder: "",
+                                text: $purchasePriceText,
+                                keyboardType: .decimalPad,
+                                textAlignment: .right
+                            )
+                        }
                         Text("Enter dollars and cents, for example 1299.99.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)

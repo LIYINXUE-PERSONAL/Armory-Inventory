@@ -94,8 +94,14 @@ struct AddAttachmentView: View {
                 if showsPurchaseSection {
                     Section("Purchase") {
                         DatePicker("Purchase date", selection: $purchaseDate, displayedComponents: .date)
-                        TextField("Purchase price (USD)", text: $purchasePriceText)
-                            .keyboardType(.decimalPad)
+                        LabeledContent("Purchase Price") {
+                            SelectAllTextField(
+                                placeholder: "",
+                                text: $purchasePriceText,
+                                keyboardType: .decimalPad,
+                                textAlignment: .right
+                            )
+                        }
                         Text("With \(accessoriesTaxRate.formatted(.number.precision(.fractionLength(0...2))))% accessories tax: \(purchasePriceWithTaxText)")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
