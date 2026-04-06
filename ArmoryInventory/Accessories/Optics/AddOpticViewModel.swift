@@ -140,6 +140,19 @@ final class AddOpticViewModel {
         return (minValue, maxValue)
     }
 
+    func showsMagnificationFields(for selectedType: OpticType) -> Bool {
+        switch selectedType {
+        case .redDot, .holographic:
+            return false
+        default:
+            return true
+        }
+    }
+
+    func showsTubeSizeField(for selectedType: OpticType) -> Bool {
+        showsMagnificationFields(for: selectedType)
+    }
+
     func duplicateExists(serialNumber: String, excluding optic: Optic?, in existingOptics: [Optic]) -> Bool {
         guard let normalizedSerialNumber = optionalSerialNumber(serialNumber) else {
             return false
@@ -192,18 +205,22 @@ final class AddOpticViewModel {
         if selectedFootprint == .other, footprintDetail == nil {
             return false
         }
-        guard resolvedMagnification(
-            isFixed: isFixedMagnification,
-            fixedText: fixedMagnificationText,
-            minText: minMagnificationText,
-            maxText: maxMagnificationText
-        ) != nil else {
+        if showsMagnificationFields(for: selectedType) {
+            guard resolvedMagnification(
+                isFixed: isFixedMagnification,
+                fixedText: fixedMagnificationText,
+                minText: minMagnificationText,
+                maxText: maxMagnificationText
+            ) != nil else {
+                return false
+            }
+        }
+        if showsTubeSizeField(for: selectedType),
+           !trimmedValue(tubeSizeText).isEmpty,
+           tubeSizeMillimeters(from: tubeSizeText) == nil {
             return false
         }
-        if !trimmedValue(tubeSizeText).isEmpty && tubeSizeMillimeters(from: tubeSizeText) == nil {
-            return false
-        }
-        if !isFixedMagnification, focalPlane == nil {
+        if showsMagnificationFields(for: selectedType), !isFixedMagnification, focalPlane == nil {
             return false
         }
         if selectedColor == .other, colorDetail == nil {

@@ -241,6 +241,9 @@
     "Color details" : {
 
     },
+    "Color Details" : {
+
+    },
     "Common Calibers" : {
 
     },
@@ -325,7 +328,7 @@
     "Footprint" : {
 
     },
-    "Footprint details" : {
+    "Footprint Details" : {
 
     },
     "From" : {
@@ -409,10 +412,10 @@
     "Min" : {
 
     },
-    "Mode" : {
+    "mm" : {
 
     },
-    "Model name" : {
+    "Mode" : {
 
     },
     "Model Name" : {
@@ -544,7 +547,7 @@
     "Reset to Default Order" : {
 
     },
-    "Reticle (optional)" : {
+    "Reticle" : {
 
     },
     "Rounds" : {
@@ -560,9 +563,6 @@
 
     },
     "Serial Number" : {
-
-    },
-    "Serial number (optional)" : {
 
     },
     "Settings" : {
@@ -613,13 +613,13 @@
     "Tube" : {
 
     },
-    "Tube size in mm (optional)" : {
+    "Tube Size" : {
 
     },
     "Type" : {
 
     },
-    "Type details" : {
+    "Type Details" : {
 
     },
     "Typical: %lldgr-%lldgr" : {

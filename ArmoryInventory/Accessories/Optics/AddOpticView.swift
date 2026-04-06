@@ -86,13 +86,22 @@ struct AddOpticView: View {
         NavigationStack {
             Form {
                 Section("Basic Info") {
-                    TextField("Brand", text: $brand)
-                        .textInputAutocapitalization(.words)
-                    TextField("Model name", text: $modelName)
-                        .textInputAutocapitalization(.words)
-                    TextField("Serial number (optional)", text: $serialNumber)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
+                    LabeledContent("Brand") {
+                        TextField("", text: $brand)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Model Name") {
+                        TextField("", text: $modelName)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Serial Number") {
+                        TextField("Optional", text: $serialNumber)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .multilineTextAlignment(.trailing)
+                    }
                     if duplicateExists {
                         Text("That serial number already exists in your inventory.")
                             .font(.footnote)
@@ -117,23 +126,28 @@ struct AddOpticView: View {
                         customFootprint = updatedSelection.customFootprint
                     }
 
-                    Picker("Magnification", selection: $isFixedMagnification) {
-                        Text("Fixed").tag(true)
-                        Text("Variable").tag(false)
-                    }
-                    .pickerStyle(.segmented)
+                    if showsMagnificationFields {
+                        Picker("Magnification", selection: $isFixedMagnification) {
+                            Text("Fixed").tag(true)
+                            Text("Variable").tag(false)
+                        }
+                        .pickerStyle(.segmented)
 
-                    if isFixedMagnification {
-                        TextField("Magnification", text: $fixedMagnificationText)
-                            .keyboardType(.decimalPad)
-                    } else {
-                        HStack(spacing: 12) {
-                            TextField("Min", text: $minMagnificationText)
-                                .keyboardType(.decimalPad)
-                            Divider()
-                                .frame(height: 24)
-                            TextField("Max", text: $maxMagnificationText)
-                                .keyboardType(.decimalPad)
+                        if isFixedMagnification {
+                            LabeledContent("Magnification") {
+                                TextField("", text: $fixedMagnificationText)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                            }
+                        } else {
+                            HStack(spacing: 12) {
+                                TextField("Min", text: $minMagnificationText)
+                                    .keyboardType(.decimalPad)
+                                Divider()
+                                    .frame(height: 24)
+                                TextField("Max", text: $maxMagnificationText)
+                                    .keyboardType(.decimalPad)
+                            }
                         }
                     }
 
@@ -146,19 +160,35 @@ struct AddOpticView: View {
                         }
                     }
 
-                    TextField("Reticle (optional)", text: $reticle)
-                        .textInputAutocapitalization(.words)
+                    LabeledContent("Reticle") {
+                        TextField("Optional", text: $reticle)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
                     Picker("Footprint", selection: $selectedFootprint) {
                         ForEach(OpticFootprint.allCases) { footprint in
                             Text(footprint.displayName).tag(footprint)
                         }
                     }
                     if selectedFootprint == .other {
-                        TextField("Footprint details", text: $customFootprint)
-                            .textInputAutocapitalization(.words)
+                        LabeledContent("Footprint Details") {
+                            TextField("", text: $customFootprint)
+                                .textInputAutocapitalization(.words)
+                                .multilineTextAlignment(.trailing)
+                        }
                     }
-                    TextField("Tube size in mm (optional)", text: $tubeSizeText)
-                        .keyboardType(.decimalPad)
+                    if showsTubeSizeField {
+                        LabeledContent("Tube Size") {
+                            HStack(spacing: 6) {
+                                TextField("Optional", text: $tubeSizeText)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+
+                                Text("mm")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                     Toggle("Illuminated", isOn: $isIlluminated)
 
                     Picker("Color", selection: $selectedColor) {
@@ -169,7 +199,10 @@ struct AddOpticView: View {
                     }
 
                     if selectedColor == .other {
-                        TextField("Color details", text: $customColor)
+                        LabeledContent("Color Details") {
+                            TextField("", text: $customColor)
+                                .multilineTextAlignment(.trailing)
+                        }
                     }
                 }
                 .disabled(isReadOnly)
@@ -232,7 +265,11 @@ struct AddOpticView: View {
     }
 
     private var resolvedMagnification: (min: Double, max: Double)? {
-        viewModel.resolvedMagnification(
+        guard showsMagnificationFields else {
+            return (1, 1)
+        }
+
+        return viewModel.resolvedMagnification(
             isFixed: isFixedMagnification,
             fixedText: fixedMagnificationText,
             minText: minMagnificationText,
@@ -257,7 +294,11 @@ struct AddOpticView: View {
     }
 
     private var resolvedTubeSizeMillimeters: Double? {
-        viewModel.tubeSizeMillimeters(from: tubeSizeText)
+        guard showsTubeSizeField else {
+            return nil
+        }
+
+        return viewModel.tubeSizeMillimeters(from: tubeSizeText)
     }
 
     private var resolvedFocalPlane: OpticFocalPlane? {
@@ -280,7 +321,15 @@ struct AddOpticView: View {
     }
 
     private var showsFocalPlane: Bool {
-        viewModel.showsFocalPlane(isFixedMagnification: isFixedMagnification)
+        showsMagnificationFields && viewModel.showsFocalPlane(isFixedMagnification: isFixedMagnification)
+    }
+
+    private var showsMagnificationFields: Bool {
+        viewModel.showsMagnificationFields(for: selectedType)
+    }
+
+    private var showsTubeSizeField: Bool {
+        viewModel.showsTubeSizeField(for: selectedType)
     }
 
     private var purchasePriceWithTaxText: String {

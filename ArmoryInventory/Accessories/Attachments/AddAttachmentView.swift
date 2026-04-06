@@ -49,18 +49,27 @@ struct AddAttachmentView: View {
         NavigationStack {
             Form {
                 Section("Basic Info") {
-                    TextField("Brand", text: $brand)
-                        .textInputAutocapitalization(.words)
-                    TextField("Model name", text: $modelName)
-                        .textInputAutocapitalization(.words)
+                    LabeledContent("Brand") {
+                        TextField("", text: $brand)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Model Name") {
+                        TextField("", text: $modelName)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
                     Picker("Attachment Type", selection: $selectedType) {
                         ForEach(AttachmentType.allCases) { type in
                             Text(type.displayName).tag(type)
                         }
                     }
                     if selectedType == .other {
-                        TextField("Type details", text: $customType)
-                            .textInputAutocapitalization(.words)
+                        LabeledContent("Type Details") {
+                            TextField("", text: $customType)
+                                .textInputAutocapitalization(.words)
+                                .multilineTextAlignment(.trailing)
+                        }
                     }
                 }
                 .disabled(isReadOnly)
@@ -74,7 +83,10 @@ struct AddAttachmentView: View {
                     }
 
                     if selectedColor == .other {
-                        TextField("Color details", text: $customColor)
+                        LabeledContent("Color Details") {
+                            TextField("", text: $customColor)
+                                .multilineTextAlignment(.trailing)
+                        }
                     }
                 }
                 .disabled(isReadOnly)
