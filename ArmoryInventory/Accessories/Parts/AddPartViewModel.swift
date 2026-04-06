@@ -9,6 +9,12 @@ import Foundation
 import SwiftData
 
 final class AddPartViewModel {
+    private let priceInputParser: PriceInputParsing
+
+    init(priceInputParser: PriceInputParsing = PriceInputParserService()) {
+        self.priceInputParser = priceInputParser
+    }
+
     func initialPurchasePriceText(for part: Part?) -> String {
         part.map {
             (Decimal($0.purchasePriceCents) / 100).formatted(.number.precision(.fractionLength(2)))
@@ -25,18 +31,7 @@ final class AddPartViewModel {
     }
 
     func purchasePriceCents(from text: String) -> Int? {
-        let trimmedText = trimmedValue(text)
-        guard !trimmedText.isEmpty else {
-            return nil
-        }
-
-        let normalizedText = trimmedText.replacingOccurrences(of: "$", with: "")
-        guard let amount = Decimal(string: normalizedText), amount >= 0 else {
-            return nil
-        }
-
-        let cents = (amount * 100 as NSDecimalNumber).rounding(accordingToBehavior: nil).intValue
-        return cents
+        priceInputParser.purchasePriceCents(from: text)
     }
 
     func resolvedTypeDetail(selectedType: PartType, customType: String) -> String? {
