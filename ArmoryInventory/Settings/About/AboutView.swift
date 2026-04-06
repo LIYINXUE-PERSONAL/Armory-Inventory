@@ -22,7 +22,7 @@ struct AboutView: View {
                             .font(.title2.weight(.semibold))
                             .multilineTextAlignment(.center)
 
-                        Text("Track firearms, ammo, optics, magazines, attachments, and related inventory.")
+                        Text("Track firearms, ammo, optics, magazines, attachments, parts, and related inventory.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)

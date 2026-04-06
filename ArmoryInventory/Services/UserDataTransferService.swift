@@ -87,6 +87,7 @@ final class UserDataTransferService: UserDataTransferServicing {
         let optics = try context.fetch(FetchDescriptor<Optic>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
         let magazines = try context.fetch(FetchDescriptor<Magazine>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
         let attachments = try context.fetch(FetchDescriptor<Attachment>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
+        let parts = try context.fetch(FetchDescriptor<Part>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
 
         var ammoIdentifiers: [ObjectIdentifier: UUID] = [:]
         let ammoSnapshots = ammoTypes.map { ammo -> AmmoTypeSnapshot in
@@ -187,6 +188,23 @@ final class UserDataTransferService: UserDataTransferServicing {
             },
             attachments: attachments.map {
                 AttachmentSnapshot(
+                    id: $0.id ?? UUID(),
+                    brand: $0.brand,
+                    modelName: $0.modelName,
+                    type: $0.type,
+                    typeDetail: $0.typeDetail,
+                    color: $0.color,
+                    colorDetail: $0.colorDetail,
+                    purchaseDate: $0.purchaseDate,
+                    purchasePriceCents: $0.purchasePriceCents,
+                    notes: $0.notes,
+                    sortOrder: $0.sortOrder,
+                    createdAt: $0.createdAt,
+                    firearmID: $0.firearm?.id
+                )
+            },
+            parts: parts.map {
+                PartSnapshot(
                     id: $0.id ?? UUID(),
                     brand: $0.brand,
                     modelName: $0.modelName,
@@ -320,6 +338,25 @@ final class UserDataTransferService: UserDataTransferServicing {
             context.insert(attachment)
         }
 
+        for snapshot in snapshot.parts {
+            let part = Part(
+                id: snapshot.id,
+                brand: snapshot.brand,
+                modelName: snapshot.modelName,
+                type: PartType(rawValue: snapshot.type) ?? .other,
+                typeDetail: snapshot.typeDetail,
+                color: snapshot.color.flatMap(FirearmColor.init(rawValue:)),
+                colorDetail: snapshot.colorDetail,
+                purchaseDate: snapshot.purchaseDate,
+                purchasePriceCents: snapshot.purchasePriceCents,
+                notes: snapshot.notes,
+                firearm: snapshot.firearmID.flatMap { firearms[$0] },
+                sortOrder: snapshot.sortOrder,
+                createdAt: snapshot.createdAt
+            )
+            context.insert(part)
+        }
+
         for snapshot in snapshot.ammoAdjustmentRecords {
             let record = AmmoAdjustmentRecord(
                 quantity: snapshot.quantity,
@@ -339,6 +376,7 @@ final class UserDataTransferService: UserDataTransferServicing {
     private func deleteExistingData(in context: ModelContext) throws {
         try deleteAll(FetchDescriptor<AmmoAdjustmentRecord>(), in: context)
         try deleteAll(FetchDescriptor<Attachment>(), in: context)
+        try deleteAll(FetchDescriptor<Part>(), in: context)
         try deleteAll(FetchDescriptor<Magazine>(), in: context)
         try deleteAll(FetchDescriptor<Optic>(), in: context)
         try deleteAll(FetchDescriptor<Firearm>(), in: context)
@@ -410,6 +448,20 @@ final class UserDataTransferService: UserDataTransferServicing {
 private struct UserDataSnapshot: Codable {
     static let currentVersion = 1
 
+    private enum CodingKeys: String, CodingKey {
+        case version
+        case exportedAt
+        case settings
+        case calibers
+        case ammoTypes
+        case ammoAdjustmentRecords
+        case firearms
+        case optics
+        case magazines
+        case attachments
+        case parts
+    }
+
     let version: Int
     let exportedAt: Date
     let settings: [String: SettingValue]
@@ -420,6 +472,22 @@ private struct UserDataSnapshot: Codable {
     let optics: [OpticSnapshot]
     let magazines: [MagazineSnapshot]
     let attachments: [AttachmentSnapshot]
+    let parts: [PartSnapshot]
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        version = try container.decode(Int.self, forKey: .version)
+        exportedAt = try container.decode(Date.self, forKey: .exportedAt)
+        settings = try container.decode([String: SettingValue].self, forKey: .settings)
+        calibers = try container.decode([CaliberSnapshot].self, forKey: .calibers)
+        ammoTypes = try container.decode([AmmoTypeSnapshot].self, forKey: .ammoTypes)
+        ammoAdjustmentRecords = try container.decode([AmmoAdjustmentRecordSnapshot].self, forKey: .ammoAdjustmentRecords)
+        firearms = try container.decode([FirearmSnapshot].self, forKey: .firearms)
+        optics = try container.decode([OpticSnapshot].self, forKey: .optics)
+        magazines = try container.decode([MagazineSnapshot].self, forKey: .magazines)
+        attachments = try container.decode([AttachmentSnapshot].self, forKey: .attachments)
+        parts = try container.decodeIfPresent([PartSnapshot].self, forKey: .parts) ?? []
+    }
 
     init(
         version: Int = currentVersion,
@@ -431,7 +499,8 @@ private struct UserDataSnapshot: Codable {
         firearms: [FirearmSnapshot],
         optics: [OpticSnapshot],
         magazines: [MagazineSnapshot],
-        attachments: [AttachmentSnapshot]
+        attachments: [AttachmentSnapshot],
+        parts: [PartSnapshot]
     ) {
         self.version = version
         self.exportedAt = exportedAt
@@ -443,6 +512,7 @@ private struct UserDataSnapshot: Codable {
         self.optics = optics
         self.magazines = magazines
         self.attachments = attachments
+        self.parts = parts
     }
 }
 
@@ -532,6 +602,22 @@ private struct MagazineSnapshot: Codable {
 }
 
 private struct AttachmentSnapshot: Codable {
+    let id: UUID
+    let brand: String
+    let modelName: String
+    let type: String
+    let typeDetail: String?
+    let color: String?
+    let colorDetail: String?
+    let purchaseDate: Date
+    let purchasePriceCents: Int
+    let notes: String?
+    let sortOrder: Int
+    let createdAt: Date
+    let firearmID: UUID?
+}
+
+private struct PartSnapshot: Codable {
     let id: UUID
     let brand: String
     let modelName: String

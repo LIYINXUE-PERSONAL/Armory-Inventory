@@ -88,6 +88,17 @@ final class UserDataTransferServiceTests: XCTestCase {
             sortOrder: 4,
             createdAt: Date(timeIntervalSince1970: 8_000)
         )
+        let part = Part(
+            id: UUID(),
+            brand: "Apex",
+            modelName: "Action Enhancement",
+            type: .trigger,
+            purchaseDate: Date(timeIntervalSince1970: 8_500),
+            purchasePriceCents: 12_500,
+            firearm: firearm,
+            sortOrder: 5,
+            createdAt: Date(timeIntervalSince1970: 8_600)
+        )
         let record = AmmoAdjustmentRecord(
             quantity: 50,
             occurredAt: Date(timeIntervalSince1970: 9_000),
@@ -102,6 +113,7 @@ final class UserDataTransferServiceTests: XCTestCase {
         sourceContext.insert(optic)
         sourceContext.insert(magazine)
         sourceContext.insert(attachment)
+        sourceContext.insert(part)
         sourceContext.insert(record)
         try sourceContext.save()
 
@@ -121,6 +133,7 @@ final class UserDataTransferServiceTests: XCTestCase {
         let importedOptics = try destinationContext.fetch(FetchDescriptor<Optic>())
         let importedMagazines = try destinationContext.fetch(FetchDescriptor<Magazine>())
         let importedAttachments = try destinationContext.fetch(FetchDescriptor<Attachment>())
+        let importedParts = try destinationContext.fetch(FetchDescriptor<Part>())
         let importedRecords = try destinationContext.fetch(FetchDescriptor<AmmoAdjustmentRecord>())
 
         XCTAssertEqual(importedFirearms.count, 1)
@@ -128,12 +141,14 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertEqual(importedOptics.count, 1)
         XCTAssertEqual(importedMagazines.count, 1)
         XCTAssertEqual(importedAttachments.count, 1)
+        XCTAssertEqual(importedParts.count, 1)
         XCTAssertEqual(importedRecords.count, 1)
         XCTAssertEqual(importedFirearms.first?.id, firearmID)
         XCTAssertEqual(importedFirearms.first?.caliber?.name, "9mm")
         XCTAssertEqual(importedOptics.first?.firearm?.id, firearmID)
         XCTAssertEqual(importedMagazines.first?.caliber?.name, "9mm")
         XCTAssertEqual(importedAttachments.first?.firearm?.id, firearmID)
+        XCTAssertEqual(importedParts.first?.firearm?.id, firearmID)
         XCTAssertEqual(importedRecords.first?.ammoType?.brand, "Federal")
         XCTAssertEqual(importedRecords.first?.adjustmentKind, .purchase)
 

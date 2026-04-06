@@ -33,6 +33,10 @@ final class AddFirearmViewModel {
         Set(firearm?.attachments.map(\.persistentModelID) ?? [])
     }
 
+    func selectedPartIDs(for firearm: Firearm?) -> Set<PersistentIdentifier> {
+        Set(firearm?.parts.map(\.persistentModelID) ?? [])
+    }
+
     func trimmedValue(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -110,6 +114,10 @@ final class AddFirearmViewModel {
         attachments.filter { selectedIDs.contains($0.persistentModelID) }
     }
 
+    func resolvedParts(from parts: [Part], selectedIDs: Set<PersistentIdentifier>) -> [Part] {
+        parts.filter { selectedIDs.contains($0.persistentModelID) }
+    }
+
     func availableOptics(
         from optics: [Optic],
         selectedIDs: Set<PersistentIdentifier>,
@@ -165,6 +173,28 @@ final class AddFirearmViewModel {
             }
 
             guard let linkedFirearm = attachment.firearm else {
+                return true
+            }
+
+            guard let firearm else {
+                return false
+            }
+
+            return linkedFirearm.persistentModelID == firearm.persistentModelID
+        }
+    }
+
+    func availableParts(
+        from parts: [Part],
+        selectedIDs: Set<PersistentIdentifier>,
+        firearm: Firearm?
+    ) -> [Part] {
+        parts.filter { part in
+            if selectedIDs.contains(part.persistentModelID) {
+                return true
+            }
+
+            guard let linkedFirearm = part.firearm else {
                 return true
             }
 
@@ -290,6 +320,7 @@ final class AddFirearmViewModel {
         optics: [Optic],
         magazines: [Magazine],
         attachments: [Attachment],
+        parts: [Part],
         canAdd: Bool,
         to context: ModelContext
     ) -> Bool {
@@ -315,6 +346,7 @@ final class AddFirearmViewModel {
             optics: optics,
             magazines: magazines,
             attachments: attachments,
+            parts: parts,
             sortOrder: nextSortOrder(in: context)
         )
         context.insert(firearm)
@@ -348,6 +380,7 @@ final class AddFirearmViewModel {
         optics: [Optic],
         magazines: [Magazine],
         attachments: [Attachment],
+        parts: [Part],
         canSave: Bool,
         in context: ModelContext
     ) -> Bool {
@@ -372,6 +405,7 @@ final class AddFirearmViewModel {
         firearm.optics = optics
         firearm.magazines = magazines
         firearm.attachments = attachments
+        firearm.parts = parts
 
         do {
             try context.save()

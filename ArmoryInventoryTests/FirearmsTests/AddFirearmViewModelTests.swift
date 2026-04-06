@@ -183,6 +183,26 @@ final class AddFirearmViewModelTests: XCTestCase {
             purchasePriceCents: 5800,
             firearm: otherFirearm
         )
+        let freePart = Part(
+            brand: "Geissele",
+            modelName: "SSA-E",
+            type: .trigger,
+            purchasePriceCents: 24000
+        )
+        let currentPart = Part(
+            brand: "BCM",
+            modelName: "MK2",
+            type: .chargingHandle,
+            purchasePriceCents: 8000,
+            firearm: currentFirearm
+        )
+        let otherPart = Part(
+            brand: "Apex",
+            modelName: "Action Enhancement",
+            type: .trigger,
+            purchasePriceCents: 12500,
+            firearm: otherFirearm
+        )
 
         context.insert(currentFirearm)
         context.insert(otherFirearm)
@@ -195,19 +215,25 @@ final class AddFirearmViewModelTests: XCTestCase {
         context.insert(freeAttachment)
         context.insert(currentAttachment)
         context.insert(otherAttachment)
+        context.insert(freePart)
+        context.insert(currentPart)
+        context.insert(otherPart)
         try context.save()
 
         currentFirearm.optics = [currentOptic]
         currentFirearm.magazines = [currentMagazine]
         currentFirearm.attachments = [currentAttachment]
+        currentFirearm.parts = [currentPart]
 
         let selectedOpticIDs = viewModel.selectedOpticIDs(for: currentFirearm)
         let selectedMagazineIDs = viewModel.selectedMagazineIDs(for: currentFirearm)
         let selectedAttachmentIDs = viewModel.selectedAttachmentIDs(for: currentFirearm)
+        let selectedPartIDs = viewModel.selectedPartIDs(for: currentFirearm)
 
         XCTAssertEqual(selectedOpticIDs, [currentOptic.persistentModelID])
         XCTAssertEqual(selectedMagazineIDs, [currentMagazine.persistentModelID])
         XCTAssertEqual(selectedAttachmentIDs, [currentAttachment.persistentModelID])
+        XCTAssertEqual(selectedPartIDs, [currentPart.persistentModelID])
 
         XCTAssertEqual(
             Set(
@@ -242,6 +268,17 @@ final class AddFirearmViewModelTests: XCTestCase {
             ),
             [freeAttachment.persistentModelID, currentAttachment.persistentModelID]
         )
+        XCTAssertEqual(
+            Set(
+                viewModel.availableParts(
+                    from: [freePart, currentPart, otherPart],
+                    selectedIDs: [],
+                    firearm: currentFirearm
+                )
+                .map(\.persistentModelID)
+            ),
+            [freePart.persistentModelID, currentPart.persistentModelID]
+        )
 
         XCTAssertEqual(
             viewModel.resolvedOptics(
@@ -266,6 +303,14 @@ final class AddFirearmViewModelTests: XCTestCase {
             )
             .map(\.persistentModelID),
             [freeAttachment.persistentModelID, currentAttachment.persistentModelID]
+        )
+        XCTAssertEqual(
+            viewModel.resolvedParts(
+                from: [freePart, currentPart, otherPart],
+                selectedIDs: [freePart.persistentModelID, otherPart.persistentModelID]
+            )
+            .map(\.persistentModelID),
+            [freePart.persistentModelID, otherPart.persistentModelID]
         )
     }
 
@@ -375,10 +420,17 @@ final class AddFirearmViewModelTests: XCTestCase {
             type: .light,
             purchasePriceCents: 14000
         )
+        let part = Part(
+            brand: "Apex",
+            modelName: "Action Enhancement",
+            type: .trigger,
+            purchasePriceCents: 12500
+        )
         context.insert(caliber)
         context.insert(optic)
         context.insert(magazine)
         context.insert(attachment)
+        context.insert(part)
 
         let didAdd = viewModel.addFirearm(
             brand: "  cZ  ",
@@ -398,6 +450,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             optics: [optic],
             magazines: [magazine],
             attachments: [attachment],
+            parts: [part],
             canAdd: true,
             to: context
         )
@@ -419,6 +472,7 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertEqual(firearms.first?.optics.map(\.displayName), ["Holosun 507C"])
         XCTAssertEqual(firearms.first?.magazines.map(\.displayName), ["CZ P-10"])
         XCTAssertEqual(firearms.first?.attachments.map(\.displayName), ["Streamlight TLR-7A"])
+        XCTAssertEqual(firearms.first?.parts.map(\.displayName), ["Apex Action Enhancement"])
     }
 
     @MainActor
@@ -445,6 +499,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             optics: [],
             magazines: [],
             attachments: [],
+            parts: [],
             canAdd: false,
             to: context
         )
@@ -495,6 +550,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             optics: [],
             magazines: [],
             attachments: [],
+            parts: [],
             canSave: true,
             in: context
         )
