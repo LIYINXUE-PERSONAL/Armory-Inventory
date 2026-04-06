@@ -23,6 +23,7 @@ final class AddFirearmLookupServiceTests: XCTestCase {
         XCTAssertTrue(lookupData.optics.isEmpty)
         XCTAssertTrue(lookupData.magazines.isEmpty)
         XCTAssertTrue(lookupData.attachments.isEmpty)
+        XCTAssertTrue(lookupData.parts.isEmpty)
     }
 
     @MainActor
@@ -149,6 +150,30 @@ final class AddFirearmLookupServiceTests: XCTestCase {
                 purchasePriceCents: 2500
             )
         )
+        context.insert(
+            Part(
+                brand: "Geissele",
+                modelName: "SSA-E",
+                type: .trigger,
+                purchasePriceCents: 24000
+            )
+        )
+        context.insert(
+            Part(
+                brand: "BCM",
+                modelName: "MK2",
+                type: .chargingHandle,
+                purchasePriceCents: 8000
+            )
+        )
+        context.insert(
+            Part(
+                brand: "Aero",
+                modelName: "M4E1",
+                type: .upperReceiver,
+                purchasePriceCents: 12500
+            )
+        )
 
         let lookupData = try service.fetchLookupData(in: context)
 
@@ -157,5 +182,6 @@ final class AddFirearmLookupServiceTests: XCTestCase {
         XCTAssertEqual(lookupData.optics.map(\.displayName), ["Aimpoint Acro", "Aimpoint T-2", "Vortex Razor"])
         XCTAssertEqual(lookupData.magazines.map(\.displayName), ["CZ Competition", "CZ OEM", "Magpul PMAG"])
         XCTAssertEqual(lookupData.attachments.map(\.displayName), ["BCM KAG", "BCM Vertical Grip", "SureFire X300"])
+        XCTAssertEqual(lookupData.parts.map(\.displayName), ["Aero M4E1", "BCM MK2", "Geissele SSA-E"])
     }
 }

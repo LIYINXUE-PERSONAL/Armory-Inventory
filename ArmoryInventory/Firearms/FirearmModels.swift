@@ -133,6 +133,7 @@ final class Firearm {
     @Relationship(inverse: \Optic.firearm) var optics: [Optic]
     @Relationship(inverse: \Magazine.firearm) var magazines: [Magazine]
     @Relationship(inverse: \Attachment.firearm) var attachments: [Attachment]
+    @Relationship(inverse: \Part.firearm) var parts: [Part]
 
     init(
         id: UUID? = UUID(),
@@ -153,6 +154,7 @@ final class Firearm {
         optics: [Optic] = [],
         magazines: [Magazine] = [],
         attachments: [Attachment] = [],
+        parts: [Part] = [],
         sortOrder: Int = 0,
         createdAt: Date = .now
     ) {
@@ -174,6 +176,7 @@ final class Firearm {
         self.optics = optics
         self.magazines = magazines
         self.attachments = attachments
+        self.parts = parts
         self.sortOrder = sortOrder
         self.createdAt = createdAt
     }
@@ -248,7 +251,8 @@ final class Firearm {
         let opticsValue = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let magazinesValue = magazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let attachmentsValue = attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        return max(0, purchasePriceCents) + opticsValue + magazinesValue + attachmentsValue
+        let partsValue = parts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+        return max(0, purchasePriceCents) + opticsValue + magazinesValue + attachmentsValue + partsValue
     }
 
     var totalCardValueText: String {

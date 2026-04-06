@@ -19,6 +19,7 @@ final class InventoryListServiceTests: XCTestCase {
         XCTAssertTrue(try service.fetchAttachments(in: context).isEmpty)
         XCTAssertTrue(try service.fetchMagazines(in: context).isEmpty)
         XCTAssertTrue(try service.fetchOptics(in: context).isEmpty)
+        XCTAssertTrue(try service.fetchParts(in: context).isEmpty)
         XCTAssertTrue(try service.fetchFirearms(in: context).isEmpty)
     }
 
@@ -146,6 +147,30 @@ final class InventoryListServiceTests: XCTestCase {
             sortOrder: 1,
             createdAt: earlyDate
         )
+        let firstPart = Part(
+            brand: "Geissele",
+            modelName: "SSA-E",
+            type: .trigger,
+            purchasePriceCents: 24000,
+            sortOrder: 1,
+            createdAt: middleDate
+        )
+        let secondPart = Part(
+            brand: "BCM",
+            modelName: "MK2",
+            type: .chargingHandle,
+            purchasePriceCents: 8000,
+            sortOrder: 0,
+            createdAt: laterDate
+        )
+        let thirdPart = Part(
+            brand: "Aero",
+            modelName: "M4E1",
+            type: .upperReceiver,
+            purchasePriceCents: 12500,
+            sortOrder: 1,
+            createdAt: earlyDate
+        )
 
         context.insert(firstAttachment)
         context.insert(secondAttachment)
@@ -156,6 +181,9 @@ final class InventoryListServiceTests: XCTestCase {
         context.insert(firstOptic)
         context.insert(secondOptic)
         context.insert(thirdOptic)
+        context.insert(firstPart)
+        context.insert(secondPart)
+        context.insert(thirdPart)
         context.insert(firstFirearm)
         context.insert(secondFirearm)
         context.insert(thirdFirearm)
@@ -163,11 +191,13 @@ final class InventoryListServiceTests: XCTestCase {
         let attachments = try service.fetchAttachments(in: context)
         let magazines = try service.fetchMagazines(in: context)
         let optics = try service.fetchOptics(in: context)
+        let parts = try service.fetchParts(in: context)
         let firearms = try service.fetchFirearms(in: context)
 
         XCTAssertEqual(attachments.map(\.displayName), ["BCM KAG", "SureFire M640DF", "Magpul CTR"])
         XCTAssertEqual(magazines.map(\.displayName), ["Magpul PMAG", "Mec-Gar Competition", "CZ OEM"])
         XCTAssertEqual(optics.map(\.displayName), ["Aimpoint T-2", "EOTech EXPS3", "Vortex Razor HD"])
+        XCTAssertEqual(parts.map(\.displayName), ["BCM MK2", "Aero M4E1", "Geissele SSA-E"])
         XCTAssertEqual(firearms.map(\.displayName), ["CZ P-10 C", "Benelli M4", "Daniel Defense DDM4"])
     }
 }

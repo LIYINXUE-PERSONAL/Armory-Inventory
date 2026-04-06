@@ -53,24 +53,6 @@
 		};
 /* End PBXFrameworksBuildPhase section */
 
-/* Begin PBXShellScriptBuildPhase section */
-		B5A1A1003C1B100000000001 /* Update Build Number */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Update Build Number";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "set -eu\n\nbuild_number=\"$(date +%Y%m%d.%H%M)\"\ninfo_plist=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n\nif ! /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion ${build_number}\" \"$info_plist\"; then\n  /usr/libexec/PlistBuddy -c \"Add :CFBundleVersion string ${build_number}\" \"$info_plist\"\nfi\n\necho \"Updated CFBundleVersion to ${build_number}\"\n";
-		};
-/* End PBXShellScriptBuildPhase section */
-
 /* Begin PBXGroup section */
 		B5025A8A2F7F44CA003069A9 = {
 			isa = PBXGroup;
@@ -196,6 +178,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B5A1A1003C1B100000000001 /* Update Build Number */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Update Build Number";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\n\nbuild_number=\"$(date +%Y%m%d.%H%M)\"\ninfo_plist=\"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n\nif ! /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion ${build_number}\" \"$info_plist\"; then\n  /usr/libexec/PlistBuddy -c \"Add :CFBundleVersion string ${build_number}\" \"$info_plist\"\nfi\n\necho \"Updated CFBundleVersion to ${build_number}\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B5025A8F2F7F44CA003069A9 /* Sources */ = {

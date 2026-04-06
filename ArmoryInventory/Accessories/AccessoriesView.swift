@@ -12,6 +12,7 @@ struct AccessoriesView: View {
     @Query private var optics: [Optic]
     @Query private var magazines: [Magazine]
     @Query private var attachments: [Attachment]
+    @Query private var parts: [Part]
     @AppStorage(InventorySettingsKeys.showTotalValue) private var showTotalValue = true
     private let topLevelCategories = AccessoryCategory.topLevelCategories
 
@@ -51,6 +52,8 @@ struct AccessoriesView: View {
             MagazinesView()
         case "attachments":
             AttachmentsView()
+        case "parts":
+            PartsView()
         default:
             AccessoryCategoryDetailView(category: category)
         }
@@ -60,7 +63,8 @@ struct AccessoriesView: View {
         let totalCents =
             optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) } +
             magazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) } +
-            attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+            attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) } +
+            parts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
     }
@@ -146,6 +150,14 @@ private struct AccessoryCategory: Identifiable {
             shortDescription: "Mounted accessories grouped by attachment type",
             detailDescription: "Attachments include mounted accessories such as stocks, grips, lasers, lights, hand stops, and similar hardware. They can be categorized later using an Attachment Type field instead of separate screens.",
             examples: ["Stock", "Grip", "Laser", "Light", "Hand Stop", "Bipod"]
+        ),
+        AccessoryCategory(
+            id: "parts",
+            name: "Parts",
+            systemImage: "gearshape.2.fill",
+            shortDescription: "Core components and replacement assemblies",
+            detailDescription: "Parts cover major firearm components you install, swap, or keep on hand, such as barrels, triggers, receivers, recoil systems, and other internal assemblies.",
+            examples: ["Barrel", "Trigger", "Bolt Carrier Group", "Charging Handle", "Slide", "Recoil System"]
         ),
     ]
 }

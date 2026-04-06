@@ -14,6 +14,7 @@ struct AddFirearmLookupData {
     var optics: [Optic] = []
     var magazines: [Magazine] = []
     var attachments: [Attachment] = []
+    var parts: [Part] = []
 }
 
 protocol AddFirearmLookupServicing {
@@ -37,13 +38,17 @@ struct AddFirearmLookupService: AddFirearmLookupServicing {
         let attachmentsDescriptor = FetchDescriptor<Attachment>(
             sortBy: [SortDescriptor(\.brand), SortDescriptor(\.modelName)]
         )
+        let partsDescriptor = FetchDescriptor<Part>(
+            sortBy: [SortDescriptor(\.brand), SortDescriptor(\.modelName)]
+        )
 
         return AddFirearmLookupData(
             calibers: try context.fetch(calibersDescriptor),
             existingFirearms: try context.fetch(firearmsDescriptor),
             optics: try context.fetch(opticsDescriptor),
             magazines: try context.fetch(magazinesDescriptor),
-            attachments: try context.fetch(attachmentsDescriptor)
+            attachments: try context.fetch(attachmentsDescriptor),
+            parts: try context.fetch(partsDescriptor)
         )
     }
 }

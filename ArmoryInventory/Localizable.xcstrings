@@ -118,6 +118,15 @@
     "Add optics first to link them to this firearm." : {
 
     },
+    "Add Part" : {
+
+    },
+    "Add Parts" : {
+
+    },
+    "Add parts first to link them to this firearm." : {
+
+    },
     "Add your first attachment to track stocks, grips, lasers, lights, and other hardware." : {
 
     },
@@ -131,6 +140,9 @@
 
     },
     "Add your first optic to start tracking mounts, magnification, and purchase cost." : {
+
+    },
+    "Add your first part to track barrels, triggers, receivers, recoil systems, and other swap-ready components." : {
 
     },
     "Adjust Quantity" : {
@@ -149,6 +161,9 @@
 
     },
     "All saved optics are linked to other firearms or none have been added yet." : {
+
+    },
+    "All saved parts are linked to other firearms or none have been added yet." : {
 
     },
     "All Types (%lld)" : {
@@ -241,6 +256,9 @@
     "Color details" : {
 
     },
+    "Color Details" : {
+
+    },
     "Common Calibers" : {
 
     },
@@ -325,7 +343,7 @@
     "Footprint" : {
 
     },
-    "Footprint details" : {
+    "Footprint Details" : {
 
     },
     "From" : {
@@ -361,7 +379,7 @@
     "in." : {
 
     },
-    "Includes the firearm plus linked optics, magazines, and attachments." : {
+    "Includes the firearm plus linked optics, magazines, attachments, and parts." : {
 
     },
     "Link Attachments" : {
@@ -371,6 +389,9 @@
 
     },
     "Link Optics" : {
+
+    },
+    "Link Parts" : {
 
     },
     "Linked Attachments" : {
@@ -383,6 +404,9 @@
 
     },
     "Linked Optics" : {
+
+    },
+    "Linked Parts" : {
 
     },
     "Magazine Details" : {
@@ -403,16 +427,19 @@
     "Manage Optics" : {
 
     },
+    "Manage Parts" : {
+
+    },
     "Max" : {
 
     },
     "Min" : {
 
     },
-    "Mode" : {
+    "mm" : {
 
     },
-    "Model name" : {
+    "Mode" : {
 
     },
     "Model Name" : {
@@ -434,6 +461,9 @@
 
     },
     "New Optic" : {
+
+    },
+    "New Part" : {
 
     },
     "Nickname" : {
@@ -475,6 +505,15 @@
     "No Optics Yet" : {
 
     },
+    "No Parts Available" : {
+
+    },
+    "No parts linked." : {
+
+    },
+    "No Parts Yet" : {
+
+    },
     "No unlinked attachments available." : {
 
     },
@@ -482,6 +521,9 @@
 
     },
     "No unlinked optics available." : {
+
+    },
+    "No unlinked parts available." : {
 
     },
     "None" : {
@@ -514,6 +556,15 @@
     "Overview" : {
 
     },
+    "Part Details" : {
+
+    },
+    "Part Type" : {
+
+    },
+    "Parts" : {
+
+    },
     "Post-Tax Total" : {
 
     },
@@ -532,7 +583,7 @@
     "Purchase date" : {
 
     },
-    "Purchase price (USD)" : {
+    "Purchase Price" : {
 
     },
     "Purchased" : {
@@ -544,7 +595,7 @@
     "Reset to Default Order" : {
 
     },
-    "Reticle (optional)" : {
+    "Reticle" : {
 
     },
     "Rounds" : {
@@ -560,9 +611,6 @@
 
     },
     "Serial Number" : {
-
-    },
-    "Serial number (optional)" : {
 
     },
     "Settings" : {
@@ -604,7 +652,7 @@
     "Total Value" : {
 
     },
-    "Track firearms, ammo, optics, magazines, attachments, and related inventory." : {
+    "Track firearms, ammo, optics, magazines, attachments, parts, and related inventory." : {
 
     },
     "Track the major components you swap between firearms." : {
@@ -613,13 +661,13 @@
     "Tube" : {
 
     },
-    "Tube size in mm (optional)" : {
+    "Tube Size" : {
 
     },
     "Type" : {
 
     },
-    "Type details" : {
+    "Type Details" : {
 
     },
     "Typical: %lldgr-%lldgr" : {
