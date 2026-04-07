@@ -11,6 +11,8 @@ import SwiftData
 struct AttachmentsView: View {
     @Environment(\.modelContext) private var context
     @AppStorage(AttachmentTypeSort.settingsVersionKey) private var typeSortVersion = 0
+    @AppStorage(InventorySettingsKeys.attachmentItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
+    @AppStorage(InventorySettingsKeys.attachmentItemSortDirection) private var itemSortDirectionRaw = ""
     @AppStorage(InventorySettingsKeys.showValueInCard) private var showValueInCard = true
     @AppStorage(InventorySettingsKeys.showTotalValue) private var showTotalValue = true
     @State private var showingAddAttachment = false
@@ -106,7 +108,9 @@ struct AttachmentsView: View {
     }
 
     private var groupedAttachments: [String: [Attachment]] {
-        Dictionary(grouping: attachments, by: \.typeDisplayName)
+        Dictionary(grouping: attachments, by: \.typeDisplayName).mapValues {
+            AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
+        }
     }
 
     private var groupedAttachmentTypes: [String] {
@@ -150,5 +154,13 @@ struct AttachmentsView: View {
         let totalCents = attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private var selectedItemSortOrder: AccessoryItemSortOrder {
+        AccessoryItemSortOrder(rawValue: itemSortOrder) ?? .manual
+    }
+
+    private var selectedItemSortDirection: AccessoryItemSortDirection {
+        AccessoryItemSortDirection(rawValue: itemSortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: selectedItemSortOrder)
     }
 }

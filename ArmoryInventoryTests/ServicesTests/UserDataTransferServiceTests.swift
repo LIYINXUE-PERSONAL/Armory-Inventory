@@ -156,6 +156,14 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertEqual(destinationDefaults.stringArray(forKey: InventorySettingsKeys.caliberSortOrder), ["9mm", ".45 acp"])
         XCTAssertEqual(destinationDefaults.bool(forKey: InventorySettingsKeys.showValueInCard), true)
         XCTAssertEqual(destinationDefaults.integer(forKey: InventorySettingsKeys.attachmentTypeSortOrderVersion), 2)
+        XCTAssertEqual(destinationDefaults.string(forKey: InventorySettingsKeys.attachmentItemSortOrder), AccessoryItemSortOrder.value.rawValue)
+        XCTAssertEqual(destinationDefaults.string(forKey: InventorySettingsKeys.attachmentItemSortDirection), AccessoryItemSortDirection.descending.rawValue)
+        XCTAssertEqual(destinationDefaults.stringArray(forKey: InventorySettingsKeys.opticTypeSortOrder), ["lpvo", "red dot"])
+        XCTAssertEqual(destinationDefaults.string(forKey: InventorySettingsKeys.opticItemSortOrder), AccessoryItemSortOrder.purchaseDate.rawValue)
+        XCTAssertEqual(destinationDefaults.string(forKey: InventorySettingsKeys.opticItemSortDirection), AccessoryItemSortDirection.descending.rawValue)
+        XCTAssertEqual(destinationDefaults.stringArray(forKey: InventorySettingsKeys.partTypeSortOrder), ["trigger", "barrel"])
+        XCTAssertEqual(destinationDefaults.string(forKey: InventorySettingsKeys.partItemSortOrder), AccessoryItemSortOrder.brand.rawValue)
+        XCTAssertEqual(destinationDefaults.string(forKey: InventorySettingsKeys.partItemSortDirection), AccessoryItemSortDirection.ascending.rawValue)
         XCTAssertNotNil(destinationDefaults.object(forKey: InventorySettingsKeys.lastModelSaveDate) as? Date)
     }
 
@@ -235,6 +243,11 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.firearmsSalesTaxRate))
         XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.showValueInCard))
         XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.caliberSortOrder))
+        XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.attachmentItemSortOrder))
+        XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.opticTypeSortOrder))
+        XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.opticItemSortOrder))
+        XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.partTypeSortOrder))
+        XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.partItemSortOrder))
         XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.lastModelSaveDate))
     }
 
@@ -252,6 +265,14 @@ final class UserDataTransferServiceTests: XCTestCase {
         defaults.set(true, forKey: InventorySettingsKeys.showValueInCard)
         defaults.set(["9mm", ".45 acp"], forKey: InventorySettingsKeys.caliberSortOrder)
         defaults.set(2, forKey: InventorySettingsKeys.attachmentTypeSortOrderVersion)
+        defaults.set(AccessoryItemSortOrder.value.rawValue, forKey: InventorySettingsKeys.attachmentItemSortOrder)
+        defaults.set(AccessoryItemSortDirection.descending.rawValue, forKey: InventorySettingsKeys.attachmentItemSortDirection)
+        defaults.set(["lpvo", "red dot"], forKey: InventorySettingsKeys.opticTypeSortOrder)
+        defaults.set(AccessoryItemSortOrder.purchaseDate.rawValue, forKey: InventorySettingsKeys.opticItemSortOrder)
+        defaults.set(AccessoryItemSortDirection.descending.rawValue, forKey: InventorySettingsKeys.opticItemSortDirection)
+        defaults.set(["trigger", "barrel"], forKey: InventorySettingsKeys.partTypeSortOrder)
+        defaults.set(AccessoryItemSortOrder.brand.rawValue, forKey: InventorySettingsKeys.partItemSortOrder)
+        defaults.set(AccessoryItemSortDirection.ascending.rawValue, forKey: InventorySettingsKeys.partItemSortDirection)
         defaults.set(Date(timeIntervalSince1970: 10_000), forKey: InventorySettingsKeys.lastModelSaveDate)
     }
 }

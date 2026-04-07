@@ -219,6 +219,10 @@ final class Optic {
         "\(brand) \(modelName)"
     }
 
+    var typeDisplayName: String {
+        opticType.displayName
+    }
+
     var magnificationText: String {
         let minText = minMagnification.formatted(.number.precision(.fractionLength(0...1)))
         let maxText = maxMagnification.formatted(.number.precision(.fractionLength(0...1)))

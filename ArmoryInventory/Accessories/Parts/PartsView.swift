@@ -10,6 +10,9 @@ import SwiftData
 
 struct PartsView: View {
     @Environment(\.modelContext) private var context
+    @AppStorage(PartTypeSort.settingsVersionKey) private var typeSortVersion = 0
+    @AppStorage(InventorySettingsKeys.partItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
+    @AppStorage(InventorySettingsKeys.partItemSortDirection) private var itemSortDirectionRaw = ""
     @AppStorage(InventorySettingsKeys.showValueInCard) private var showValueInCard = true
     @AppStorage(InventorySettingsKeys.showTotalValue) private var showTotalValue = true
     @State private var showingAddPart = false
@@ -83,6 +86,9 @@ struct PartsView: View {
                 reloadParts()
             }
         }
+        .onChange(of: typeSortVersion) { _, _ in
+            reloadParts()
+        }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 EditButton()
@@ -105,11 +111,13 @@ struct PartsView: View {
     }
 
     private var groupedParts: [String: [Part]] {
-        Dictionary(grouping: parts, by: \.typeDisplayName)
+        Dictionary(grouping: parts, by: \.typeDisplayName).mapValues {
+            AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
+        }
     }
 
     private var groupedPartTypes: [String] {
-        PartType.displayOrder(for: Array(groupedParts.keys))
+        PartTypeSort.displayOrder(for: Array(groupedParts.keys))
     }
 
     private func deleteParts(at offsets: IndexSet, in type: String) {
@@ -149,5 +157,13 @@ struct PartsView: View {
         let totalCents = parts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private var selectedItemSortOrder: AccessoryItemSortOrder {
+        AccessoryItemSortOrder(rawValue: itemSortOrder) ?? .manual
+    }
+
+    private var selectedItemSortDirection: AccessoryItemSortDirection {
+        AccessoryItemSortDirection(rawValue: itemSortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: selectedItemSortOrder)
     }
 }
