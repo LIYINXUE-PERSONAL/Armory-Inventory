@@ -303,6 +303,7 @@ final class AddFirearmViewModel {
         nickname: String?,
         serialNumber: String,
         purchaseDate: Date,
+        lastCleanedDate: Date?,
         purchasePriceCents: Int,
         type: FirearmType,
         action: FirearmAction,
@@ -329,6 +330,7 @@ final class AddFirearmViewModel {
             nickname: optionalValue(nickname ?? ""),
             serialNumber: optionalSerialNumber(serialNumber),
             purchaseDate: purchaseDate,
+            lastCleanedDate: lastCleanedDate,
             purchasePriceCents: purchasePriceCents,
             type: type,
             action: action,
@@ -363,6 +365,7 @@ final class AddFirearmViewModel {
         nickname: String?,
         serialNumber: String,
         purchaseDate: Date,
+        lastCleanedDate: Date?,
         purchasePriceCents: Int,
         type: FirearmType,
         action: FirearmAction,
@@ -388,6 +391,7 @@ final class AddFirearmViewModel {
         firearm.nickname = optionalValue(nickname ?? "")
         firearm.serialNumber = optionalSerialNumber(serialNumber)
         firearm.purchaseDate = purchaseDate
+        firearm.lastCleanedDate = lastCleanedDate
         firearm.purchasePriceCents = purchasePriceCents
         firearm.type = type.rawValue
         firearm.action = action.rawValue

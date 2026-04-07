@@ -91,6 +91,7 @@ final class FirearmModelsTests: XCTestCase {
             modelName: "P",
             nickname: "Duty",
             serialNumber: "ABC123",
+            lastCleanedDate: Date(timeIntervalSince1970: 123_456),
             purchasePriceCents: 250000,
             type: .other,
             action: .other,
@@ -115,6 +116,7 @@ final class FirearmModelsTests: XCTestCase {
         XCTAssertEqual(firearm.roundsText, "200 Rounds")
         XCTAssertEqual(firearm.barrelLengthText, "4.4 in")
         XCTAssertTrue(firearm.purchasePriceText.contains("2,500"))
+        XCTAssertEqual(firearm.lastCleanedDateText, firearm.lastCleanedDate?.formatted(date: .abbreviated, time: .omitted))
         XCTAssertEqual(firearm.totalCardValueCents, 378000)
         XCTAssertTrue(firearm.totalCardValueText.contains("3,780"))
     }
@@ -189,6 +191,7 @@ final class FirearmModelsTests: XCTestCase {
         XCTAssertNil(firearm.barrelLengthText)
         XCTAssertEqual(firearm.totalCardValueCents, 0)
         XCTAssertTrue(firearm.totalCardValueText.contains("0.00"))
+        XCTAssertNil(firearm.lastCleanedDateText)
 
         firearm.color = nil
         firearm.caliber = nil
