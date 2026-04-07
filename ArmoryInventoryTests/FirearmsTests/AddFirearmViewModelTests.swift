@@ -438,6 +438,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             nickname: "carry gun",
             serialNumber: " cz-999 ",
             purchaseDate: purchaseDate,
+            lastCleanedDate: Date(timeIntervalSince1970: 22_222),
             purchasePriceCents: 49999,
             type: .pistol,
             action: .semiAuto,
@@ -469,6 +470,7 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertEqual(firearms.first?.firearmColor, .black)
         XCTAssertEqual(firearms.first?.caliber?.name, "9mm")
         XCTAssertEqual(firearms.first?.purchaseDate, purchaseDate)
+        XCTAssertEqual(firearms.first?.lastCleanedDate, Date(timeIntervalSince1970: 22_222))
         XCTAssertEqual(firearms.first?.optics.map(\.displayName), ["Holosun 507C"])
         XCTAssertEqual(firearms.first?.magazines.map(\.displayName), ["CZ P-10"])
         XCTAssertEqual(firearms.first?.attachments.map(\.displayName), ["Streamlight TLR-7A"])
@@ -487,6 +489,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             nickname: nil,
             serialNumber: "",
             purchaseDate: .now,
+            lastCleanedDate: nil,
             purchasePriceCents: 189900,
             type: .shotgun,
             action: .semiAuto,
@@ -538,6 +541,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             nickname: "range gun",
             serialNumber: "",
             purchaseDate: Date(timeIntervalSince1970: 9_999),
+            lastCleanedDate: Date(timeIntervalSince1970: 15_555),
             purchasePriceCents: 65000,
             type: .pistol,
             action: .other,
@@ -560,6 +564,7 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertEqual(firearm.modelName, "m&p 2.0")
         XCTAssertEqual(firearm.nickname, "range gun")
         XCTAssertNil(firearm.serialNumber)
+        XCTAssertEqual(firearm.lastCleanedDate, Date(timeIntervalSince1970: 15_555))
         XCTAssertEqual(firearm.purchasePriceCents, 65000)
         XCTAssertEqual(firearm.firearmAction, .other)
         XCTAssertEqual(firearm.actionDetail, "DA/SA")

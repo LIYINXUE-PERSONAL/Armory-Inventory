@@ -19,6 +19,8 @@ struct AddFirearmView: View {
     @State private var nickname = ""
     @State private var serialNumber = ""
     @State private var purchaseDate = Date.now
+    @State private var hasLastCleanedDate = false
+    @State private var lastCleanedDate = Date.now
     @State private var purchasePriceText = "0.00"
     @State private var selectedType: FirearmType = .rifle
     @State private var selectedAction: FirearmAction = .semiAuto
@@ -58,6 +60,8 @@ struct AddFirearmView: View {
         _nickname = State(initialValue: firearm?.nickname ?? "")
         _serialNumber = State(initialValue: firearm?.serialNumber ?? "")
         _purchaseDate = State(initialValue: firearm?.purchaseDate ?? .now)
+        _hasLastCleanedDate = State(initialValue: firearm?.lastCleanedDate != nil)
+        _lastCleanedDate = State(initialValue: firearm?.lastCleanedDate ?? .now)
         _purchasePriceText = State(initialValue: viewModel.initialPurchasePriceText(for: firearm))
         _selectedType = State(initialValue: firearm?.firearmType ?? .rifle)
         _selectedAction = State(initialValue: firearm?.firearmAction ?? .semiAuto)
@@ -151,6 +155,19 @@ struct AddFirearmView: View {
 
                     if selectedColor == .other {
                         TextField("Color details", text: $customColor)
+                    }
+                }
+                .disabled(isReadOnly)
+
+                Section("Maintenance") {
+                    if isReadOnly {
+                        LabeledContent("Last cleaned", value: firearm?.lastCleanedDateText ?? "Not set")
+                    } else {
+                        Toggle("Track last cleaned date", isOn: $hasLastCleanedDate)
+
+                        if hasLastCleanedDate {
+                            DatePicker("Last cleaned", selection: $lastCleanedDate, displayedComponents: .date)
+                        }
                     }
                 }
                 .disabled(isReadOnly)
@@ -582,6 +599,10 @@ struct AddFirearmView: View {
         viewModel.purchasePriceCents(from: purchasePriceText)
     }
 
+    private var resolvedLastCleanedDate: Date? {
+        hasLastCleanedDate ? lastCleanedDate : nil
+    }
+
     private var resolvedOptics: [Optic] {
         viewModel.resolvedOptics(from: lookupData.optics, selectedIDs: selectedOpticIDs)
     }
@@ -692,6 +713,7 @@ struct AddFirearmView: View {
                 nickname: resolvedNickname,
                 serialNumber: serialNumber,
                 purchaseDate: purchaseDate,
+                lastCleanedDate: resolvedLastCleanedDate,
                 purchasePriceCents: resolvedPurchasePriceCents ?? 0,
                 type: selectedType,
                 action: selectedAction,
@@ -715,6 +737,7 @@ struct AddFirearmView: View {
                 nickname: resolvedNickname,
                 serialNumber: serialNumber,
                 purchaseDate: purchaseDate,
+                lastCleanedDate: resolvedLastCleanedDate,
                 purchasePriceCents: resolvedPurchasePriceCents ?? 0,
                 type: selectedType,
                 action: selectedAction,

@@ -118,6 +118,7 @@ final class Firearm {
     var nickname: String?
     @Attribute(.unique) var serialNumber: String?
     var purchaseDate: Date
+    var lastCleanedDate: Date?
     var purchasePriceCents: Int
     var type: FirearmType.RawValue
     var action: FirearmAction.RawValue
@@ -142,6 +143,7 @@ final class Firearm {
         nickname: String? = nil,
         serialNumber: String? = nil,
         purchaseDate: Date = .now,
+        lastCleanedDate: Date? = nil,
         purchasePriceCents: Int,
         type: FirearmType,
         action: FirearmAction,
@@ -164,6 +166,7 @@ final class Firearm {
         self.nickname = nickname
         self.serialNumber = serialNumber
         self.purchaseDate = purchaseDate
+        self.lastCleanedDate = lastCleanedDate
         self.purchasePriceCents = purchasePriceCents
         self.type = type.rawValue
         self.action = action.rawValue
@@ -245,6 +248,10 @@ final class Firearm {
     var purchasePriceText: String {
         let amount = Decimal(purchasePriceCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    var lastCleanedDateText: String? {
+        lastCleanedDate?.formatted(date: .abbreviated, time: .omitted)
     }
 
     var totalCardValueCents: Int {

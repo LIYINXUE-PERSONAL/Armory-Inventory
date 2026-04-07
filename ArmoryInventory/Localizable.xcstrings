@@ -382,6 +382,9 @@
     "Includes the firearm plus linked optics, magazines, attachments, and parts." : {
 
     },
+    "Last cleaned" : {
+
+    },
     "Link Attachments" : {
 
     },
@@ -416,6 +419,9 @@
 
     },
     "Magnification" : {
+
+    },
+    "Maintenance" : {
 
     },
     "Manage Attachments" : {
@@ -653,6 +659,9 @@
 
     },
     "Track firearms, ammo, optics, magazines, attachments, parts, and related inventory." : {
+
+    },
+    "Track last cleaned date" : {
 
     },
     "Track the major components you swap between firearms." : {
