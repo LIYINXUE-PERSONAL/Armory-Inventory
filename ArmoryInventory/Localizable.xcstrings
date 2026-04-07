@@ -361,6 +361,12 @@
     "Hold and drag calibers to control the order used throughout the app." : {
 
     },
+    "Hold and drag optic types to control the section order used in optics." : {
+
+    },
+    "Hold and drag part types to control the section order used in parts." : {
+
+    },
     "Illuminated" : {
 
     },
@@ -550,6 +556,9 @@
     "Optics" : {
 
     },
+    "Optics Sorting" : {
+
+    },
     "Optional" : {
 
     },
@@ -569,6 +578,9 @@
 
     },
     "Parts" : {
+
+    },
+    "Parts Sorting" : {
 
     },
     "Post-Tax Total" : {
@@ -631,6 +643,9 @@
     "Show Value in Details" : {
 
     },
+    "Sort %@ In Each Type By" : {
+
+    },
     "Sort Firearms By" : {
 
     },
@@ -677,6 +692,9 @@
 
     },
     "Type Details" : {
+
+    },
+    "Type Order" : {
 
     },
     "Typical: %lldgr-%lldgr" : {

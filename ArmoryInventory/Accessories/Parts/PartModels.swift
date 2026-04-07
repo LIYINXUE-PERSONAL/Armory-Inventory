@@ -47,12 +47,6 @@ enum PartType: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    static func displayOrder(for names: [String]) -> [String] {
-        let enumOrder = allCases.map(\.displayName)
-        let knownNames = enumOrder.filter(names.contains)
-        let customNames = names.filter { !enumOrder.contains($0) }.sorted()
-        return knownNames + customNames
-    }
 }
 
 @Model

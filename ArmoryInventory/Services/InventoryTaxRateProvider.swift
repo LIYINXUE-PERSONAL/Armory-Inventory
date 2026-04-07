@@ -39,6 +39,16 @@ enum InventorySettingsKeys {
     static let caliberSortOrderVersion = "CaliberSortOrderVersion"
     static let attachmentTypeSortOrder = "AttachmentTypeSortOrder"
     static let attachmentTypeSortOrderVersion = "AttachmentTypeSortOrderVersion"
+    static let attachmentItemSortOrder = "AttachmentItemSortOrder"
+    static let attachmentItemSortDirection = "AttachmentItemSortDirection"
+    static let opticTypeSortOrder = "OpticTypeSortOrder"
+    static let opticTypeSortOrderVersion = "OpticTypeSortOrderVersion"
+    static let opticItemSortOrder = "OpticItemSortOrder"
+    static let opticItemSortDirection = "OpticItemSortDirection"
+    static let partTypeSortOrder = "PartTypeSortOrder"
+    static let partTypeSortOrderVersion = "PartTypeSortOrderVersion"
+    static let partItemSortOrder = "PartItemSortOrder"
+    static let partItemSortDirection = "PartItemSortDirection"
     static let lastModelSaveDate = "LastModelSaveDate"
 
     static let managedUserDataKeys: [String] = [
@@ -54,6 +64,16 @@ enum InventorySettingsKeys {
         caliberSortOrderVersion,
         attachmentTypeSortOrder,
         attachmentTypeSortOrderVersion,
+        attachmentItemSortOrder,
+        attachmentItemSortDirection,
+        opticTypeSortOrder,
+        opticTypeSortOrderVersion,
+        opticItemSortOrder,
+        opticItemSortDirection,
+        partTypeSortOrder,
+        partTypeSortOrderVersion,
+        partItemSortOrder,
+        partItemSortDirection,
         lastModelSaveDate
     ]
 }

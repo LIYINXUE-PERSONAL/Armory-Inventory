@@ -73,6 +73,7 @@ final class OpticsModelsTests: XCTestCase {
         XCTAssertEqual(optic.opticColor, .other)
         XCTAssertEqual(optic.colorDisplayName, "OD Green")
         XCTAssertEqual(optic.displayName, "Vortex Razor HD")
+        XCTAssertEqual(optic.typeDisplayName, "LPVO")
         XCTAssertEqual(optic.magnificationText, "1-6x")
         XCTAssertEqual(optic.tubeSizeText, "30 mm")
         XCTAssertTrue(optic.purchasePriceText.contains("1,299"))
@@ -103,6 +104,7 @@ final class OpticsModelsTests: XCTestCase {
         XCTAssertEqual(optic.footprintDisplayName, "Other")
         XCTAssertEqual(optic.opticColor, .other)
         XCTAssertEqual(optic.colorDisplayName, "Other")
+        XCTAssertEqual(optic.typeDisplayName, "Other")
         XCTAssertEqual(optic.magnificationText, "1x")
         XCTAssertNil(optic.tubeSizeText)
 

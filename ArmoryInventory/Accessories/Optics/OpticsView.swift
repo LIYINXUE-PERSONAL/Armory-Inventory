@@ -10,6 +10,9 @@ import SwiftData
 
 struct OpticsView: View {
     @Environment(\.modelContext) private var context
+    @AppStorage(OpticTypeSort.settingsVersionKey) private var typeSortVersion = 0
+    @AppStorage(InventorySettingsKeys.opticItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
+    @AppStorage(InventorySettingsKeys.opticItemSortDirection) private var itemSortDirectionRaw = ""
     @AppStorage(InventorySettingsKeys.showValueInCard) private var showValueInCard = true
     @AppStorage(InventorySettingsKeys.showTotalValue) private var showTotalValue = true
     @State private var showingAddOptic = false
@@ -28,45 +31,51 @@ struct OpticsView: View {
                 )
             } else {
                 List {
-                    ForEach(optics) { optic in
-                        Button {
-                            selectedOptic = optic
-                        } label: {
-                            VStack(alignment: .leading, spacing: 6) {
-                                HStack(alignment: .firstTextBaseline) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(optic.displayName)
-                                            .font(.headline)
-                                        Text("\(optic.opticType.displayName) • \(optic.magnificationText)")
-                                            .font(.subheadline)
-                                            .foregroundStyle(.secondary)
+                    ForEach(groupedOpticTypes, id: \.self) { type in
+                        Section(type) {
+                            ForEach(groupedOptics[type] ?? []) { optic in
+                                Button {
+                                    selectedOptic = optic
+                                } label: {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack(alignment: .firstTextBaseline) {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(optic.displayName)
+                                                    .font(.headline)
+                                                Text(optic.magnificationText)
+                                                    .font(.subheadline)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+
+                                        LabeledContent("Footprint", value: optic.footprintDisplayName)
+
+                                        if let tubeSizeText = optic.tubeSizeText {
+                                            LabeledContent("Tube", value: tubeSizeText)
+                                        }
+
+                                        if let focalPlane = optic.opticFocalPlane {
+                                            LabeledContent("Focal Plane", value: focalPlane.displayName)
+                                        }
+
+                                        if showValueInCard, optic.purchasePriceCents > 0 {
+                                            LabeledContent("Value", value: optic.purchasePriceText)
+                                        }
+
+                                        if let firearm = optic.firearm {
+                                            LabeledContent("Linked Firearm", value: firearm.displayName)
+                                        }
                                     }
+                                    .padding(.vertical, 6)
+                                    .contentShape(Rectangle())
                                 }
-
-                                LabeledContent("Footprint", value: optic.footprintDisplayName)
-
-                                if let tubeSizeText = optic.tubeSizeText {
-                                    LabeledContent("Tube", value: tubeSizeText)
-                                }
-
-                                if let focalPlane = optic.opticFocalPlane {
-                                    LabeledContent("Focal Plane", value: focalPlane.displayName)
-                                }
-
-                                if showValueInCard, optic.purchasePriceCents > 0 {
-                                    LabeledContent("Value", value: optic.purchasePriceText)
-                                }
-
-                                if let firearm = optic.firearm {
-                                    LabeledContent("Linked Firearm", value: firearm.displayName)
-                                }
+                                .buttonStyle(.plain)
                             }
-                            .padding(.vertical, 6)
-                            .contentShape(Rectangle())
+                            .onDelete { offsets in
+                                deleteOptics(at: offsets, in: type)
+                            }
                         }
-                        .buttonStyle(.plain)
                     }
-                    .onDelete(perform: deleteOptics)
 
                     if showTotalValue {
                         Section {
@@ -94,6 +103,9 @@ struct OpticsView: View {
                 reloadOptics()
             }
         }
+        .onChange(of: typeSortVersion) { _, _ in
+            reloadOptics()
+        }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 EditButton()
@@ -115,9 +127,23 @@ struct OpticsView: View {
         }
     }
 
-    private func deleteOptics(at offsets: IndexSet) {
+    private var groupedOptics: [String: [Optic]] {
+        Dictionary(grouping: optics, by: \.typeDisplayName).mapValues {
+            AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
+        }
+    }
+
+    private var groupedOpticTypes: [String] {
+        OpticTypeSort.displayOrder(for: Array(groupedOptics.keys))
+    }
+
+    private func deleteOptics(at offsets: IndexSet, in type: String) {
+        guard let sectionOptics = groupedOptics[type] else {
+            return
+        }
+
         for index in offsets {
-            context.delete(optics[index])
+            context.delete(sectionOptics[index])
         }
         resequenceOptics()
 
@@ -148,5 +174,13 @@ struct OpticsView: View {
         let totalCents = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private var selectedItemSortOrder: AccessoryItemSortOrder {
+        AccessoryItemSortOrder(rawValue: itemSortOrder) ?? .manual
+    }
+
+    private var selectedItemSortDirection: AccessoryItemSortDirection {
+        AccessoryItemSortDirection(rawValue: itemSortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: selectedItemSortOrder)
     }
 }

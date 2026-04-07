@@ -1,23 +1,23 @@
 //
-//  AttachmentTypeOrderingView.swift
+//  PartTypeOrderingView.swift
 //  Armory Inventory
 //
-//  Created by Codex on 4/2/26.
+//  Created by Codex on 4/6/26.
 //
 
 import SwiftUI
 
-struct AttachmentTypeOrderingView: View {
-    @AppStorage(AttachmentTypeSort.settingsVersionKey) private var sortVersion = 0
-    @AppStorage(InventorySettingsKeys.attachmentItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
-    @AppStorage(InventorySettingsKeys.attachmentItemSortDirection) private var itemSortDirectionRaw = ""
+struct PartTypeOrderingView: View {
+    @AppStorage(PartTypeSort.settingsVersionKey) private var sortVersion = 0
+    @AppStorage(InventorySettingsKeys.partItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
+    @AppStorage(InventorySettingsKeys.partItemSortDirection) private var itemSortDirectionRaw = ""
     @State private var rankingNames: [String] = []
-    let viewModel: AttachmentTypeOrderingViewModel
+    let viewModel: PartTypeOrderingViewModel
 
     var body: some View {
         List {
             Section {
-                Text("Hold and drag attachment types to control the section order used in attachments.")
+                Text("Hold and drag part types to control the section order used in parts.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -38,10 +38,10 @@ struct AttachmentTypeOrderingView: View {
             AccessoryItemSortingSection(
                 sortOrderRaw: $itemSortOrder,
                 sortDirectionRaw: $itemSortDirectionRaw,
-                itemLabelPlural: "Attachments"
+                itemLabelPlural: "Parts"
             )
         }
-        .navigationTitle("Attachments Sorting")
+        .navigationTitle("Parts Sorting")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 EditButton()
