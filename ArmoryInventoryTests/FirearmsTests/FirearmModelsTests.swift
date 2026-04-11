@@ -80,11 +80,18 @@ final class FirearmModelsTests: XCTestCase {
             type: .light,
             purchasePriceCents: 28000
         )
+        let part = Part(
+            brand: "Apex",
+            modelName: "Trigger Kit",
+            type: .trigger,
+            purchasePriceCents: 12500
+        )
         let firearm = Firearm(
             brand: "Staccato",
             modelName: "P",
             nickname: "Duty",
             serialNumber: "ABC123",
+            lastCleanedDate: Date(timeIntervalSince1970: 123_456),
             purchasePriceCents: 250000,
             type: .other,
             action: .other,
@@ -95,7 +102,8 @@ final class FirearmModelsTests: XCTestCase {
             caliber: caliber,
             optics: [optic],
             magazines: [magazine],
-            attachments: [attachment]
+            attachments: [attachment],
+            parts: [part]
         )
 
         XCTAssertEqual(firearm.firearmType, .other)
@@ -108,8 +116,9 @@ final class FirearmModelsTests: XCTestCase {
         XCTAssertEqual(firearm.roundsText, "200 Rounds")
         XCTAssertEqual(firearm.barrelLengthText, "4.4 in")
         XCTAssertTrue(firearm.purchasePriceText.contains("2,500"))
-        XCTAssertEqual(firearm.totalCardValueCents, 365500)
-        XCTAssertTrue(firearm.totalCardValueText.contains("3,655"))
+        XCTAssertEqual(firearm.lastCleanedDateText, firearm.lastCleanedDate?.formatted(date: .abbreviated, time: .omitted))
+        XCTAssertEqual(firearm.totalCardValueCents, 378000)
+        XCTAssertTrue(firearm.totalCardValueText.contains("3,780"))
     }
 
     func testFirearmComputedPropertiesFallbackForInvalidStoredValues() {
@@ -146,6 +155,12 @@ final class FirearmModelsTests: XCTestCase {
             type: .handStop,
             purchasePriceCents: -300
         )
+        let part = Part(
+            brand: "BCM",
+            modelName: "PNT",
+            type: .trigger,
+            purchasePriceCents: -500
+        )
         let firearm = Firearm(
             brand: "Colt",
             modelName: "6920",
@@ -155,7 +170,8 @@ final class FirearmModelsTests: XCTestCase {
             caliber: caliber,
             optics: [optic],
             magazines: [magazine],
-            attachments: [attachment]
+            attachments: [attachment],
+            parts: [part]
         )
         firearm.type = "invalid-type"
         firearm.action = "invalid-action"
@@ -175,6 +191,7 @@ final class FirearmModelsTests: XCTestCase {
         XCTAssertNil(firearm.barrelLengthText)
         XCTAssertEqual(firearm.totalCardValueCents, 0)
         XCTAssertTrue(firearm.totalCardValueText.contains("0.00"))
+        XCTAssertNil(firearm.lastCleanedDateText)
 
         firearm.color = nil
         firearm.caliber = nil

@@ -1,51 +1,51 @@
 //
-//  AttachmentsView.swift
+//  PartsView.swift
 //  Armory Inventory
 //
-//  Created by Codex on 4/2/26.
+//  Created by Codex on 4/5/26.
 //
 
 import SwiftUI
 import SwiftData
 
-struct AttachmentsView: View {
+struct PartsView: View {
     @Environment(\.modelContext) private var context
-    @AppStorage(AttachmentTypeSort.settingsVersionKey) private var typeSortVersion = 0
-    @AppStorage(InventorySettingsKeys.attachmentItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
-    @AppStorage(InventorySettingsKeys.attachmentItemSortDirection) private var itemSortDirectionRaw = ""
+    @AppStorage(PartTypeSort.settingsVersionKey) private var typeSortVersion = 0
+    @AppStorage(InventorySettingsKeys.partItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
+    @AppStorage(InventorySettingsKeys.partItemSortDirection) private var itemSortDirectionRaw = ""
     @AppStorage(InventorySettingsKeys.showValueInCard) private var showValueInCard = true
     @AppStorage(InventorySettingsKeys.showTotalValue) private var showTotalValue = true
-    @State private var showingAddAttachment = false
-    @State private var selectedAttachment: Attachment?
-    @State private var attachments: [Attachment] = []
+    @State private var showingAddPart = false
+    @State private var selectedPart: Part?
+    @State private var parts: [Part] = []
 
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
 
     var body: some View {
         Group {
-            if attachments.isEmpty {
+            if parts.isEmpty {
                 ContentUnavailableView(
-                    "No Attachments Yet",
-                    systemImage: "paperclip",
-                    description: Text("Add your first attachment to track stocks, grips, lasers, lights, and other hardware.")
+                    "No Parts Yet",
+                    systemImage: "gearshape.2.fill",
+                    description: Text("Add your first part to track barrels, triggers, receivers, recoil systems, and other swap-ready components.")
                 )
             } else {
                 List {
-                    ForEach(groupedAttachmentTypes, id: \.self) { type in
+                    ForEach(groupedPartTypes, id: \.self) { type in
                         Section(type) {
-                            ForEach(groupedAttachments[type] ?? []) { attachment in
+                            ForEach(groupedParts[type] ?? []) { part in
                                 Button {
-                                    selectedAttachment = attachment
+                                    selectedPart = part
                                 } label: {
                                     VStack(alignment: .leading, spacing: 6) {
-                                        Text(attachment.displayName)
+                                        Text(part.displayName)
                                             .font(.headline)
 
-                                        if showValueInCard, attachment.purchasePriceCents > 0 {
-                                            LabeledContent("Value", value: attachment.purchasePriceText)
+                                        if showValueInCard, part.purchasePriceCents > 0 {
+                                            LabeledContent("Value", value: part.purchasePriceText)
                                         }
 
-                                        if let firearm = attachment.firearm {
+                                        if let firearm = part.firearm {
                                             LabeledContent("Linked Firearm", value: firearm.displayName)
                                         }
                                     }
@@ -55,7 +55,7 @@ struct AttachmentsView: View {
                                 .buttonStyle(.plain)
                             }
                             .onDelete { offsets in
-                                deleteAttachments(at: offsets, in: type)
+                                deleteParts(at: offsets, in: type)
                             }
                         }
                     }
@@ -68,90 +68,93 @@ struct AttachmentsView: View {
                 }
             }
         }
-        .navigationTitle("Attachments")
+        .navigationTitle("Parts")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            reloadAttachments()
+            reloadParts()
         }
         .onAppear {
-            reloadAttachments()
+            reloadParts()
         }
-        .onChange(of: showingAddAttachment) {
-            if !showingAddAttachment {
-                reloadAttachments()
+        .onChange(of: showingAddPart) {
+            if !showingAddPart {
+                reloadParts()
             }
         }
-        .onChange(of: selectedAttachment) {
-            if selectedAttachment == nil {
-                reloadAttachments()
+        .onChange(of: selectedPart) {
+            if selectedPart == nil {
+                reloadParts()
             }
+        }
+        .onChange(of: typeSortVersion) { _, _ in
+            reloadParts()
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 EditButton()
 
                 Button {
-                    showingAddAttachment = true
+                    showingAddPart = true
                 } label: {
-                    Label("Add Attachment", systemImage: "plus")
+                    Label("Add Part", systemImage: "plus")
                 }
             }
         }
-        .sheet(isPresented: $showingAddAttachment) {
-            AddAttachmentView(viewModel: AddAttachmentViewModel())
+        .sheet(isPresented: $showingAddPart) {
+            AddPartView(viewModel: AddPartViewModel())
                 .presentationDetents([.large])
         }
-        .sheet(item: $selectedAttachment) { attachment in
-            AddAttachmentView(attachment: attachment, viewModel: AddAttachmentViewModel())
+        .sheet(item: $selectedPart) { part in
+            AddPartView(part: part, viewModel: AddPartViewModel())
                 .presentationDetents([.large])
         }
     }
 
-    private var groupedAttachments: [String: [Attachment]] {
-        Dictionary(grouping: attachments, by: \.typeDisplayName).mapValues {
+    private var groupedParts: [String: [Part]] {
+        Dictionary(grouping: parts, by: \.typeDisplayName).mapValues {
             AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
         }
     }
 
-    private var groupedAttachmentTypes: [String] {
-        AttachmentTypeSort.displayOrder(for: Array(groupedAttachments.keys))
+    private var groupedPartTypes: [String] {
+        PartTypeSort.displayOrder(for: Array(groupedParts.keys))
     }
 
-    private func deleteAttachments(at offsets: IndexSet, in type: String) {
-        guard let sectionAttachments = groupedAttachments[type] else {
+    private func deleteParts(at offsets: IndexSet, in type: String) {
+        guard let sectionParts = groupedParts[type] else {
             return
         }
 
         for index in offsets {
-            context.delete(sectionAttachments[index])
+            context.delete(sectionParts[index])
         }
-        resequenceAttachments()
+        resequenceParts()
 
         do {
             try context.save()
             UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
-            reloadAttachments()
+            reloadParts()
         } catch {
             print("Delete error: \(error)")
         }
     }
 
-    private func reloadAttachments() {
+    private func reloadParts() {
         do {
-            attachments = try inventoryListService.fetchAttachments(in: context)
+            parts = try inventoryListService.fetchParts(in: context)
         } catch {
-            print("Attachments fetch error: \(error)")
+            print("Parts fetch error: \(error)")
         }
     }
 
-    private func resequenceAttachments() {
-        for (index, attachment) in attachments.enumerated() {
-            attachment.sortOrder = index
+    private func resequenceParts() {
+        for (index, part) in parts.enumerated() {
+            part.sortOrder = index
         }
     }
 
     private var totalValueText: String {
-        let totalCents = attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+        let totalCents = parts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
     }

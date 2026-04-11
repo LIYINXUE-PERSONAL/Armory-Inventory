@@ -22,7 +22,7 @@ struct AboutView: View {
                             .font(.title2.weight(.semibold))
                             .multilineTextAlignment(.center)
 
-                        Text("Track firearms, ammo, optics, magazines, attachments, and related inventory.")
+                        Text("Track firearms, ammo, optics, magazines, attachments, parts, and related inventory.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -37,6 +37,14 @@ struct AboutView: View {
 
                 Section("Version") {
                     LabeledContent("Build", value: appVersionText)
+                }
+
+                Section("Legal") {
+                    Button {
+                        openURL(privacyPolicyURL)
+                    } label: {
+                        Label("Privacy Policy", systemImage: "hand.raised")
+                    }
                 }
 
                 Section("Feedback") {
@@ -92,6 +100,10 @@ struct AboutView: View {
         case (.none, .none):
             return "Unavailable"
         }
+    }
+
+    private var privacyPolicyURL: URL {
+        URL(string: "https://github.com/LIYINXUE-PERSONAL/Armory-Inventory/blob/main/PRIVACY_POLICY.md")!
     }
 
     private func sendFeedback() {

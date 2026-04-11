@@ -1,22 +1,22 @@
 //
-//  AddMagazineViewModel.swift
+//  AddPartViewModel.swift
 //  Armory Inventory
 //
-//  Created by Codex on 4/2/26.
+//  Created by Codex on 4/5/26.
 //
 
 import Foundation
 import SwiftData
 
-final class AddMagazineViewModel {
+final class AddPartViewModel {
     private let priceInputParser: PriceInputParsing
 
     init(priceInputParser: PriceInputParsing = PriceInputParserService()) {
         self.priceInputParser = priceInputParser
     }
 
-    func initialPurchasePriceText(for magazine: Magazine?) -> String {
-        magazine.map {
+    func initialPurchasePriceText(for part: Part?) -> String {
+        part.map {
             (Decimal($0.purchasePriceCents) / 100).formatted(.number.precision(.fractionLength(2)))
         } ?? "0.00"
     }
@@ -34,20 +34,13 @@ final class AddMagazineViewModel {
         priceInputParser.purchasePriceCents(from: text)
     }
 
-    func capacity(from text: String) -> Int? {
-        let trimmedText = trimmedValue(text)
-        guard let value = Int(trimmedText), value > 0 else {
+    func resolvedTypeDetail(selectedType: PartType, customType: String) -> String? {
+        guard selectedType == .other else {
             return nil
         }
-        return value
-    }
 
-    func count(from text: String) -> Int? {
-        let trimmedText = trimmedValue(text)
-        guard let value = Int(trimmedText), value > 0 else {
-            return nil
-        }
-        return value
+        let typeDetail = trimmedValue(customType)
+        return typeDetail.isEmpty ? nil : typeDetail
     }
 
     func resolvedColorDetail(selectedColor: FirearmColor?, customColor: String) -> String? {
@@ -59,8 +52,8 @@ final class AddMagazineViewModel {
         return colorDetail.isEmpty ? nil : colorDetail
     }
 
-    func linkedFirearm(for magazine: Magazine?, unlinkFirearm: Bool) -> Firearm? {
-        unlinkFirearm ? nil : magazine?.firearm
+    func linkedFirearm(for part: Part?, unlinkFirearm: Bool) -> Firearm? {
+        unlinkFirearm ? nil : part?.firearm
     }
 
     func purchasePriceWithTaxText(purchasePriceCents: Int?, taxRate: Double) -> String {
@@ -73,16 +66,16 @@ final class AddMagazineViewModel {
         return total.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
     }
 
-    func isReadOnly(hasMagazine: Bool, isEditing: Bool) -> Bool {
-        hasMagazine && !isEditing
+    func isReadOnly(hasPart: Bool, isEditing: Bool) -> Bool {
+        hasPart && !isEditing
     }
 
     func showsPurchaseSection(showValueInDetails: Bool, isReadOnly: Bool) -> Bool {
         showValueInDetails || !isReadOnly
     }
 
-    func primaryButtonTitle(hasMagazine: Bool, isEditing: Bool) -> String {
-        if !hasMagazine {
+    func primaryButtonTitle(hasPart: Bool, isEditing: Bool) -> String {
+        if !hasPart {
             return "Add"
         }
 
@@ -90,7 +83,7 @@ final class AddMagazineViewModel {
     }
 
     func nextSortOrder(in context: ModelContext) -> Int {
-        var descriptor = FetchDescriptor<Magazine>(
+        var descriptor = FetchDescriptor<Part>(
             sortBy: [SortDescriptor(\.sortOrder, order: .reverse)]
         )
         descriptor.fetchLimit = 1
@@ -101,34 +94,34 @@ final class AddMagazineViewModel {
     func canAdd(
         brand: String,
         modelName: String,
-        countText: String,
-        capacityText: String,
+        selectedType: PartType,
+        typeDetail: String?,
         selectedColor: FirearmColor?,
         colorDetail: String?,
         purchasePriceText: String
     ) -> Bool {
         guard !trimmedValue(brand).isEmpty else { return false }
         guard !trimmedValue(modelName).isEmpty else { return false }
-        guard count(from: countText) != nil else { return false }
-        guard capacity(from: capacityText) != nil else { return false }
         guard purchasePriceCents(from: purchasePriceText) != nil else { return false }
+        if selectedType == .other, typeDetail == nil {
+            return false
+        }
         if selectedColor == .other, colorDetail == nil {
             return false
         }
         return true
     }
 
-    func addMagazine(
+    func addPart(
         brand: String,
         modelName: String,
-        count: Int,
-        capacity: Int,
-        purchaseDate: Date,
-        purchasePriceCents: Int,
+        type: PartType,
+        typeDetail: String?,
         color: FirearmColor?,
         colorDetail: String?,
+        purchaseDate: Date,
+        purchasePriceCents: Int,
         notes: String?,
-        caliber: Caliber?,
         firearm: Firearm? = nil,
         canAdd: Bool,
         to context: ModelContext
@@ -137,21 +130,20 @@ final class AddMagazineViewModel {
             return false
         }
 
-        let magazine = Magazine(
+        let part = Part(
             brand: trimmedValue(brand),
             modelName: trimmedValue(modelName),
-            count: count,
-            capacity: capacity,
-            purchaseDate: purchaseDate,
-            purchasePriceCents: purchasePriceCents,
+            type: type,
+            typeDetail: typeDetail,
             color: color,
             colorDetail: colorDetail,
+            purchaseDate: purchaseDate,
+            purchasePriceCents: purchasePriceCents,
             notes: notes,
-            caliber: caliber,
             firearm: firearm,
             sortOrder: nextSortOrder(in: context)
         )
-        context.insert(magazine)
+        context.insert(part)
 
         do {
             try context.save()
@@ -163,18 +155,17 @@ final class AddMagazineViewModel {
         }
     }
 
-    func updateMagazine(
-        _ magazine: Magazine,
+    func updatePart(
+        _ part: Part,
         brand: String,
         modelName: String,
-        count: Int,
-        capacity: Int,
-        purchaseDate: Date,
-        purchasePriceCents: Int,
+        type: PartType,
+        typeDetail: String?,
         color: FirearmColor?,
         colorDetail: String?,
+        purchaseDate: Date,
+        purchasePriceCents: Int,
         notes: String?,
-        caliber: Caliber?,
         firearm: Firearm?,
         canSave: Bool,
         in context: ModelContext
@@ -183,17 +174,16 @@ final class AddMagazineViewModel {
             return false
         }
 
-        magazine.brand = trimmedValue(brand)
-        magazine.modelName = trimmedValue(modelName)
-        magazine.count = count
-        magazine.capacity = capacity
-        magazine.purchaseDate = purchaseDate
-        magazine.purchasePriceCents = purchasePriceCents
-        magazine.color = color?.rawValue
-        magazine.colorDetail = colorDetail
-        magazine.notes = notes
-        magazine.caliber = caliber
-        magazine.firearm = firearm
+        part.brand = trimmedValue(brand)
+        part.modelName = trimmedValue(modelName)
+        part.type = type.rawValue
+        part.typeDetail = typeDetail
+        part.color = color?.rawValue
+        part.colorDetail = colorDetail
+        part.purchaseDate = purchaseDate
+        part.purchasePriceCents = purchasePriceCents
+        part.notes = notes
+        part.firearm = firearm
 
         do {
             try context.save()

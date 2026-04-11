@@ -57,6 +57,7 @@ struct ArmoryInventory: App {
             Optic.self,
             Magazine.self,
             Attachment.self,
+            Part.self,
         ])
         let storeURL = URL.applicationSupportDirectory
             .appending(path: "ArmoryInventory.store")
@@ -109,6 +110,13 @@ struct ArmoryInventory: App {
         if let attachments = try? context.fetch(FetchDescriptor<Attachment>()) {
             for attachment in attachments where attachment.id == nil {
                 attachment.id = UUID()
+                didChange = true
+            }
+        }
+
+        if let parts = try? context.fetch(FetchDescriptor<Part>()) {
+            for part in parts where part.id == nil {
+                part.id = UUID()
                 didChange = true
             }
         }

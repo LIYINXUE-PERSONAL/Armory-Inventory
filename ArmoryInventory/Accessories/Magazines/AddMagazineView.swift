@@ -58,12 +58,17 @@ struct AddMagazineView: View {
         NavigationStack {
             Form {
                 Section("Basic Info") {
-                    TextField("Brand", text: $brand)
-                        .textInputAutocapitalization(.words)
-                    TextField("Model name", text: $modelName)
-                        .textInputAutocapitalization(.words)
-                    HStack {
-                        Text("Count")
+                    LabeledContent("Brand") {
+                        TextField("", text: $brand)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Model Name") {
+                        TextField("", text: $modelName)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Count") {
                         TextField("1", text: $countText)
                             .keyboardType(.numberPad)
                             .multilineTextAlignment(.trailing)
@@ -79,8 +84,11 @@ struct AddMagazineView: View {
                         }
                     }
 
-                    TextField("Capacity", text: $capacityText)
-                        .keyboardType(.numberPad)
+                    LabeledContent("Capacity") {
+                        TextField("", text: $capacityText)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                    }
 
                     Picker("Color", selection: $selectedColor) {
                         Text("None").tag(nil as FirearmColor?)
@@ -90,7 +98,10 @@ struct AddMagazineView: View {
                     }
 
                     if selectedColor == .other {
-                        TextField("Color details", text: $customColor)
+                        LabeledContent("Color Details") {
+                            TextField("", text: $customColor)
+                                .multilineTextAlignment(.trailing)
+                        }
                     }
                 }
                 .disabled(isReadOnly)
@@ -98,8 +109,14 @@ struct AddMagazineView: View {
                 if showsPurchaseSection {
                     Section("Purchase") {
                         DatePicker("Purchase date", selection: $purchaseDate, displayedComponents: .date)
-                        TextField("Purchase price (USD)", text: $purchasePriceText)
-                            .keyboardType(.decimalPad)
+                        LabeledContent("Purchase Price") {
+                            SelectAllTextField(
+                                placeholder: "",
+                                text: $purchasePriceText,
+                                keyboardType: .decimalPad,
+                                textAlignment: .right
+                            )
+                        }
                         Text("With \(accessoriesTaxRate.formatted(.number.precision(.fractionLength(0...2))))% accessories tax: \(purchasePriceWithTaxText)")
                             .font(.footnote)
                             .foregroundStyle(.secondary)

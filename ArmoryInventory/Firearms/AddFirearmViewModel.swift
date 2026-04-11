@@ -9,6 +9,12 @@ import Foundation
 import SwiftData
 
 final class AddFirearmViewModel {
+    private let priceInputParser: PriceInputParsing
+
+    init(priceInputParser: PriceInputParsing = PriceInputParserService()) {
+        self.priceInputParser = priceInputParser
+    }
+
     func initialPurchasePriceText(for firearm: Firearm?) -> String {
         firearm.map {
             (Decimal($0.purchasePriceCents) / 100).formatted(.number.precision(.fractionLength(2)))
@@ -31,6 +37,10 @@ final class AddFirearmViewModel {
 
     func selectedAttachmentIDs(for firearm: Firearm?) -> Set<PersistentIdentifier> {
         Set(firearm?.attachments.map(\.persistentModelID) ?? [])
+    }
+
+    func selectedPartIDs(for firearm: Firearm?) -> Set<PersistentIdentifier> {
+        Set(firearm?.parts.map(\.persistentModelID) ?? [])
     }
 
     func trimmedValue(_ value: String) -> String {
@@ -84,18 +94,7 @@ final class AddFirearmViewModel {
     }
 
     func purchasePriceCents(from text: String) -> Int? {
-        let trimmedText = trimmedValue(text)
-        guard !trimmedText.isEmpty else {
-            return nil
-        }
-
-        let normalizedText = trimmedText.replacingOccurrences(of: "$", with: "")
-        guard let amount = Decimal(string: normalizedText), amount >= 0 else {
-            return nil
-        }
-
-        let cents = (amount * 100 as NSDecimalNumber).rounding(accordingToBehavior: nil).intValue
-        return cents
+        priceInputParser.purchasePriceCents(from: text)
     }
 
     func resolvedOptics(from optics: [Optic], selectedIDs: Set<PersistentIdentifier>) -> [Optic] {
@@ -108,6 +107,10 @@ final class AddFirearmViewModel {
 
     func resolvedAttachments(from attachments: [Attachment], selectedIDs: Set<PersistentIdentifier>) -> [Attachment] {
         attachments.filter { selectedIDs.contains($0.persistentModelID) }
+    }
+
+    func resolvedParts(from parts: [Part], selectedIDs: Set<PersistentIdentifier>) -> [Part] {
+        parts.filter { selectedIDs.contains($0.persistentModelID) }
     }
 
     func availableOptics(
@@ -165,6 +168,28 @@ final class AddFirearmViewModel {
             }
 
             guard let linkedFirearm = attachment.firearm else {
+                return true
+            }
+
+            guard let firearm else {
+                return false
+            }
+
+            return linkedFirearm.persistentModelID == firearm.persistentModelID
+        }
+    }
+
+    func availableParts(
+        from parts: [Part],
+        selectedIDs: Set<PersistentIdentifier>,
+        firearm: Firearm?
+    ) -> [Part] {
+        parts.filter { part in
+            if selectedIDs.contains(part.persistentModelID) {
+                return true
+            }
+
+            guard let linkedFirearm = part.firearm else {
                 return true
             }
 
@@ -278,6 +303,7 @@ final class AddFirearmViewModel {
         nickname: String?,
         serialNumber: String,
         purchaseDate: Date,
+        lastCleanedDate: Date?,
         purchasePriceCents: Int,
         type: FirearmType,
         action: FirearmAction,
@@ -290,6 +316,7 @@ final class AddFirearmViewModel {
         optics: [Optic],
         magazines: [Magazine],
         attachments: [Attachment],
+        parts: [Part],
         canAdd: Bool,
         to context: ModelContext
     ) -> Bool {
@@ -303,6 +330,7 @@ final class AddFirearmViewModel {
             nickname: optionalValue(nickname ?? ""),
             serialNumber: optionalSerialNumber(serialNumber),
             purchaseDate: purchaseDate,
+            lastCleanedDate: lastCleanedDate,
             purchasePriceCents: purchasePriceCents,
             type: type,
             action: action,
@@ -315,6 +343,7 @@ final class AddFirearmViewModel {
             optics: optics,
             magazines: magazines,
             attachments: attachments,
+            parts: parts,
             sortOrder: nextSortOrder(in: context)
         )
         context.insert(firearm)
@@ -336,6 +365,7 @@ final class AddFirearmViewModel {
         nickname: String?,
         serialNumber: String,
         purchaseDate: Date,
+        lastCleanedDate: Date?,
         purchasePriceCents: Int,
         type: FirearmType,
         action: FirearmAction,
@@ -348,6 +378,7 @@ final class AddFirearmViewModel {
         optics: [Optic],
         magazines: [Magazine],
         attachments: [Attachment],
+        parts: [Part],
         canSave: Bool,
         in context: ModelContext
     ) -> Bool {
@@ -360,6 +391,7 @@ final class AddFirearmViewModel {
         firearm.nickname = optionalValue(nickname ?? "")
         firearm.serialNumber = optionalSerialNumber(serialNumber)
         firearm.purchaseDate = purchaseDate
+        firearm.lastCleanedDate = lastCleanedDate
         firearm.purchasePriceCents = purchasePriceCents
         firearm.type = type.rawValue
         firearm.action = action.rawValue
@@ -372,6 +404,7 @@ final class AddFirearmViewModel {
         firearm.optics = optics
         firearm.magazines = magazines
         firearm.attachments = attachments
+        firearm.parts = parts
 
         do {
             try context.save()

@@ -19,7 +19,9 @@ struct AddFirearmView: View {
     @State private var nickname = ""
     @State private var serialNumber = ""
     @State private var purchaseDate = Date.now
-    @State private var purchasePriceText = ""
+    @State private var hasLastCleanedDate = false
+    @State private var lastCleanedDate = Date.now
+    @State private var purchasePriceText = "0.00"
     @State private var selectedType: FirearmType = .rifle
     @State private var selectedAction: FirearmAction = .semiAuto
     @State private var customAction = ""
@@ -31,9 +33,11 @@ struct AddFirearmView: View {
     @State private var selectedOpticIDs: Set<PersistentIdentifier> = []
     @State private var selectedMagazineIDs: Set<PersistentIdentifier> = []
     @State private var selectedAttachmentIDs: Set<PersistentIdentifier> = []
+    @State private var selectedPartIDs: Set<PersistentIdentifier> = []
     @State private var showingOpticsPicker = false
     @State private var showingMagazinesPicker = false
     @State private var showingAttachmentsPicker = false
+    @State private var showingPartsPicker = false
     @State private var isEditing = false
     @State private var lookupData = AddFirearmLookupData()
 
@@ -56,6 +60,8 @@ struct AddFirearmView: View {
         _nickname = State(initialValue: firearm?.nickname ?? "")
         _serialNumber = State(initialValue: firearm?.serialNumber ?? "")
         _purchaseDate = State(initialValue: firearm?.purchaseDate ?? .now)
+        _hasLastCleanedDate = State(initialValue: firearm?.lastCleanedDate != nil)
+        _lastCleanedDate = State(initialValue: firearm?.lastCleanedDate ?? .now)
         _purchasePriceText = State(initialValue: viewModel.initialPurchasePriceText(for: firearm))
         _selectedType = State(initialValue: firearm?.firearmType ?? .rifle)
         _selectedAction = State(initialValue: firearm?.firearmAction ?? .semiAuto)
@@ -66,6 +72,7 @@ struct AddFirearmView: View {
         _selectedOpticIDs = State(initialValue: viewModel.selectedOpticIDs(for: firearm))
         _selectedMagazineIDs = State(initialValue: viewModel.selectedMagazineIDs(for: firearm))
         _selectedAttachmentIDs = State(initialValue: viewModel.selectedAttachmentIDs(for: firearm))
+        _selectedPartIDs = State(initialValue: viewModel.selectedPartIDs(for: firearm))
         _barrelLengthText = State(initialValue: viewModel.initialBarrelLengthText(for: firearm))
         _notes = State(initialValue: firearm?.notes ?? "")
         _isEditing = State(initialValue: firearm == nil)
@@ -75,15 +82,27 @@ struct AddFirearmView: View {
         NavigationStack {
             Form {
                 Section("Basic Info") {
-                    TextField("Brand", text: $brand)
-                        .textInputAutocapitalization(.words)
-                    TextField("Model name", text: $modelName)
-                        .textInputAutocapitalization(.words)
-                    TextField("Nick name (optional)", text: $nickname)
-                        .textInputAutocapitalization(.words)
-                    TextField("Serial number (optional)", text: $serialNumber)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
+                    LabeledContent("Brand") {
+                        TextField("", text: $brand)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Model Name") {
+                        TextField("", text: $modelName)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Nickname") {
+                        TextField("Optional", text: $nickname)
+                            .textInputAutocapitalization(.words)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent("Serial Number") {
+                        TextField("Optional", text: $serialNumber)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .multilineTextAlignment(.trailing)
+                    }
                     if duplicateExists {
                         Text("That serial number already exists in your inventory.")
                             .font(.footnote)
@@ -116,8 +135,16 @@ struct AddFirearmView: View {
                         TextField("Action details", text: $customAction)
                     }
 
-                    TextField("Barrel length in inches", text: $barrelLengthText)
-                        .keyboardType(.decimalPad)
+                    LabeledContent("Barrel Length") {
+                        HStack(spacing: 6) {
+                            TextField("", text: $barrelLengthText)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.trailing)
+
+                            Text("in.")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
                     Picker("Color", selection: $selectedColor) {
                         Text("None").tag(nil as FirearmColor?)
@@ -132,11 +159,30 @@ struct AddFirearmView: View {
                 }
                 .disabled(isReadOnly)
 
+                Section("Maintenance") {
+                    if isReadOnly {
+                        LabeledContent("Last cleaned", value: firearm?.lastCleanedDateText ?? "Not set")
+                    } else {
+                        Toggle("Track last cleaned date", isOn: $hasLastCleanedDate)
+
+                        if hasLastCleanedDate {
+                            DatePicker("Last cleaned", selection: $lastCleanedDate, displayedComponents: .date)
+                        }
+                    }
+                }
+                .disabled(isReadOnly)
+
                 if showsPurchaseSection {
                     Section("Purchase") {
                         DatePicker("Purchase date", selection: $purchaseDate, displayedComponents: .date)
-                        TextField("Purchase price (USD)", text: $purchasePriceText)
-                            .keyboardType(.decimalPad)
+                        LabeledContent("Purchase Price") {
+                            SelectAllTextField(
+                                placeholder: "",
+                                text: $purchasePriceText,
+                                keyboardType: .decimalPad,
+                                textAlignment: .right
+                            )
+                        }
                         Text("Enter dollars and cents, for example 1299.99.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -249,10 +295,43 @@ struct AddFirearmView: View {
                     }
                 }
 
+                Section("Linked Parts") {
+                    if isEditing {
+                        Button {
+                            showingPartsPicker = true
+                        } label: {
+                            Label(selectedPartIDs.isEmpty ? "Add Parts" : "Manage Parts", systemImage: "plus.circle")
+                        }
+                    }
+
+                    if lookupData.parts.isEmpty {
+                        Text("Add parts first to link them to this firearm.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else if availableParts.isEmpty {
+                        Text("No unlinked parts available.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else if resolvedParts.isEmpty {
+                        Text("No parts linked.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(resolvedParts) { part in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(part.displayName)
+                                Text(part.typeDisplayName)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
                 if showsPostTaxTotalSection {
                     Section("Total Value") {
                         LabeledContent("Post-Tax Total", value: totalValueWithTaxText)
-                        Text("Includes the firearm plus linked optics, magazines, and attachments.")
+                        Text("Includes the firearm plus linked optics, magazines, attachments, and parts.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -442,6 +521,57 @@ struct AddFirearmView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
+            .sheet(isPresented: $showingPartsPicker) {
+                NavigationStack {
+                    Group {
+                        if availableParts.isEmpty {
+                            ContentUnavailableView(
+                                "No Parts Available",
+                                systemImage: "gearshape.2.fill",
+                                description: Text("All saved parts are linked to other firearms or none have been added yet.")
+                            )
+                        } else {
+                            List {
+                                ForEach(availableParts) { part in
+                                    Button {
+                                        togglePartSelection(for: part)
+                                    } label: {
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(part.displayName)
+                                                    .foregroundStyle(.primary)
+                                                Text(part.typeDisplayName)
+                                                    .font(.footnote)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            if selectedPartIDs.contains(part.persistentModelID) {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(.tint)
+                                            } else {
+                                                Image(systemName: "circle")
+                                                    .foregroundStyle(.tertiary)
+                                            }
+                                        }
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("Link Parts")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                showingPartsPicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
         }
     }
 
@@ -469,6 +599,10 @@ struct AddFirearmView: View {
         viewModel.purchasePriceCents(from: purchasePriceText)
     }
 
+    private var resolvedLastCleanedDate: Date? {
+        hasLastCleanedDate ? lastCleanedDate : nil
+    }
+
     private var resolvedOptics: [Optic] {
         viewModel.resolvedOptics(from: lookupData.optics, selectedIDs: selectedOpticIDs)
     }
@@ -481,6 +615,10 @@ struct AddFirearmView: View {
         viewModel.resolvedAttachments(from: lookupData.attachments, selectedIDs: selectedAttachmentIDs)
     }
 
+    private var resolvedParts: [Part] {
+        viewModel.resolvedParts(from: lookupData.parts, selectedIDs: selectedPartIDs)
+    }
+
     private var availableOptics: [Optic] {
         viewModel.availableOptics(from: lookupData.optics, selectedIDs: selectedOpticIDs, firearm: firearm)
     }
@@ -491,6 +629,10 @@ struct AddFirearmView: View {
 
     private var availableAttachments: [Attachment] {
         viewModel.availableAttachments(from: lookupData.attachments, selectedIDs: selectedAttachmentIDs, firearm: firearm)
+    }
+
+    private var availableParts: [Part] {
+        viewModel.availableParts(from: lookupData.parts, selectedIDs: selectedPartIDs, firearm: firearm)
     }
 
     private var duplicateExists: Bool {
@@ -526,7 +668,8 @@ struct AddFirearmView: View {
         let opticsTotal = resolvedOptics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let magazinesTotal = resolvedMagazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let attachmentsTotal = resolvedAttachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        return opticsTotal + magazinesTotal + attachmentsTotal
+        let partsTotal = resolvedParts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+        return opticsTotal + magazinesTotal + attachmentsTotal + partsTotal
     }
 
     private var primaryButtonTitle: String {
@@ -570,6 +713,7 @@ struct AddFirearmView: View {
                 nickname: resolvedNickname,
                 serialNumber: serialNumber,
                 purchaseDate: purchaseDate,
+                lastCleanedDate: resolvedLastCleanedDate,
                 purchasePriceCents: resolvedPurchasePriceCents ?? 0,
                 type: selectedType,
                 action: selectedAction,
@@ -582,6 +726,7 @@ struct AddFirearmView: View {
                 optics: resolvedOptics,
                 magazines: resolvedMagazines,
                 attachments: resolvedAttachments,
+                parts: resolvedParts,
                 canSave: canAdd,
                 in: context
             )
@@ -592,6 +737,7 @@ struct AddFirearmView: View {
                 nickname: resolvedNickname,
                 serialNumber: serialNumber,
                 purchaseDate: purchaseDate,
+                lastCleanedDate: resolvedLastCleanedDate,
                 purchasePriceCents: resolvedPurchasePriceCents ?? 0,
                 type: selectedType,
                 action: selectedAction,
@@ -604,6 +750,7 @@ struct AddFirearmView: View {
                 optics: resolvedOptics,
                 magazines: resolvedMagazines,
                 attachments: resolvedAttachments,
+                parts: resolvedParts,
                 canAdd: canAdd,
                 to: context
             )
@@ -663,6 +810,14 @@ struct AddFirearmView: View {
         selectedAttachmentIDs = viewModel.toggledSelection(
             currentSelection: selectedAttachmentIDs,
             itemID: attachment.persistentModelID,
+            isEditing: isEditing
+        )
+    }
+
+    private func togglePartSelection(for part: Part) {
+        selectedPartIDs = viewModel.toggledSelection(
+            currentSelection: selectedPartIDs,
+            itemID: part.persistentModelID,
             isEditing: isEditing
         )
     }

@@ -1,23 +1,23 @@
 //
-//  AttachmentTypeOrderingView.swift
+//  OpticTypeOrderingView.swift
 //  Armory Inventory
 //
-//  Created by Codex on 4/2/26.
+//  Created by Codex on 4/6/26.
 //
 
 import SwiftUI
 
-struct AttachmentTypeOrderingView: View {
-    @AppStorage(AttachmentTypeSort.settingsVersionKey) private var sortVersion = 0
-    @AppStorage(InventorySettingsKeys.attachmentItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
-    @AppStorage(InventorySettingsKeys.attachmentItemSortDirection) private var itemSortDirectionRaw = ""
+struct OpticTypeOrderingView: View {
+    @AppStorage(OpticTypeSort.settingsVersionKey) private var sortVersion = 0
+    @AppStorage(InventorySettingsKeys.opticItemSortOrder) private var itemSortOrder = AccessoryItemSortOrder.manual.rawValue
+    @AppStorage(InventorySettingsKeys.opticItemSortDirection) private var itemSortDirectionRaw = ""
     @State private var rankingNames: [String] = []
-    let viewModel: AttachmentTypeOrderingViewModel
+    let viewModel: OpticTypeOrderingViewModel
 
     var body: some View {
         List {
             Section {
-                Text("Hold and drag attachment types to control the section order used in attachments.")
+                Text("Hold and drag optic types to control the section order used in optics.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -38,10 +38,10 @@ struct AttachmentTypeOrderingView: View {
             AccessoryItemSortingSection(
                 sortOrderRaw: $itemSortOrder,
                 sortDirectionRaw: $itemSortDirectionRaw,
-                itemLabelPlural: "Attachments"
+                itemLabelPlural: "Optics"
             )
         }
-        .navigationTitle("Attachments Sorting")
+        .navigationTitle("Optics Sorting")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 EditButton()

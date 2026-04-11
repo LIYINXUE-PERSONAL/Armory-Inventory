@@ -9,6 +9,12 @@ import Foundation
 import SwiftData
 
 final class AddOpticViewModel {
+    private let priceInputParser: PriceInputParsing
+
+    init(priceInputParser: PriceInputParsing = PriceInputParserService()) {
+        self.priceInputParser = priceInputParser
+    }
+
     func initialPurchasePriceText(for optic: Optic?) -> String {
         optic.map {
             (Decimal($0.purchasePriceCents) / 100).formatted(.number.precision(.fractionLength(2)))
@@ -40,18 +46,7 @@ final class AddOpticViewModel {
     }
 
     func purchasePriceCents(from text: String) -> Int? {
-        let trimmedText = trimmedValue(text)
-        guard !trimmedText.isEmpty else {
-            return nil
-        }
-
-        let normalizedText = trimmedText.replacingOccurrences(of: "$", with: "")
-        guard let amount = Decimal(string: normalizedText), amount >= 0 else {
-            return nil
-        }
-
-        let cents = (amount * 100 as NSDecimalNumber).rounding(accordingToBehavior: nil).intValue
-        return cents
+        priceInputParser.purchasePriceCents(from: text)
     }
 
     func magnificationValue(from text: String) -> Double? {
@@ -140,6 +135,19 @@ final class AddOpticViewModel {
         return (minValue, maxValue)
     }
 
+    func showsMagnificationFields(for selectedType: OpticType) -> Bool {
+        switch selectedType {
+        case .redDot, .holographic:
+            return false
+        default:
+            return true
+        }
+    }
+
+    func showsTubeSizeField(for selectedType: OpticType) -> Bool {
+        showsMagnificationFields(for: selectedType)
+    }
+
     func duplicateExists(serialNumber: String, excluding optic: Optic?, in existingOptics: [Optic]) -> Bool {
         guard let normalizedSerialNumber = optionalSerialNumber(serialNumber) else {
             return false
@@ -192,18 +200,22 @@ final class AddOpticViewModel {
         if selectedFootprint == .other, footprintDetail == nil {
             return false
         }
-        guard resolvedMagnification(
-            isFixed: isFixedMagnification,
-            fixedText: fixedMagnificationText,
-            minText: minMagnificationText,
-            maxText: maxMagnificationText
-        ) != nil else {
+        if showsMagnificationFields(for: selectedType) {
+            guard resolvedMagnification(
+                isFixed: isFixedMagnification,
+                fixedText: fixedMagnificationText,
+                minText: minMagnificationText,
+                maxText: maxMagnificationText
+            ) != nil else {
+                return false
+            }
+        }
+        if showsTubeSizeField(for: selectedType),
+           !trimmedValue(tubeSizeText).isEmpty,
+           tubeSizeMillimeters(from: tubeSizeText) == nil {
             return false
         }
-        if !trimmedValue(tubeSizeText).isEmpty && tubeSizeMillimeters(from: tubeSizeText) == nil {
-            return false
-        }
-        if !isFixedMagnification, focalPlane == nil {
+        if showsMagnificationFields(for: selectedType), !isFixedMagnification, focalPlane == nil {
             return false
         }
         if selectedColor == .other, colorDetail == nil {

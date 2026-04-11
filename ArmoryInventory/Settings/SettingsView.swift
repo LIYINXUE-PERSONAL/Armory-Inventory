@@ -56,9 +56,21 @@ struct SettingsView: View {
                 
                 Section("Accessories"){
                     NavigationLink {
+                        OpticTypeOrderingView(viewModel: OpticTypeOrderingViewModel())
+                    } label: {
+                        Label("Optics Sorting", systemImage: "arrow.up.arrow.down")
+                    }
+
+                    NavigationLink {
                         AttachmentTypeOrderingView(viewModel: AttachmentTypeOrderingViewModel())
                     } label: {
                         Label("Attachments Sorting", systemImage: "arrow.up.arrow.down")
+                    }
+                    
+                    NavigationLink {
+                        PartTypeOrderingView(viewModel: PartTypeOrderingViewModel())
+                    } label: {
+                        Label("Parts Sorting", systemImage: "arrow.up.arrow.down")
                     }
                 }
             }

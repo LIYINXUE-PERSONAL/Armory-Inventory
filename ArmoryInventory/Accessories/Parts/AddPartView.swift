@@ -1,23 +1,23 @@
 //
-//  AddAttachmentView.swift
+//  AddPartView.swift
 //  Armory Inventory
 //
-//  Created by Codex on 4/2/26.
+//  Created by Codex on 4/5/26.
 //
 
 import SwiftUI
 import SwiftData
 
-struct AddAttachmentView: View {
+struct AddPartView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @AppStorage(InventorySettingsKeys.accessoriesSalesTaxRate) private var accessoriesTaxRate = 0.0
     @AppStorage(InventorySettingsKeys.showValueInDetails) private var showValueInDetails = true
 
-    let attachment: Attachment?
+    let part: Part?
     @State private var brand = ""
     @State private var modelName = ""
-    @State private var selectedType: AttachmentType = .stock
+    @State private var selectedType: PartType = .barrel
     @State private var customType = ""
     @State private var selectedColor: FirearmColor?
     @State private var customColor = ""
@@ -27,22 +27,22 @@ struct AddAttachmentView: View {
     @State private var unlinkFirearm = false
     @State private var isEditing = false
 
-    let viewModel: AddAttachmentViewModel
+    let viewModel: AddPartViewModel
 
-    init(attachment: Attachment? = nil, viewModel: AddAttachmentViewModel) {
-        self.attachment = attachment
+    init(part: Part? = nil, viewModel: AddPartViewModel) {
+        self.part = part
         self.viewModel = viewModel
-        _brand = State(initialValue: attachment?.brand ?? "")
-        _modelName = State(initialValue: attachment?.modelName ?? "")
-        _selectedType = State(initialValue: attachment?.attachmentType ?? .stock)
-        _customType = State(initialValue: attachment?.attachmentType == .other ? attachment?.typeDetail ?? "" : "")
-        _selectedColor = State(initialValue: attachment?.attachmentColor)
-        _customColor = State(initialValue: attachment?.attachmentColor == .other ? attachment?.colorDetail ?? "" : "")
-        _purchaseDate = State(initialValue: attachment?.purchaseDate ?? .now)
-        _purchasePriceText = State(initialValue: viewModel.initialPurchasePriceText(for: attachment))
-        _notes = State(initialValue: attachment?.notes ?? "")
+        _brand = State(initialValue: part?.brand ?? "")
+        _modelName = State(initialValue: part?.modelName ?? "")
+        _selectedType = State(initialValue: part?.partType ?? .barrel)
+        _customType = State(initialValue: part?.partType == .other ? part?.typeDetail ?? "" : "")
+        _selectedColor = State(initialValue: part?.partColor)
+        _customColor = State(initialValue: part?.partColor == .other ? part?.colorDetail ?? "" : "")
+        _purchaseDate = State(initialValue: part?.purchaseDate ?? .now)
+        _purchasePriceText = State(initialValue: viewModel.initialPurchasePriceText(for: part))
+        _notes = State(initialValue: part?.notes ?? "")
         _unlinkFirearm = State(initialValue: false)
-        _isEditing = State(initialValue: attachment == nil)
+        _isEditing = State(initialValue: part == nil)
     }
 
     var body: some View {
@@ -59,8 +59,8 @@ struct AddAttachmentView: View {
                             .textInputAutocapitalization(.words)
                             .multilineTextAlignment(.trailing)
                     }
-                    Picker("Attachment Type", selection: $selectedType) {
-                        ForEach(AttachmentType.allCases) { type in
+                    Picker("Part Type", selection: $selectedType) {
+                        ForEach(PartType.allCases) { type in
                             Text(type.displayName).tag(type)
                         }
                     }
@@ -128,7 +128,7 @@ struct AddAttachmentView: View {
                     }
                 }
             }
-            .navigationTitle(attachment == nil ? "New Attachment" : "Attachment Details")
+            .navigationTitle(part == nil ? "New Part" : "Part Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -159,7 +159,7 @@ struct AddAttachmentView: View {
     }
 
     private var linkedFirearm: Firearm? {
-        viewModel.linkedFirearm(for: attachment, unlinkFirearm: unlinkFirearm)
+        viewModel.linkedFirearm(for: part, unlinkFirearm: unlinkFirearm)
     }
 
     private var purchasePriceWithTaxText: String {
@@ -170,7 +170,7 @@ struct AddAttachmentView: View {
     }
 
     private var isReadOnly: Bool {
-        viewModel.isReadOnly(hasAttachment: attachment != nil, isEditing: isEditing)
+        viewModel.isReadOnly(hasPart: part != nil, isEditing: isEditing)
     }
 
     private var showsPurchaseSection: Bool {
@@ -178,7 +178,7 @@ struct AddAttachmentView: View {
     }
 
     private var primaryButtonTitle: String {
-        viewModel.primaryButtonTitle(hasAttachment: attachment != nil, isEditing: isEditing)
+        viewModel.primaryButtonTitle(hasPart: part != nil, isEditing: isEditing)
     }
 
     private var canAdd: Bool {
@@ -193,15 +193,15 @@ struct AddAttachmentView: View {
         )
     }
 
-    private func saveAttachment() {
+    private func savePart() {
         guard let purchasePriceCents = resolvedPurchasePriceCents else {
             return
         }
 
         let didSave: Bool
-        if let attachment {
-            didSave = viewModel.updateAttachment(
-                attachment,
+        if let part {
+            didSave = viewModel.updatePart(
+                part,
                 brand: brand,
                 modelName: modelName,
                 type: selectedType,
@@ -216,7 +216,7 @@ struct AddAttachmentView: View {
                 in: context
             )
         } else {
-            didSave = viewModel.addAttachment(
+            didSave = viewModel.addPart(
                 brand: brand,
                 modelName: modelName,
                 type: selectedType,
@@ -236,7 +236,7 @@ struct AddAttachmentView: View {
             return
         }
 
-        if attachment == nil {
+        if part == nil {
             dismiss()
         } else {
             isEditing = false
@@ -244,10 +244,10 @@ struct AddAttachmentView: View {
     }
 
     private func handlePrimaryAction() {
-        if attachment != nil && !isEditing {
+        if part != nil && !isEditing {
             isEditing = true
             return
         }
-        saveAttachment()
+        savePart()
     }
 }
