@@ -39,6 +39,14 @@ struct AboutView: View {
                     LabeledContent("Build", value: appVersionText)
                 }
 
+                Section("Legal") {
+                    Button {
+                        openURL(privacyPolicyURL)
+                    } label: {
+                        Label("Privacy Policy", systemImage: "hand.raised")
+                    }
+                }
+
                 Section("Feedback") {
                     Button {
                         sendFeedback()
@@ -92,6 +100,10 @@ struct AboutView: View {
         case (.none, .none):
             return "Unavailable"
         }
+    }
+
+    private var privacyPolicyURL: URL {
+        URL(string: "https://github.com/LIYINXUE-PERSONAL/Armory-Inventory/blob/main/PRIVACY_POLICY.md")!
     }
 
     private func sendFeedback() {

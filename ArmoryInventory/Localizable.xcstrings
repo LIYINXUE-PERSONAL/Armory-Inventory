@@ -397,6 +397,9 @@
     "Last cleaned" : {
 
     },
+    "Legal" : {
+
+    },
     "Link Attachments" : {
 
     },
@@ -598,6 +601,9 @@
     "Price" : {
 
     },
+    "Privacy Policy" : {
+
+    },
     "Product" : {
 
     },
@@ -613,9 +619,6 @@
     "Purchase Price" : {
 
     },
-    "Purchased" : {
-
-    },
     "Range" : {
 
     },
@@ -626,9 +629,6 @@
 
     },
     "Rounds" : {
-
-    },
-    "Save" : {
 
     },
     "Select" : {
