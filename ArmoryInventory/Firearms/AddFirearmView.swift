@@ -7,9 +7,7 @@
 
 import SwiftUI
 import SwiftData
-#if os(iOS)
 import UIKit
-#endif
 
 struct AddFirearmView: View {
     @Environment(\.dismiss) private var dismiss
@@ -367,7 +365,6 @@ struct AddFirearmView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
-                #if os(iOS)
                 if firearm != nil && !isEditing {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {
@@ -377,7 +374,6 @@ struct AddFirearmView: View {
                         }
                     }
                 }
-                #endif
                 ToolbarItem(placement: .confirmationAction) {
                     Button(primaryButtonTitle) { handlePrimaryAction() }
                         .disabled(isEditing && !canAdd)
@@ -587,7 +583,6 @@ struct AddFirearmView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
-            #if os(iOS)
             .alert("Snapshot Error", isPresented: snapshotErrorBinding) {
                 Button("OK", role: .cancel) {
                     snapshotErrorMessage = nil
@@ -595,7 +590,6 @@ struct AddFirearmView: View {
             } message: {
                 Text(snapshotErrorMessage ?? "")
             }
-            #endif
         }
     }
 
@@ -846,7 +840,6 @@ struct AddFirearmView: View {
         )
     }
 
-    #if os(iOS)
     private var snapshotErrorBinding: Binding<Bool> {
         Binding(
             get: { snapshotErrorMessage != nil },
@@ -916,10 +909,8 @@ struct AddFirearmView: View {
 
         presentingViewController.present(activityViewController, animated: true)
     }
-    #endif
 }
 
-#if os(iOS)
 private enum FirearmSnapshotError: LocalizedError {
     case renderFailed
     case presentationFailed
@@ -1141,4 +1132,3 @@ private struct FirearmSnapshotCard: View {
             )
     }
 }
-#endif
