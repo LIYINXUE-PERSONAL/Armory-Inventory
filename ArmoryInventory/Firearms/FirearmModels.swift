@@ -254,6 +254,24 @@ final class Firearm {
         lastCleanedDate?.formatted(date: .abbreviated, time: .omitted)
     }
 
+    var nicknameTextForSnapshot: String? {
+        guard let nickname, !nickname.isEmpty else {
+            return nil
+        }
+        return nickname
+    }
+
+    var serialNumberTextForSnapshot: String? {
+        guard let serialNumber, !serialNumber.isEmpty else {
+            return nil
+        }
+        return serialNumber
+    }
+
+    var notesTextForSnapshot: String {
+        notes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
     var totalCardValueCents: Int {
         let opticsValue = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let magazinesValue = magazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }

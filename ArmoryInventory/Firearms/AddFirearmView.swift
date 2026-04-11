@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct AddFirearmView: View {
     @Environment(\.dismiss) private var dismiss
@@ -40,6 +41,7 @@ struct AddFirearmView: View {
     @State private var showingPartsPicker = false
     @State private var isEditing = false
     @State private var lookupData = AddFirearmLookupData()
+    @State private var snapshotErrorMessage: String?
 
     let viewModel: AddFirearmViewModel
     private let lookupService: AddFirearmLookupServicing
@@ -363,6 +365,15 @@ struct AddFirearmView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+                if firearm != nil && !isEditing {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            shareSnapshot()
+                        } label: {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(primaryButtonTitle) { handlePrimaryAction() }
                         .disabled(isEditing && !canAdd)
@@ -571,6 +582,13 @@ struct AddFirearmView: View {
                     }
                 }
                 .presentationDetents([.medium, .large])
+            }
+            .alert("Snapshot Error", isPresented: snapshotErrorBinding) {
+                Button("OK", role: .cancel) {
+                    snapshotErrorMessage = nil
+                }
+            } message: {
+                Text(snapshotErrorMessage ?? "")
             }
         }
     }
@@ -820,5 +838,297 @@ struct AddFirearmView: View {
             itemID: part.persistentModelID,
             isEditing: isEditing
         )
+    }
+
+    private var snapshotErrorBinding: Binding<Bool> {
+        Binding(
+            get: { snapshotErrorMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    snapshotErrorMessage = nil
+                }
+            }
+        )
+    }
+
+    private func shareSnapshot() {
+        guard let firearm else {
+            return
+        }
+
+        guard let image = renderSnapshotImage(for: firearm) else {
+            snapshotErrorMessage = FirearmSnapshotError.renderFailed.localizedDescription
+            return
+        }
+
+        presentShareSheet(with: image)
+    }
+
+    private func renderSnapshotImage(for firearm: Firearm) -> UIImage? {
+        let content = FirearmSnapshotCard(
+            firearm: firearm,
+            hidesSerialNumber: true,
+            showsValue: showValueInDetails,
+            totalValueText: totalValueWithTaxText,
+            optics: resolvedOptics,
+            magazines: resolvedMagazines,
+            attachments: resolvedAttachments,
+            parts: resolvedParts
+        )
+        .frame(width: 1080)
+        .background(Color.white)
+
+        let renderer = ImageRenderer(content: content)
+        renderer.proposedSize = ProposedViewSize(width: 1080, height: nil)
+        renderer.scale = 1
+        renderer.isOpaque = true
+        return renderer.uiImage
+    }
+
+    private func presentShareSheet(with image: UIImage) {
+        guard let presentingViewController = UIApplication.topViewController() else {
+            snapshotErrorMessage = FirearmSnapshotError.presentationFailed.localizedDescription
+            return
+        }
+
+        let activityViewController = UIActivityViewController(
+            activityItems: [image],
+            applicationActivities: nil
+        )
+
+        if let popover = activityViewController.popoverPresentationController {
+            popover.sourceView = presentingViewController.view
+            popover.sourceRect = CGRect(
+                x: presentingViewController.view.bounds.midX,
+                y: presentingViewController.view.bounds.midY,
+                width: 1,
+                height: 1
+            )
+            popover.permittedArrowDirections = []
+        }
+
+        presentingViewController.present(activityViewController, animated: true)
+    }
+}
+
+private enum FirearmSnapshotError: LocalizedError {
+    case renderFailed
+    case presentationFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .renderFailed:
+            return "The snapshot image could not be generated."
+        case .presentationFailed:
+            return "The share sheet could not be presented."
+        }
+    }
+}
+
+private extension UIApplication {
+    static func topViewController(
+        base: UIViewController? = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow)?
+            .rootViewController
+    ) -> UIViewController? {
+        if let navigationController = base as? UINavigationController {
+            return topViewController(base: navigationController.visibleViewController)
+        }
+
+        if let tabBarController = base as? UITabBarController,
+           let selectedViewController = tabBarController.selectedViewController {
+            return topViewController(base: selectedViewController)
+        }
+
+        if let presentedViewController = base?.presentedViewController {
+            return topViewController(base: presentedViewController)
+        }
+
+        return base
+    }
+}
+
+private struct FirearmSnapshotCard: View {
+    let firearm: Firearm
+    let hidesSerialNumber: Bool
+    let showsValue: Bool
+    let totalValueText: String
+    let optics: [Optic]
+    let magazines: [Magazine]
+    let attachments: [Attachment]
+    let parts: [Part]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            header
+
+            detailGrid
+
+            if !firearm.notesTextForSnapshot.isEmpty {
+                snapshotSection("Notes") {
+                    Text(firearm.notesTextForSnapshot)
+                        .font(.system(size: 34))
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            linkedSection("Linked Optics", items: optics.map { "\($0.displayName) • \($0.magnificationText)" })
+            linkedSection("Linked Magazines", items: magazines.map { "\($0.displayName) • \($0.capacityText)" })
+            linkedSection("Linked Attachments", items: attachments.map { "\($0.displayName) • \($0.typeDisplayName)" })
+            linkedSection("Linked Parts", items: parts.map { "\($0.displayName) • \($0.typeDisplayName)" })
+
+            Text("Generated by Armory Inventory")
+                .font(.system(size: 26, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+        .padding(48)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(red: 0.96, green: 0.95, blue: 0.92),
+                    Color.white
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(firearm.displayName)
+                .font(.system(size: 66, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+
+            HStack(spacing: 12) {
+                snapshotBadge(firearm.firearmType.displayName)
+
+                if let caliberName = firearm.caliber?.name, !caliberName.isEmpty {
+                    snapshotBadge(caliberName)
+                }
+
+                if let serialText = serialNumberText {
+                    snapshotBadge(serialText)
+                }
+            }
+
+            if let nickname = firearm.nicknameTextForSnapshot {
+                Text("“\(nickname)”")
+                    .font(.system(size: 38, weight: .medium, design: .serif))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var detailGrid: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible(), spacing: 18),
+                GridItem(.flexible(), spacing: 18)
+            ],
+            alignment: .leading,
+            spacing: 18
+        ) {
+            snapshotMetric("Action", firearm.actionDisplayName)
+
+            if let barrel = firearm.barrelLengthText {
+                snapshotMetric("Barrel", barrel)
+            }
+
+            if let color = firearm.colorDisplayName {
+                snapshotMetric("Color", color)
+            }
+
+            snapshotMetric("Purchase Date", firearm.purchaseDate.formatted(date: .abbreviated, time: .omitted))
+
+            if let lastCleaned = firearm.lastCleanedDateText {
+                snapshotMetric("Last Cleaned", lastCleaned)
+            }
+
+            if showsValue {
+                snapshotMetric("Post-Tax Total", totalValueText)
+            }
+        }
+    }
+
+    private var serialNumberText: String? {
+        guard let serialNumber = firearm.serialNumberTextForSnapshot else {
+            return nil
+        }
+
+        if hidesSerialNumber {
+            return "Serial Hidden"
+        }
+
+        return "SN \(serialNumber)"
+    }
+
+    private func snapshotMetric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title.uppercased())
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            Text(value)
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(24)
+        .background(Color.black.opacity(0.04), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+    }
+
+    private func linkedSection(_ title: String, items: [String]) -> some View {
+        snapshotSection(title) {
+            if items.isEmpty {
+                Text("None linked")
+                    .font(.system(size: 30))
+                    .foregroundStyle(.secondary)
+            } else {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(items, id: \.self) { item in
+                        HStack(alignment: .top, spacing: 12) {
+                            Circle()
+                                .fill(Color.primary.opacity(0.75))
+                                .frame(width: 8, height: 8)
+                                .padding(.top, 14)
+
+                            Text(item)
+                                .font(.system(size: 30))
+                                .foregroundStyle(.primary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func snapshotSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.system(size: 30, weight: .bold))
+                .foregroundStyle(.primary)
+
+            content()
+        }
+    }
+
+    private func snapshotBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 24, weight: .semibold))
+            .foregroundStyle(Color(red: 0.26, green: 0.21, blue: 0.13))
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 999, style: .continuous)
+                    .fill(Color(red: 0.89, green: 0.83, blue: 0.7))
+            )
     }
 }
