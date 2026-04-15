@@ -121,19 +121,48 @@ struct AddFirearmView: View {
                         }
                     }
 
-                    Picker("Caliber", selection: $selectedCaliber) {
-                        Text("None").tag(nil as Caliber?)
-                        ForEach(lookupData.calibers) { caliber in
-                            Text(caliber.name).tag(Optional(caliber))
-                        }
-                    }
+                    LabeledContent("Caliber") {
+                        Menu {
+                            Button {
+                                selectedCaliber = nil
+                            } label: {
+                                if selectedCaliber == nil {
+                                    Label("None", systemImage: "checkmark")
+                                } else {
+                                    Text("None")
+                                }
+                            }
 
-                    if isEditing {
-                        Button {
-                            showingAddCaliber = true
+                            ForEach(lookupData.calibers) { caliber in
+                                Button {
+                                    selectedCaliber = caliber
+                                } label: {
+                                    if selectedCaliber?.persistentModelID == caliber.persistentModelID {
+                                        Label(caliber.name, systemImage: "checkmark")
+                                    } else {
+                                        Text(caliber.name)
+                                    }
+                                }
+                            }
+
+                            if isEditing {
+                                Divider()
+                                Button {
+                                    showingAddCaliber = true
+                                } label: {
+                                    Label("Add Caliber", systemImage: "plus.circle")
+                                }
+                            }
                         } label: {
-                            Label("Add Caliber", systemImage: "plus.circle")
+                            HStack(spacing: 6) {
+                                Text(selectedCaliber?.name ?? "None")
+                                    .foregroundStyle(selectedCaliber == nil ? .secondary : .primary)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                        .buttonStyle(.plain)
                     }
 
                     Picker("Action", selection: $selectedAction) {
