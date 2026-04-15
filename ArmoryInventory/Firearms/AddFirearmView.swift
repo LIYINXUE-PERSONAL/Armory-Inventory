@@ -39,6 +39,7 @@ struct AddFirearmView: View {
     @State private var showingMagazinesPicker = false
     @State private var showingAttachmentsPicker = false
     @State private var showingPartsPicker = false
+    @State private var showingAddCaliber = false
     @State private var isEditing = false
     @State private var lookupData = AddFirearmLookupData()
     @State private var snapshotErrorMessage: String?
@@ -120,11 +121,48 @@ struct AddFirearmView: View {
                         }
                     }
 
-                    Picker("Caliber", selection: $selectedCaliber) {
-                        Text("None").tag(nil as Caliber?)
-                        ForEach(lookupData.calibers) { caliber in
-                            Text(caliber.name).tag(Optional(caliber))
+                    LabeledContent("Caliber") {
+                        Menu {
+                            Button {
+                                selectedCaliber = nil
+                            } label: {
+                                if selectedCaliber == nil {
+                                    Label("None", systemImage: "checkmark")
+                                } else {
+                                    Text("None")
+                                }
+                            }
+
+                            ForEach(lookupData.calibers) { caliber in
+                                Button {
+                                    selectedCaliber = caliber
+                                } label: {
+                                    if selectedCaliber?.persistentModelID == caliber.persistentModelID {
+                                        Label(caliber.name, systemImage: "checkmark")
+                                    } else {
+                                        Text(caliber.name)
+                                    }
+                                }
+                            }
+
+                            if isEditing {
+                                Divider()
+                                Button {
+                                    showingAddCaliber = true
+                                } label: {
+                                    Label("Add Caliber", systemImage: "plus.circle")
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(selectedCaliber?.name ?? "None")
+                                    .foregroundStyle(selectedCaliber == nil ? .secondary : .primary)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                        .buttonStyle(.plain)
                     }
 
                     Picker("Action", selection: $selectedAction) {
@@ -378,6 +416,10 @@ struct AddFirearmView: View {
                     Button(primaryButtonTitle) { handlePrimaryAction() }
                         .disabled(isEditing && !canAdd)
                 }
+            }
+            .sheet(isPresented: $showingAddCaliber, onDismiss: reloadLookupData) {
+                AddCaliberView(viewModel: AddCaliberViewModel())
+                    .presentationDetents([.medium])
             }
             .sheet(isPresented: $showingOpticsPicker) {
                 NavigationStack {

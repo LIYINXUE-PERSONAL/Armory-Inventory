@@ -167,6 +167,18 @@ final class CaliberListViewModelTests: XCTestCase {
         viewModel.updateQuantity(for: ammo, to: -10, in: context)
         XCTAssertEqual(ammo.quantity, 0)
         XCTAssertTrue(viewModel.shouldClearSelectedCaliber(caliber.persistentModelID, deleting: caliber))
+        XCTAssertFalse(viewModel.hasLinkedFirearms(caliber))
+
+        let linkedFirearm = Firearm(
+            brand: "Glock",
+            modelName: "17",
+            purchasePriceCents: 50000,
+            type: .pistol,
+            action: .semiAuto,
+            caliber: caliber
+        )
+        context.insert(linkedFirearm)
+        XCTAssertTrue(viewModel.hasLinkedFirearms(caliber))
 
         viewModel.deleteAmmo(ammo, in: context)
         XCTAssertTrue(try context.fetch(FetchDescriptor<AmmoType>()).isEmpty)
