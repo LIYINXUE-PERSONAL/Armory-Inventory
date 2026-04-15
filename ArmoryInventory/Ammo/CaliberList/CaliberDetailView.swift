@@ -13,6 +13,7 @@ struct CaliberDetailView: View {
     @Environment(\.modelContext) private var context
     @State private var showingAddAmmoType = false
     @State private var selectedAmmoForAdjustment: AmmoType?
+    @State private var showingCannotDeleteCaliberAlert = false
     let caliber: Caliber
     let viewModel: CaliberListViewModel
 
@@ -71,8 +72,7 @@ struct CaliberDetailView: View {
 
                 Menu {
                     Button(role: .destructive) {
-                        viewModel.deleteCaliber(caliber, in: context)
-                        dismiss()
+                        deleteCaliber()
                     } label: {
                         Label("Delete Caliber", systemImage: "trash")
                     }
@@ -80,6 +80,11 @@ struct CaliberDetailView: View {
                     Image(systemName: "ellipsis")
                 }
             }
+        }
+        .alert("Cannot Delete Caliber", isPresented: $showingCannotDeleteCaliberAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("A firearm is currently using this caliber, so it cannot be deleted.")
         }
         .sheet(isPresented: $showingAddAmmoType) {
             AddAmmoTypeView(caliber: caliber, viewModel: AddAmmoTypeViewModel())
@@ -109,5 +114,15 @@ struct CaliberDetailView: View {
         stride(from: 0, to: sortedAmmo.count, by: 2).map { index in
             Array(sortedAmmo[index..<min(index + 2, sortedAmmo.count)])
         }
+    }
+
+    private func deleteCaliber() {
+        if viewModel.hasLinkedFirearms(caliber) {
+            showingCannotDeleteCaliberAlert = true
+            return
+        }
+
+        viewModel.deleteCaliber(caliber, in: context)
+        dismiss()
     }
 }

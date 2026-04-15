@@ -172,6 +172,10 @@ final class CaliberListViewModel {
         selectedID == caliber.persistentModelID
     }
 
+    func hasLinkedFirearms(_ caliber: Caliber) -> Bool {
+        !caliber.firearms.isEmpty
+    }
+
     func deleteCaliber(_ caliber: Caliber, in context: ModelContext) {
         context.delete(caliber)
         saveContext(context)

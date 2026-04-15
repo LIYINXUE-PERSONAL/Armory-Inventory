@@ -39,6 +39,7 @@ struct AddFirearmView: View {
     @State private var showingMagazinesPicker = false
     @State private var showingAttachmentsPicker = false
     @State private var showingPartsPicker = false
+    @State private var showingAddCaliber = false
     @State private var isEditing = false
     @State private var lookupData = AddFirearmLookupData()
     @State private var snapshotErrorMessage: String?
@@ -124,6 +125,14 @@ struct AddFirearmView: View {
                         Text("None").tag(nil as Caliber?)
                         ForEach(lookupData.calibers) { caliber in
                             Text(caliber.name).tag(Optional(caliber))
+                        }
+                    }
+
+                    if isEditing {
+                        Button {
+                            showingAddCaliber = true
+                        } label: {
+                            Label("Add Caliber", systemImage: "plus.circle")
                         }
                     }
 
@@ -378,6 +387,10 @@ struct AddFirearmView: View {
                     Button(primaryButtonTitle) { handlePrimaryAction() }
                         .disabled(isEditing && !canAdd)
                 }
+            }
+            .sheet(isPresented: $showingAddCaliber, onDismiss: reloadLookupData) {
+                AddCaliberView(viewModel: AddCaliberViewModel())
+                    .presentationDetents([.medium])
             }
             .sheet(isPresented: $showingOpticsPicker) {
                 NavigationStack {
