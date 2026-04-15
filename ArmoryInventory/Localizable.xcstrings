@@ -67,6 +67,9 @@
     "100%+" : {
 
     },
+    "A firearm is currently using this caliber, so it cannot be deleted." : {
+
+    },
     "About" : {
 
     },
@@ -233,6 +236,9 @@
 
     },
     "Cancel" : {
+
+    },
+    "Cannot Delete Caliber" : {
 
     },
     "Capacity" : {
