@@ -57,8 +57,10 @@ struct CaliberListView: View {
                                                 toggleCollapsedState(for: caliber)
                                             }
                                         } label: {
-                                            Image(systemName: isCollapsed(caliber) ? "chevron.down" : "chevron.up")
+                                            Image(systemName: "chevron.down")
                                                 .font(.headline)
+                                                .rotationEffect(.degrees(isCollapsed(caliber) ? 0 : 180))
+                                                .animation(.easeInOut(duration: 0.2), value: isCollapsed(caliber))
                                         }
                                         .buttonStyle(.borderless)
                                     }
@@ -73,9 +75,17 @@ struct CaliberListView: View {
                                                 )
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 12)
+                                            } else if viewModel.inStockSortedAmmo(for: caliber).isEmpty {
+                                                ContentUnavailableView(
+                                                    "No Ammo In Stock",
+                                                    systemImage: "exclamationmark.circle",
+                                                    description: Text("Open \(caliber.name) to view out-of-stock loads.")
+                                                )
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 12)
                                             } else {
                                                 Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-                                                    ForEach(ammoRows(for: caliber), id: \.self) { row in
+                                                    ForEach(viewModel.ammoRows(for: caliber, includeOutOfStock: false), id: \.self) { row in
                                                         GridRow {
                                                             ForEach(row) { ammo in
                                                                 AmmoCardView(
@@ -95,7 +105,10 @@ struct CaliberListView: View {
                                                 }
                                             }
                                         }
-                                        .transition(.opacity)
+                                        .transition(.modifier(
+                                            active: TopAnchoredStretchModifier(progress: 0.01),
+                                            identity: TopAnchoredStretchModifier(progress: 1)
+                                        ))
                                     }
                                 }
                                 .padding(16)
@@ -164,17 +177,6 @@ struct CaliberListView: View {
         return viewModel.sortedCalibers(from: calibers)
     }
 
-    private func sortedAmmo(for caliber: Caliber) -> [AmmoType] {
-        viewModel.sortedAmmo(for: caliber)
-    }
-
-    private func ammoRows(for caliber: Caliber) -> [[AmmoType]] {
-        let ammo = sortedAmmo(for: caliber)
-        return stride(from: 0, to: ammo.count, by: 2).map { index in
-            Array(ammo[index..<min(index + 2, ammo.count)])
-        }
-    }
-
     private func deleteAmmo(_ ammo: AmmoType) {
         viewModel.deleteAmmo(ammo, in: context)
     }
@@ -224,6 +226,17 @@ struct CaliberListView: View {
             for: sortedCalibers,
             currencyCode: Locale.current.currency?.identifier ?? "USD"
         )
+    }
+}
+
+private struct TopAnchoredStretchModifier: ViewModifier {
+    let progress: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(x: 1, y: progress, anchor: .top)
+            .opacity(progress)
+            .clipped()
     }
 }
 

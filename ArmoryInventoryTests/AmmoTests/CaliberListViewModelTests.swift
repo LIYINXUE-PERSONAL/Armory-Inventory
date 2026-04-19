@@ -135,12 +135,61 @@ final class CaliberListViewModelTests: XCTestCase {
             viewModel.sortedAmmo(for: caliber).map(\.grain),
             [124, 115, 124]
         )
+        XCTAssertEqual(
+            viewModel.inStockSortedAmmo(for: caliber).map(\.brand),
+            ["Blazer", "Federal", "Federal"]
+        )
+        XCTAssertTrue(viewModel.outOfStockSortedAmmo(for: caliber).isEmpty)
 
         let expectedValue = (Decimal(1500) / 100).formatted(.currency(code: "USD"))
         XCTAssertEqual(
             viewModel.totalValueText(for: [firstCaliber, secondCaliber], currencyCode: "USD"),
             expectedValue
         )
+    }
+
+    @MainActor
+    func testAmmoRowsCanIncludeOrExcludeOutOfStockLoads() {
+        let caliber = Caliber(name: "9mm")
+        let first = AmmoType(
+            brand: "Federal",
+            bulletType: "FMJ",
+            grain: 115,
+            quantity: 40,
+            caliber: caliber
+        )
+        let second = AmmoType(
+            brand: "Blazer",
+            bulletType: "JHP",
+            grain: 124,
+            quantity: 20,
+            caliber: caliber
+        )
+        let third = AmmoType(
+            brand: "AAC",
+            bulletType: "OTM",
+            grain: 77,
+            quantity: 0,
+            caliber: caliber
+        )
+        caliber.ammoTypes = [third, first, second]
+
+        let viewModel = CaliberListViewModel(
+            ammoChangeService: AmmoChangeServiceMock(),
+            taxRateProvider: FixedInventoryTaxRateProvider()
+        )
+
+        let inStockRows = viewModel.ammoRows(for: caliber, includeOutOfStock: false)
+        let allRows = viewModel.ammoRows(for: caliber, includeOutOfStock: true)
+        let outOfStockRows = viewModel.ammoRows(for: viewModel.outOfStockSortedAmmo(for: caliber))
+
+        XCTAssertEqual(inStockRows.count, 1)
+        XCTAssertEqual(inStockRows[0].map(\.brand), ["Federal", "Blazer"])
+        XCTAssertEqual(allRows.count, 2)
+        XCTAssertEqual(allRows[0].map(\.brand), ["Federal", "Blazer"])
+        XCTAssertEqual(allRows[1].map(\.brand), ["AAC"])
+        XCTAssertEqual(outOfStockRows.count, 1)
+        XCTAssertEqual(outOfStockRows[0].map(\.brand), ["AAC"])
     }
 
     @MainActor

@@ -496,6 +496,9 @@
     "Nickname" : {
 
     },
+    "No Ammo In Stock" : {
+
+    },
     "No Ammo Yet" : {
 
     },
@@ -566,6 +569,9 @@
 
     },
     "OK" : {
+
+    },
+    "Open %@ to view out-of-stock loads." : {
 
     },
     "Optic Details" : {
