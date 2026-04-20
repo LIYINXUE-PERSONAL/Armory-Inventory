@@ -86,7 +86,7 @@ final class CaliberListViewModel {
     }
 
     func outOfStockSortedAmmo(for caliber: Caliber) -> [AmmoType] {
-        sortedAmmo(for: caliber).filter { $0.quantity == 0 }
+        sortedAmmo(for: caliber).filter { $0.quantity <= 0 }
     }
 
     func ammoRows(for caliber: Caliber, includeOutOfStock: Bool) -> [[AmmoType]] {

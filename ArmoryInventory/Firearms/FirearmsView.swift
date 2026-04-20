@@ -158,7 +158,9 @@ struct FirearmsView: View {
                 HStack {
                     Text("Filters")
                     Spacer()
-                    Image(systemName: showingFilters ? "chevron.up" : "chevron.down")
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(.degrees(showingFilters ? 180 : 0))
+                        .animation(.easeInOut(duration: 0.2), value: showingFilters)
                         .foregroundStyle(.secondary)
                 }
             }

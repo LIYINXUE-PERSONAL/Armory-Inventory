@@ -139,7 +139,10 @@ final class CaliberListViewModelTests: XCTestCase {
             viewModel.inStockSortedAmmo(for: caliber).map(\.brand),
             ["Blazer", "Federal", "Federal"]
         )
-        XCTAssertTrue(viewModel.outOfStockSortedAmmo(for: caliber).isEmpty)
+        XCTAssertEqual(
+            viewModel.outOfStockSortedAmmo(for: secondCaliber).map(\.brand),
+            ["PMC"]
+        )
 
         let expectedValue = (Decimal(1500) / 100).formatted(.currency(code: "USD"))
         XCTAssertEqual(
@@ -172,7 +175,14 @@ final class CaliberListViewModelTests: XCTestCase {
             quantity: 0,
             caliber: caliber
         )
-        caliber.ammoTypes = [third, first, second]
+        let fourth = AmmoType(
+            brand: "PMC",
+            bulletType: "FMJ",
+            grain: 147,
+            quantity: -10,
+            caliber: caliber
+        )
+        caliber.ammoTypes = [third, first, second, fourth]
 
         let viewModel = CaliberListViewModel(
             ammoChangeService: AmmoChangeServiceMock(),
@@ -187,9 +197,9 @@ final class CaliberListViewModelTests: XCTestCase {
         XCTAssertEqual(inStockRows[0].map(\.brand), ["Federal", "Blazer"])
         XCTAssertEqual(allRows.count, 2)
         XCTAssertEqual(allRows[0].map(\.brand), ["Federal", "Blazer"])
-        XCTAssertEqual(allRows[1].map(\.brand), ["AAC"])
+        XCTAssertEqual(allRows[1].map(\.brand), ["AAC", "PMC"])
         XCTAssertEqual(outOfStockRows.count, 1)
-        XCTAssertEqual(outOfStockRows[0].map(\.brand), ["AAC"])
+        XCTAssertEqual(outOfStockRows[0].map(\.brand), ["AAC", "PMC"])
     }
 
     @MainActor
