@@ -12,11 +12,12 @@ final class MagazinePatternModelsTests: XCTestCase {
     func testAr15PatternSupportsMultipleCalibers() throws {
         let pattern = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "ar15-stanag-223-556-300blk"))
 
-        XCTAssertEqual(pattern.family, .ar15Stanag)
+        XCTAssertEqual(pattern.familyLabel, "AR-15 STANAG")
         XCTAssertTrue(pattern.supports(caliberName: ".223 Rem"))
         XCTAssertTrue(pattern.supports(caliberName: "5.56 NATO"))
         XCTAssertTrue(pattern.supports(caliberName: ".300 Blackout"))
         XCTAssertFalse(pattern.supports(caliberName: "9mm"))
+        XCTAssertTrue(pattern.compatibility.platformTags.contains("AR-15"))
         XCTAssertTrue(pattern.isCompatible(with: .rifle, action: .semiAuto, caliberName: "5.56 NATO"))
         XCTAssertFalse(pattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: "5.56 NATO"))
     }
@@ -25,15 +26,15 @@ final class MagazinePatternModelsTests: XCTestCase {
         let fullSize = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "glock-double-stack-9mm-full-size-compact"))
         let compact = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "glock-double-stack-9mm-compact"))
 
-        XCTAssertEqual(fullSize.supportedCaliberNames, ["9mm"])
-        XCTAssertEqual(compact.supportedCaliberNames, ["9mm"])
-        XCTAssertEqual(fullSize.family, .glockDoubleStack9mm)
-        XCTAssertEqual(compact.family, .glockDoubleStack9mm)
+        XCTAssertEqual(fullSize.compatibility.supportedCaliberNames, ["9mm"])
+        XCTAssertEqual(compact.compatibility.supportedCaliberNames, ["9mm"])
+        XCTAssertEqual(fullSize.familyLabel, "Glock Double-Stack 9mm")
+        XCTAssertEqual(compact.familyLabel, "Glock Double-Stack 9mm")
         XCTAssertNotEqual(fullSize.id, compact.id)
-        XCTAssertNotEqual(fullSize.fitProfile, compact.fitProfile)
-        XCTAssertTrue(fullSize.compatiblePlatformNames.contains("Glock 17"))
-        XCTAssertFalse(compact.compatiblePlatformNames.contains("Glock 17"))
-        XCTAssertTrue(compact.compatiblePlatformNames.contains("Glock 19"))
+        XCTAssertNotEqual(fullSize.compatibility.fitDescriptors, compact.compatibility.fitDescriptors)
+        XCTAssertTrue(fullSize.compatibility.platformTags.contains("Glock 17"))
+        XCTAssertFalse(compact.compatibility.platformTags.contains("Glock 17"))
+        XCTAssertTrue(compact.compatibility.platformTags.contains("Glock 19"))
     }
 
     func testSuggestedPatternsFilterByTypeActionAndCaliber() {
@@ -63,28 +64,30 @@ final class MagazinePatternModelsTests: XCTestCase {
     func testLegacyFallbackPreservesUserFacingDetails() {
         let legacyPattern = MagazinePattern.legacy(
             displayName: "CZ 75 Pattern",
+            familyLabel: "CZ 75",
             supportedCaliberNames: ["9mm"],
             compatibleFirearmTypes: [.pistol],
             compatibleFirearmActions: [.semiAuto],
-            compatiblePlatformNames: ["CZ 75", "Shadow 2"],
+            platformTags: ["CZ 75", "Shadow 2"],
+            fitDescriptors: ["double-stack steel-frame pistol"],
             notes: "Imported before catalog support existed."
         )
 
         XCTAssertEqual(legacyPattern.kind, .legacy)
-        XCTAssertEqual(legacyPattern.family, .legacy)
+        XCTAssertEqual(legacyPattern.familyLabel, "CZ 75")
         XCTAssertEqual(legacyPattern.displayName, "CZ 75 Pattern")
-        XCTAssertEqual(legacyPattern.fitProfile, .legacy)
-        XCTAssertEqual(legacyPattern.supportedCaliberNames, ["9mm"])
-        XCTAssertEqual(legacyPattern.compatiblePlatformNames, ["CZ 75", "Shadow 2"])
+        XCTAssertEqual(legacyPattern.compatibility.supportedCaliberNames, ["9mm"])
+        XCTAssertEqual(legacyPattern.compatibility.platformTags, ["CZ 75", "Shadow 2"])
+        XCTAssertEqual(legacyPattern.compatibility.fitDescriptors, ["double-stack steel-frame pistol"])
         XCTAssertTrue(legacyPattern.id.hasPrefix("legacy:"))
         XCTAssertTrue(legacyPattern.isFallback)
     }
 
     func testUnknownFallbackIsAvailableForUnmappedRecords() {
         XCTAssertEqual(MagazinePattern.unknown.kind, .unknown)
-        XCTAssertEqual(MagazinePattern.unknown.family, .unknown)
-        XCTAssertTrue(MagazinePattern.unknown.supportedCaliberNames.isEmpty)
-        XCTAssertTrue(MagazinePattern.unknown.compatiblePlatformNames.isEmpty)
+        XCTAssertEqual(MagazinePattern.unknown.familyLabel, "Unknown")
+        XCTAssertTrue(MagazinePattern.unknown.compatibility.supportedCaliberNames.isEmpty)
+        XCTAssertTrue(MagazinePattern.unknown.compatibility.platformTags.isEmpty)
         XCTAssertTrue(MagazinePattern.unknown.isFallback)
     }
 }

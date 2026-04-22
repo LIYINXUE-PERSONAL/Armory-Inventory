@@ -15,39 +15,28 @@ enum MagazinePatternKind: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-enum MagazinePatternFamily: String, Codable, CaseIterable, Identifiable {
-    case ar15Stanag
-    case glockDoubleStack9mm
-    case sigP320DoubleStack9mm
-    case doubleStack1911_2011_9mm
-    case legacy
-    case unknown
+struct MagazinePatternCompatibility: Codable, Hashable {
+    let supportedCaliberNames: [String]
+    let compatibleFirearmTypes: [FirearmType]
+    let compatibleFirearmActions: [FirearmAction]
+    let platformTags: [String]
+    let fitDescriptors: [String]
 
-    var id: String { rawValue }
-}
-
-enum MagazinePatternFitProfile: String, Codable, CaseIterable, Identifiable {
-    case rifleStandard
-    case fullSizeAndCompact
-    case compactOnly
-    case servicePistol
-    case doubleStack1911
-    case legacy
-    case unknown
-
-    var id: String { rawValue }
+    static let empty = MagazinePatternCompatibility(
+        supportedCaliberNames: [],
+        compatibleFirearmTypes: [],
+        compatibleFirearmActions: [],
+        platformTags: [],
+        fitDescriptors: []
+    )
 }
 
 struct MagazinePattern: Identifiable, Codable, Hashable {
     let id: String
     let kind: MagazinePatternKind
-    let family: MagazinePatternFamily
     let displayName: String
-    let supportedCaliberNames: [String]
-    let compatibleFirearmTypes: [FirearmType]
-    let compatibleFirearmActions: [FirearmAction]
-    let compatiblePlatformNames: [String]
-    let fitProfile: MagazinePatternFitProfile
+    let familyLabel: String
+    let compatibility: MagazinePatternCompatibility
     let aliases: [String]
     let notes: String?
 
@@ -65,7 +54,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
             return false
         }
 
-        return supportedCaliberNames.contains { Self.normalize($0) == normalizedQuery }
+        return compatibility.supportedCaliberNames.contains { Self.normalize($0) == normalizedQuery }
     }
 
     func isCompatible(
@@ -73,8 +62,8 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
         action: FirearmAction,
         caliberName: String?
     ) -> Bool {
-        let typeMatches = compatibleFirearmTypes.isEmpty || compatibleFirearmTypes.contains(firearmType)
-        let actionMatches = compatibleFirearmActions.isEmpty || compatibleFirearmActions.contains(action)
+        let typeMatches = compatibility.compatibleFirearmTypes.isEmpty || compatibility.compatibleFirearmTypes.contains(firearmType)
+        let actionMatches = compatibility.compatibleFirearmActions.isEmpty || compatibility.compatibleFirearmActions.contains(action)
         let caliberMatches = caliberName == nil || supports(caliberName: caliberName)
         return typeMatches && actionMatches && caliberMatches
     }
@@ -82,23 +71,21 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
     static let unknown = MagazinePattern(
         id: "unknown",
         kind: .unknown,
-        family: .unknown,
         displayName: "Unknown Pattern",
-        supportedCaliberNames: [],
-        compatibleFirearmTypes: [],
-        compatibleFirearmActions: [],
-        compatiblePlatformNames: [],
-        fitProfile: .unknown,
+        familyLabel: "Unknown",
+        compatibility: .empty,
         aliases: [],
         notes: "Fallback used when no catalog pattern can be resolved."
     )
 
     static func legacy(
         displayName: String,
+        familyLabel: String? = nil,
         supportedCaliberNames: [String] = [],
         compatibleFirearmTypes: [FirearmType] = [],
         compatibleFirearmActions: [FirearmAction] = [],
-        compatiblePlatformNames: [String] = [],
+        platformTags: [String] = [],
+        fitDescriptors: [String] = [],
         notes: String? = nil
     ) -> MagazinePattern {
         let trimmedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -109,13 +96,15 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
         return MagazinePattern(
             id: "legacy:\(legacyID)",
             kind: .legacy,
-            family: .legacy,
             displayName: resolvedName,
-            supportedCaliberNames: supportedCaliberNames,
-            compatibleFirearmTypes: compatibleFirearmTypes,
-            compatibleFirearmActions: compatibleFirearmActions,
-            compatiblePlatformNames: compatiblePlatformNames,
-            fitProfile: .legacy,
+            familyLabel: familyLabel ?? resolvedName,
+            compatibility: MagazinePatternCompatibility(
+                supportedCaliberNames: supportedCaliberNames,
+                compatibleFirearmTypes: compatibleFirearmTypes,
+                compatibleFirearmActions: compatibleFirearmActions,
+                platformTags: platformTags,
+                fitDescriptors: fitDescriptors
+            ),
             aliases: [],
             notes: notes
         )
@@ -134,65 +123,75 @@ enum MagazinePatternCatalog {
         MagazinePattern(
             id: "ar15-stanag-223-556-300blk",
             kind: .catalog,
-            family: .ar15Stanag,
             displayName: "AR-15 STANAG",
-            supportedCaliberNames: [".223 Rem", "5.56 NATO", ".300 Blackout"],
-            compatibleFirearmTypes: [.rifle],
-            compatibleFirearmActions: [.semiAuto, .selectFire],
-            compatiblePlatformNames: ["AR-15", "STANAG", "AR-15 pattern lower"],
-            fitProfile: .rifleStandard,
+            familyLabel: "AR-15 STANAG",
+            compatibility: MagazinePatternCompatibility(
+                supportedCaliberNames: [".223 Rem", "5.56 NATO", ".300 Blackout"],
+                compatibleFirearmTypes: [.rifle],
+                compatibleFirearmActions: [.semiAuto, .selectFire],
+                platformTags: ["AR-15", "STANAG", "AR-15 pattern lower"],
+                fitDescriptors: ["standard rifle magazine", "straight-in STANAG magwell"]
+            ),
             aliases: ["STANAG AR-15", "AR-15 PMAG", "GI AR-15"],
             notes: "Standard AR-15 magazine family shared across .223 Rem, 5.56 NATO, and .300 Blackout platforms."
         ),
         MagazinePattern(
             id: "glock-double-stack-9mm-full-size-compact",
             kind: .catalog,
-            family: .glockDoubleStack9mm,
             displayName: "Glock Double-Stack 9mm Full-Size",
-            supportedCaliberNames: ["9mm"],
-            compatibleFirearmTypes: [.pistol],
-            compatibleFirearmActions: [.semiAuto],
-            compatiblePlatformNames: ["Glock 17", "Glock 19", "Glock 34", "Glock 45"],
-            fitProfile: .fullSizeAndCompact,
+            familyLabel: "Glock Double-Stack 9mm",
+            compatibility: MagazinePatternCompatibility(
+                supportedCaliberNames: ["9mm"],
+                compatibleFirearmTypes: [.pistol],
+                compatibleFirearmActions: [.semiAuto],
+                platformTags: ["Glock 17", "Glock 19", "Glock 34", "Glock 45"],
+                fitDescriptors: ["full-size body", "fits full-size and compact Glock-pattern frames"]
+            ),
             aliases: ["G17/G19 9mm", "Glock OEM 17-round", "Glock full-size 9mm"],
             notes: "Longer Glock-pattern 9mm magazines that work in both full-size and compact frames."
         ),
         MagazinePattern(
             id: "glock-double-stack-9mm-compact",
             kind: .catalog,
-            family: .glockDoubleStack9mm,
             displayName: "Glock Double-Stack 9mm Compact",
-            supportedCaliberNames: ["9mm"],
-            compatibleFirearmTypes: [.pistol],
-            compatibleFirearmActions: [.semiAuto],
-            compatiblePlatformNames: ["Glock 19", "Glock 26", "Glock 49"],
-            fitProfile: .compactOnly,
+            familyLabel: "Glock Double-Stack 9mm",
+            compatibility: MagazinePatternCompatibility(
+                supportedCaliberNames: ["9mm"],
+                compatibleFirearmTypes: [.pistol],
+                compatibleFirearmActions: [.semiAuto],
+                platformTags: ["Glock 19", "Glock 26", "Glock 49"],
+                fitDescriptors: ["compact body", "compact-only Glock-pattern frames"]
+            ),
             aliases: ["G19-only 9mm", "Glock OEM 15-round", "Glock compact 9mm"],
             notes: "Shorter Glock-pattern 9mm magazines that do not fit the same set of firearms as full-size bodies."
         ),
         MagazinePattern(
             id: "sig-p320-double-stack-9mm",
             kind: .catalog,
-            family: .sigP320DoubleStack9mm,
             displayName: "SIG P320 9mm",
-            supportedCaliberNames: ["9mm"],
-            compatibleFirearmTypes: [.pistol],
-            compatibleFirearmActions: [.semiAuto],
-            compatiblePlatformNames: ["SIG P320", "SIG M17", "SIG M18", "AXG Pro"],
-            fitProfile: .servicePistol,
+            familyLabel: "SIG P320 9mm",
+            compatibility: MagazinePatternCompatibility(
+                supportedCaliberNames: ["9mm"],
+                compatibleFirearmTypes: [.pistol],
+                compatibleFirearmActions: [.semiAuto],
+                platformTags: ["SIG P320", "SIG M17", "SIG M18", "AXG Pro"],
+                fitDescriptors: ["double-stack service pistol body"]
+            ),
             aliases: ["P320 9mm", "M17/M18 9mm", "SIG 320 full-size 9mm"],
             notes: "Double-stack SIG P320 family magazines."
         ),
         MagazinePattern(
             id: "2011-double-stack-9mm",
             kind: .catalog,
-            family: .doubleStack1911_2011_9mm,
             displayName: "2011 / Double-Stack 1911 9mm",
-            supportedCaliberNames: ["9mm"],
-            compatibleFirearmTypes: [.pistol],
-            compatibleFirearmActions: [.semiAuto],
-            compatiblePlatformNames: ["2011", "Staccato", "Atlas", "double-stack 1911"],
-            fitProfile: .doubleStack1911,
+            familyLabel: "2011 / Double-Stack 1911 9mm",
+            compatibility: MagazinePatternCompatibility(
+                supportedCaliberNames: ["9mm"],
+                compatibleFirearmTypes: [.pistol],
+                compatibleFirearmActions: [.semiAuto],
+                platformTags: ["2011", "Staccato", "Atlas", "double-stack 1911"],
+                fitDescriptors: ["double-stack 1911 grip module", "2011 pattern"]
+            ),
             aliases: ["2011 9mm", "DS 1911 9mm", "Staccato 9mm"],
             notes: "Double-stack 1911 / 2011 magazine family."
         )
