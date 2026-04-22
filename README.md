@@ -53,6 +53,8 @@ ArmoryInventory/
 │   ├── Firearms/
 │   ├── Services/
 │   └── Settings/
+├── docs/
+│   └── magazine-patterns-audit.md
 └── ArmoryInventoryTests/
     ├── AccessoriesTests/
     ├── AmmoTests/
