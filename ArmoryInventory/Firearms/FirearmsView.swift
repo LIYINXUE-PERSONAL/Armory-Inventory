@@ -158,7 +158,9 @@ struct FirearmsView: View {
                 HStack {
                     Text("Filters")
                     Spacer()
-                    Image(systemName: showingFilters ? "chevron.up" : "chevron.down")
+                    Image(systemName: "chevron.down")
+                        .rotationEffect(.degrees(showingFilters ? 180 : 0))
+                        .animation(.easeInOut(duration: 0.2), value: showingFilters)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -225,6 +227,10 @@ struct FirearmsView: View {
                         }
                     }
                 }
+                .transition(.modifier(
+                    active: TopAnchoredStretchModifier(progress: 0.01),
+                    identity: TopAnchoredStretchModifier(progress: 1)
+                ))
             }
         }
         .padding(16)
@@ -432,6 +438,17 @@ struct FirearmsView: View {
 
     private func compareNames(_ lhs: String, _ rhs: String) -> Bool {
         compare(lhs.localizedStandardCompare(rhs))
+    }
+}
+
+private struct TopAnchoredStretchModifier: ViewModifier {
+    let progress: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(x: 1, y: progress, anchor: .top)
+            .opacity(progress)
+            .clipped()
     }
 }
 

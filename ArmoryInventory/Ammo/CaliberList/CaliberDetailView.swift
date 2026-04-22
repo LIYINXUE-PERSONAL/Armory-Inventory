@@ -28,7 +28,7 @@ struct CaliberDetailView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                if sortedAmmo.isEmpty {
+                if viewModel.sortedAmmo(for: caliber).isEmpty {
                     ContentUnavailableView(
                         "No Ammo Yet",
                         systemImage: "shippingbox",
@@ -37,23 +37,13 @@ struct CaliberDetailView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 32)
                 } else {
-                    Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-                        ForEach(ammoRows, id: \.self) { row in
-                            GridRow {
-                                ForEach(row) { ammo in
-                                    AmmoCardView(
-                                        ammo: ammo,
-                                        backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
-                                    )
-                                    .onTapGesture {
-                                        selectedAmmoForAdjustment = ammo
-                                    }
-                                }
+                    VStack(alignment: .leading, spacing: 20) {
+                        if !viewModel.inStockSortedAmmo(for: caliber).isEmpty {
+                            ammoSection(title: "In Stock", ammo: viewModel.inStockSortedAmmo(for: caliber))
+                        }
 
-                                if row.count == 1 {
-                                    Color.clear
-                                }
-                            }
+                        if !viewModel.outOfStockSortedAmmo(for: caliber).isEmpty {
+                            ammoSection(title: "Out of Stock", ammo: viewModel.outOfStockSortedAmmo(for: caliber))
                         }
                     }
                 }
@@ -106,13 +96,31 @@ struct CaliberDetailView: View {
         }
     }
 
-    private var sortedAmmo: [AmmoType] {
-        viewModel.sortedAmmo(for: caliber)
-    }
+    @ViewBuilder
+    private func ammoSection(title: String, ammo: [AmmoType]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(title)
+                .font(.headline)
 
-    private var ammoRows: [[AmmoType]] {
-        stride(from: 0, to: sortedAmmo.count, by: 2).map { index in
-            Array(sortedAmmo[index..<min(index + 2, sortedAmmo.count)])
+            Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                ForEach(viewModel.ammoRows(for: ammo), id: \.self) { row in
+                    GridRow {
+                        ForEach(row) { ammo in
+                            AmmoCardView(
+                                ammo: ammo,
+                                backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
+                            )
+                            .onTapGesture {
+                                selectedAmmoForAdjustment = ammo
+                            }
+                        }
+
+                        if row.count == 1 {
+                            Color.clear
+                        }
+                    }
+                }
+            }
         }
     }
 

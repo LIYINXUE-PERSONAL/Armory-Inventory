@@ -26,9 +26,11 @@ struct AmmoCardView: View {
 
             Spacer(minLength: 0)
 
-            Text(AmmoType.roundsText(for: ammo.quantity))
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+            if ammo.quantity > 0 {
+                Text(AmmoType.roundsText(for: ammo.quantity))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
 
             if showValueInCard, ammo.centsPerRound > 0, ammo.quantity > 0 {
                 Text(ammo.totalValueText)
