@@ -9,6 +9,7 @@ import Foundation
 
 enum MagazinePatternKind: String, Codable, CaseIterable, Identifiable {
     case catalog
+    case custom
     case legacy
     case unknown
 
@@ -33,6 +34,9 @@ struct MagazinePatternCompatibility: Codable, Hashable {
 
 struct MagazinePattern: Identifiable, Codable, Hashable {
     private static let normalizationLocale = Locale(identifier: "en_US_POSIX")
+    private static let catalogPrefix = "catalog:"
+    private static let customPrefix = "custom:"
+    private static let legacyPrefix = "legacy:"
 
     let id: String
     let kind: MagazinePatternKind
@@ -71,7 +75,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
     }
 
     static let unknown = MagazinePattern(
-        id: "unknown",
+        id: "\(legacyPrefix)unknown",
         kind: .unknown,
         displayName: "Unknown Pattern",
         familyLabel: "Unknown",
@@ -79,6 +83,38 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
         aliases: [],
         notes: "Fallback used when no catalog pattern can be resolved."
     )
+
+    static func custom(
+        id: UUID = UUID(),
+        displayName: String,
+        familyLabel: String,
+        supportedCaliberNames: [String] = [],
+        compatibleFirearmTypes: [FirearmType] = [],
+        compatibleFirearmActions: [FirearmAction] = [],
+        platformTags: [String] = [],
+        fitDescriptors: [String] = [],
+        aliases: [String] = [],
+        notes: String? = nil
+    ) -> MagazinePattern {
+        let resolvedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedFamilyLabel = familyLabel.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return MagazinePattern(
+            id: "\(customPrefix)\(id.uuidString.lowercased())",
+            kind: .custom,
+            displayName: resolvedDisplayName.isEmpty ? "Custom Pattern" : resolvedDisplayName,
+            familyLabel: resolvedFamilyLabel.isEmpty ? (resolvedDisplayName.isEmpty ? "Custom Pattern" : resolvedDisplayName) : resolvedFamilyLabel,
+            compatibility: MagazinePatternCompatibility(
+                supportedCaliberNames: supportedCaliberNames,
+                compatibleFirearmTypes: compatibleFirearmTypes,
+                compatibleFirearmActions: compatibleFirearmActions,
+                platformTags: platformTags,
+                fitDescriptors: fitDescriptors
+            ),
+            aliases: aliases,
+            notes: notes
+        )
+    }
 
     static func legacy(
         displayName: String,
@@ -96,7 +132,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
         let legacyID = normalizedID.isEmpty ? fallbackLegacyID(for: resolvedName) : normalizedID
 
         return MagazinePattern(
-            id: "legacy:\(legacyID)",
+            id: "\(legacyPrefix)\(legacyID)",
             kind: .legacy,
             displayName: resolvedName,
             familyLabel: familyLabel ?? resolvedName,
@@ -135,7 +171,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
 enum MagazinePatternCatalog {
     static let canonicalPatterns: [MagazinePattern] = [
         MagazinePattern(
-            id: "ar15-stanag-223-556-300blk",
+            id: "catalog:ar15-stanag-223-556-300blk",
             kind: .catalog,
             displayName: "AR-15 STANAG",
             familyLabel: "AR-15 STANAG",
@@ -150,7 +186,7 @@ enum MagazinePatternCatalog {
             notes: "Standard AR-15 magazine family shared across .223 Rem, 5.56 NATO, and .300 Blackout platforms."
         ),
         MagazinePattern(
-            id: "glock-double-stack-9mm-full-size-compact",
+            id: "catalog:glock-double-stack-9mm-full-size-compact",
             kind: .catalog,
             displayName: "Glock Double-Stack 9mm Full-Size",
             familyLabel: "Glock Double-Stack 9mm",
@@ -165,7 +201,7 @@ enum MagazinePatternCatalog {
             notes: "Longer Glock-pattern 9mm magazines that work in both full-size and compact frames."
         ),
         MagazinePattern(
-            id: "glock-double-stack-9mm-compact",
+            id: "catalog:glock-double-stack-9mm-compact",
             kind: .catalog,
             displayName: "Glock Double-Stack 9mm Compact",
             familyLabel: "Glock Double-Stack 9mm",
@@ -180,7 +216,7 @@ enum MagazinePatternCatalog {
             notes: "Shorter Glock-pattern 9mm magazines that do not fit the same set of firearms as full-size bodies."
         ),
         MagazinePattern(
-            id: "sig-p320-double-stack-9mm",
+            id: "catalog:sig-p320-double-stack-9mm",
             kind: .catalog,
             displayName: "SIG P320 9mm",
             familyLabel: "SIG P320 9mm",
@@ -195,7 +231,7 @@ enum MagazinePatternCatalog {
             notes: "Double-stack SIG P320 family magazines."
         ),
         MagazinePattern(
-            id: "2011-double-stack-9mm",
+            id: "catalog:2011-double-stack-9mm",
             kind: .catalog,
             displayName: "2011 / Double-Stack 1911 9mm",
             familyLabel: "2011 / Double-Stack 1911 9mm",

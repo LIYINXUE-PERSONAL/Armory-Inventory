@@ -10,7 +10,7 @@ import XCTest
 
 final class MagazinePatternModelsTests: XCTestCase {
     func testAr15PatternSupportsMultipleCalibers() throws {
-        let pattern = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "ar15-stanag-223-556-300blk"))
+        let pattern = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "catalog:ar15-stanag-223-556-300blk"))
 
         XCTAssertEqual(pattern.familyLabel, "AR-15 STANAG")
         XCTAssertTrue(pattern.supports(caliberName: ".223 Rem"))
@@ -23,8 +23,8 @@ final class MagazinePatternModelsTests: XCTestCase {
     }
 
     func testCatalogCanRepresentDistinctPatternsForSameCaliber() throws {
-        let fullSize = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "glock-double-stack-9mm-full-size-compact"))
-        let compact = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "glock-double-stack-9mm-compact"))
+        let fullSize = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "catalog:glock-double-stack-9mm-full-size-compact"))
+        let compact = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "catalog:glock-double-stack-9mm-compact"))
 
         XCTAssertEqual(fullSize.compatibility.supportedCaliberNames, ["9mm"])
         XCTAssertEqual(compact.compatibility.supportedCaliberNames, ["9mm"])
@@ -52,13 +52,13 @@ final class MagazinePatternModelsTests: XCTestCase {
         XCTAssertEqual(
             Set(pistolPatterns.map(\.id)),
             [
-                "glock-double-stack-9mm-full-size-compact",
-                "glock-double-stack-9mm-compact",
-                "sig-p320-double-stack-9mm",
-                "2011-double-stack-9mm"
+                "catalog:glock-double-stack-9mm-full-size-compact",
+                "catalog:glock-double-stack-9mm-compact",
+                "catalog:sig-p320-double-stack-9mm",
+                "catalog:2011-double-stack-9mm"
             ]
         )
-        XCTAssertEqual(riflePatterns.map(\.id), ["ar15-stanag-223-556-300blk"])
+        XCTAssertEqual(riflePatterns.map(\.id), ["catalog:ar15-stanag-223-556-300blk"])
     }
 
     func testLegacyFallbackPreservesUserFacingDetails() {
@@ -83,6 +83,26 @@ final class MagazinePatternModelsTests: XCTestCase {
         XCTAssertTrue(legacyPattern.isFallback)
     }
 
+    func testCustomPatternsUseStableOpaqueIDNamespace() {
+        let pattern = MagazinePattern.custom(
+            id: UUID(uuidString: "12345678-1234-1234-1234-1234567890AB")!,
+            displayName: "My PCC Pattern",
+            familyLabel: "AR9 Lower",
+            supportedCaliberNames: ["9mm"],
+            compatibleFirearmTypes: [.rifle],
+            compatibleFirearmActions: [.semiAuto],
+            platformTags: ["AR9", "Colt-style"],
+            fitDescriptors: ["straight magazine"],
+            aliases: ["Competition PCC"]
+        )
+
+        XCTAssertEqual(pattern.id, "custom:12345678-1234-1234-1234-1234567890ab")
+        XCTAssertEqual(pattern.displayName, "My PCC Pattern")
+        XCTAssertEqual(pattern.familyLabel, "AR9 Lower")
+        XCTAssertEqual(pattern.compatibility.platformTags, ["AR9", "Colt-style"])
+        XCTAssertEqual(pattern.aliases, ["Competition PCC"])
+    }
+
     func testLegacyFallbackGeneratesDistinctIDsWhenSlugWouldBeEmpty() {
         let punctuationPattern = MagazinePattern.legacy(displayName: "!!!")
         let cjkPattern = MagazinePattern.legacy(displayName: "弹匣")
@@ -95,6 +115,7 @@ final class MagazinePatternModelsTests: XCTestCase {
     func testUnknownFallbackIsAvailableForUnmappedRecords() {
         XCTAssertEqual(MagazinePattern.unknown.kind, .unknown)
         XCTAssertEqual(MagazinePattern.unknown.familyLabel, "Unknown")
+        XCTAssertEqual(MagazinePattern.unknown.id, "legacy:unknown")
         XCTAssertTrue(MagazinePattern.unknown.compatibility.supportedCaliberNames.isEmpty)
         XCTAssertTrue(MagazinePattern.unknown.compatibility.platformTags.isEmpty)
         XCTAssertTrue(MagazinePattern.unknown.isFallback)
