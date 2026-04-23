@@ -119,10 +119,17 @@ final class MagazinePatternModelsTests: XCTestCase {
     func testUnknownFallbackIsAvailableForUnmappedRecords() {
         XCTAssertEqual(MagazinePattern.unknown.kind, .unknown)
         XCTAssertEqual(MagazinePattern.unknown.familyLabel, "Unknown")
-        XCTAssertEqual(MagazinePattern.unknown.id, "legacy:unknown")
+        XCTAssertEqual(MagazinePattern.unknown.id, "unknown:pattern")
         XCTAssertTrue(MagazinePattern.unknown.compatibility.supportedCaliberNames.isEmpty)
         XCTAssertTrue(MagazinePattern.unknown.compatibility.platformTags.isEmpty)
         XCTAssertTrue(MagazinePattern.unknown.isFallback)
+    }
+
+    func testUnknownFallbackUsesDistinctNamespaceFromLegacyPatterns() {
+        let legacyUnknown = MagazinePattern.legacy(displayName: "unknown")
+
+        XCTAssertEqual(legacyUnknown.id, "legacy:unknown")
+        XCTAssertNotEqual(MagazinePattern.unknown.id, legacyUnknown.id)
     }
 
     func testEmptyCaliberConstraintsActAsWildcard() {

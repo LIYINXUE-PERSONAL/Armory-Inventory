@@ -67,6 +67,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
     private static let catalogPrefix = "catalog:"
     private static let customPrefix = "custom:"
     private static let legacyPrefix = "legacy:"
+    private static let unknownPrefix = "unknown:"
 
     let id: String
     let kind: MagazinePatternKind
@@ -105,7 +106,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
     }
 
     static let unknown = MagazinePattern(
-        id: "\(legacyPrefix)unknown",
+        id: "\(unknownPrefix)pattern",
         kind: .unknown,
         displayName: "Unknown Pattern",
         familyLabel: "Unknown",
