@@ -70,18 +70,5 @@ enum CaliberSort {
 
     nonisolated private static let settingsKey = InventorySettingsKeys.caliberSortOrder
 
-    nonisolated private static let defaultOrder: [String] = [
-        ".22 lr",
-        ".223 rem",
-        "5.56 nato",
-        ".300 blackout",
-        "7.62x39",
-        "6.5 creedmoor",
-        ".308 win",
-        ".380 acp",
-        "9mm",
-        ".40 s&w",
-        ".45 acp",
-        "12 gauge"
-    ]
+    nonisolated private static let defaultOrder: [String] = KnownCaliber.allCases.map(\.normalizedName)
 }
