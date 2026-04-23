@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftData
+import CryptoKit
 
 struct MagazinePatternMigration {
     nonisolated private static let ignoredMatchTokens: Set<String> = [
@@ -101,7 +102,7 @@ struct MagazinePatternMigration {
             return .unknown
         case .custom:
             return MagazinePattern.custom(
-                id: customPatternUUID(from: magazine.patternID),
+                id: customPatternUUID(from: magazine.patternID, fallbackSeed: customFallbackSeed(for: magazine)),
                 displayName: magazine.patternDisplayName ?? legacyDisplayName(for: magazine),
                 familyLabel: magazine.patternDisplayName ?? legacyDisplayName(for: magazine),
                 supportedCaliberNames: caliberNames,
@@ -133,6 +134,10 @@ struct MagazinePatternMigration {
     }
 
     private static func resolvedStoredPatternData(for magazine: Magazine) -> StoredPatternData {
+        if let storedPattern = existingStoredPatternData(for: magazine) {
+            return storedPattern
+        }
+
         let pattern = inferredPattern(for: magazine)
 
         switch pattern.kind {
@@ -147,6 +152,50 @@ struct MagazinePatternMigration {
                 id: pattern.id,
                 kind: pattern.kind,
                 displayName: pattern.displayName
+            )
+        }
+    }
+
+    private static func existingStoredPatternData(for magazine: Magazine) -> StoredPatternData? {
+        guard let kind = magazine.storedPatternKind else {
+            return nil
+        }
+
+        switch kind {
+        case .catalog:
+            guard let patternID = magazine.patternID,
+                  MagazinePatternCatalog.pattern(id: patternID) != nil else {
+                return nil
+            }
+
+            return StoredPatternData(
+                id: patternID,
+                kind: .catalog,
+                displayName: nil
+            )
+        case .legacy:
+            guard let patternID = magazine.patternID, !patternID.isEmpty else {
+                return nil
+            }
+
+            let displayName = resolvedStoredDisplayName(for: magazine)
+            return StoredPatternData(
+                id: patternID,
+                kind: .legacy,
+                displayName: displayName
+            )
+        case .custom:
+            let displayName = resolvedStoredDisplayName(for: magazine)
+            return StoredPatternData(
+                id: resolvedCustomPatternID(from: magazine.patternID, fallbackSeed: customFallbackSeed(for: magazine)),
+                kind: .custom,
+                displayName: displayName
+            )
+        case .unknown:
+            return StoredPatternData(
+                id: MagazinePattern.unknown.id,
+                kind: .unknown,
+                displayName: nil
             )
         }
     }
@@ -337,6 +386,15 @@ struct MagazinePatternMigration {
         magazine.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private static func resolvedStoredDisplayName(for magazine: Magazine) -> String {
+        let storedDisplayName = magazine.patternDisplayName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !storedDisplayName.isEmpty {
+            return storedDisplayName
+        }
+
+        return legacyDisplayName(for: magazine)
+    }
+
     private static func legacyPlatformTags(for magazine: Magazine) -> [String] {
         guard let firearm = magazine.firearm else {
             return []
@@ -345,13 +403,46 @@ struct MagazinePatternMigration {
         return [firearm.displayName]
     }
 
-    private static func customPatternUUID(from patternID: String?) -> UUID {
-        guard let patternID,
-              patternID.hasPrefix("custom:") else {
-            return UUID()
+    private static func resolvedCustomPatternID(from patternID: String?, fallbackSeed: String) -> String {
+        if let patternID,
+           patternID.hasPrefix("custom:"),
+           let rawValue = UUID(uuidString: String(patternID.dropFirst("custom:".count)))?.uuidString.lowercased() {
+            return "custom:\(rawValue)"
         }
 
-        let rawValue = String(patternID.dropFirst("custom:".count))
-        return UUID(uuidString: rawValue) ?? UUID()
+        return "custom:\(deterministicCustomPatternUUID(seed: fallbackSeed).uuidString.lowercased())"
     }
+
+    private static func customPatternUUID(from patternID: String?, fallbackSeed: String) -> UUID {
+        let resolvedID = resolvedCustomPatternID(from: patternID, fallbackSeed: fallbackSeed)
+        return UUID(uuidString: String(resolvedID.dropFirst("custom:".count))) ?? deterministicCustomPatternUUID(seed: fallbackSeed)
+    }
+
+    private static func customFallbackSeed(for magazine: Magazine) -> String {
+        [
+            magazine.patternID ?? "",
+            resolvedStoredDisplayName(for: magazine),
+            magazine.brand,
+            magazine.modelName,
+            magazine.caliber?.name ?? "",
+            magazine.firearm?.displayName ?? ""
+        ].joined(separator: "|")
+    }
+
+    private static func deterministicCustomPatternUUID(seed: String) -> UUID {
+        let digest = Insecure.SHA1.hash(data: Data(seed.utf8))
+        let bytes = Array(digest.prefix(16))
+        var uuidBytes = (
+            bytes[0], bytes[1], bytes[2], bytes[3],
+            bytes[4], bytes[5], bytes[6], bytes[7],
+            bytes[8], bytes[9], bytes[10], bytes[11],
+            bytes[12], bytes[13], bytes[14], bytes[15]
+        )
+
+        uuidBytes.6 = (uuidBytes.6 & 0x0F) | 0x50
+        uuidBytes.8 = (uuidBytes.8 & 0x3F) | 0x80
+
+        return UUID(uuid: uuidBytes)
+    }
+
 }

@@ -115,4 +115,53 @@ final class MagazinePatternMigrationTests: XCTestCase {
         XCTAssertEqual(magazine.patternID, "catalog:ar15-stanag-223-556-300blk")
         XCTAssertEqual(magazine.storedPatternKind, .catalog)
     }
+
+    func testResolvedPatternPreservesStoredCustomMetadata() {
+        let magazine = Magazine(
+            brand: "Custom",
+            modelName: "PCC",
+            patternID: "custom:12345678-1234-1234-1234-1234567890ab",
+            patternKind: .custom,
+            patternDisplayName: "Competition PCC",
+            count: 2,
+            capacity: 35,
+            purchasePriceCents: 4_000
+        )
+
+        let pattern = MagazinePatternMigration.resolvedPattern(for: magazine)
+
+        XCTAssertEqual(pattern.kind, .custom)
+        XCTAssertEqual(pattern.id, "custom:12345678-1234-1234-1234-1234567890ab")
+        XCTAssertEqual(pattern.displayName, "Competition PCC")
+    }
+
+    func testResolvedPatternUsesDeterministicFallbackForMalformedCustomID() {
+        let firstMagazine = Magazine(
+            brand: "Custom",
+            modelName: "PCC",
+            patternID: "custom:not-a-uuid",
+            patternKind: .custom,
+            patternDisplayName: "Competition PCC",
+            count: 2,
+            capacity: 35,
+            purchasePriceCents: 4_000
+        )
+        let secondMagazine = Magazine(
+            brand: "Custom",
+            modelName: "PCC",
+            patternID: "custom:not-a-uuid",
+            patternKind: .custom,
+            patternDisplayName: "Competition PCC",
+            count: 2,
+            capacity: 35,
+            purchasePriceCents: 4_000
+        )
+
+        let firstPattern = MagazinePatternMigration.resolvedPattern(for: firstMagazine)
+        let secondPattern = MagazinePatternMigration.resolvedPattern(for: secondMagazine)
+
+        XCTAssertEqual(firstPattern.kind, .custom)
+        XCTAssertEqual(firstPattern.id, secondPattern.id)
+        XCTAssertTrue(firstPattern.id.hasPrefix("custom:"))
+    }
 }
