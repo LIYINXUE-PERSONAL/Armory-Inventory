@@ -317,10 +317,13 @@ struct AddFirearmView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
+                        LabeledContent("Magazine Count", value: firearmMagazineCountText)
+                        LabeledContent("Total Capacity", value: firearmMagazineCapacityText)
+
                         ForEach(resolvedMagazines) { magazine in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(magazine.displayName)
-                                Text("\(magazine.caliber?.name ?? "No Caliber") • \(magazine.capacityText)")
+                                Text("\(magazine.caliber?.name ?? "No Caliber") • \(magazine.countText) • \(magazine.capacityText)")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -781,6 +784,24 @@ struct AddFirearmView: View {
         return opticsTotal + magazinesTotal + attachmentsTotal + partsTotal
     }
 
+    private var firearmMagazineCountText: String {
+        currentFirearmForSummary.linkedMagazineCountText(using: resolvedMagazines)
+    }
+
+    private var firearmMagazineCapacityText: String {
+        currentFirearmForSummary.linkedMagazineCapacityText(using: resolvedMagazines)
+    }
+
+    private var currentFirearmForSummary: Firearm {
+        firearm ?? Firearm(
+            brand: brand,
+            modelName: modelName,
+            purchasePriceCents: resolvedPurchasePriceCents ?? 0,
+            type: selectedType,
+            action: selectedAction
+        )
+    }
+
     private var primaryButtonTitle: String {
         viewModel.primaryButtonTitle(hasFirearm: firearm != nil, isEditing: isEditing)
     }
@@ -1074,7 +1095,7 @@ private struct FirearmSnapshotCard: View {
             }
 
             linkedSection("Linked Optics", items: optics.map { "\($0.displayName) • \($0.magnificationText)" })
-            linkedSection("Linked Magazines", items: magazines.map { "\($0.displayName) • \($0.capacityText)" })
+            linkedSection("Linked Magazines", items: magazines.map { "\($0.displayName) • \($0.countText) • \($0.capacityText)" })
             linkedSection("Linked Attachments", items: attachments.map { "\($0.displayName) • \($0.typeDisplayName)" })
             linkedSection("Linked Parts", items: parts.map { "\($0.displayName) • \($0.typeDisplayName)" })
 
@@ -1146,6 +1167,11 @@ private struct FirearmSnapshotCard: View {
 
             if let lastCleaned = firearm.lastCleanedDateText {
                 snapshotMetric("Last Cleaned", lastCleaned)
+            }
+
+            if !magazines.isEmpty {
+                snapshotMetric("Magazine Count", firearm.linkedMagazineCountText(using: magazines))
+                snapshotMetric("Total Capacity", firearm.linkedMagazineCapacityText(using: magazines))
             }
 
             if showsValue {

@@ -314,6 +314,23 @@ final class Firearm {
         Set(supportedMagazinePatterns.map(\.id))
     }
 
+    func totalLinkedMagazineCount(using magazines: [Magazine]) -> Int {
+        magazines.reduce(0) { $0 + max(0, $1.count) }
+    }
+
+    func totalLinkedMagazineCapacity(using magazines: [Magazine]) -> Int {
+        magazines.reduce(0) { $0 + $1.totalRoundCapacity }
+    }
+
+    func linkedMagazineCountText(using magazines: [Magazine]) -> String {
+        let totalCount = totalLinkedMagazineCount(using: magazines)
+        return totalCount == 1 ? "1 magazine" : "\(totalCount) magazines"
+    }
+
+    func linkedMagazineCapacityText(using magazines: [Magazine]) -> String {
+        AmmoType.roundsText(for: totalLinkedMagazineCapacity(using: magazines))
+    }
+
     var totalCardValueCents: Int {
         let opticsValue = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let magazinesValue = magazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }

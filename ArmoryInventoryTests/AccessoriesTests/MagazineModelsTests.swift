@@ -33,6 +33,8 @@ final class MagazineModelsTests: XCTestCase {
         XCTAssertEqual(magazine.displayName, "Atlas Premium")
         XCTAssertEqual(magazine.capacityText, "20 rounds")
         XCTAssertEqual(magazine.countText, "3 magazines")
+        XCTAssertEqual(magazine.totalRoundCapacity, 60)
+        XCTAssertEqual(magazine.totalRoundCapacityText, "60 Rounds")
         XCTAssertEqual(magazine.magazineColor, .other)
         XCTAssertEqual(magazine.colorDisplayName, "Nickel")
         XCTAssertTrue(magazine.purchasePriceText.contains("210"))
@@ -55,6 +57,8 @@ final class MagazineModelsTests: XCTestCase {
 
         XCTAssertEqual(magazine.countText, "1 magazine")
         XCTAssertEqual(magazine.capacityText, "17 rounds")
+        XCTAssertEqual(magazine.totalRoundCapacity, 17)
+        XCTAssertEqual(magazine.totalRoundCapacityText, "17 Rounds")
         XCTAssertEqual(magazine.magazineColor, .other)
         XCTAssertEqual(magazine.colorDisplayName, "Other")
 

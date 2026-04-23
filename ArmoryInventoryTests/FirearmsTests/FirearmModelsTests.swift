@@ -117,6 +117,10 @@ final class FirearmModelsTests: XCTestCase {
         XCTAssertEqual(firearm.barrelLengthText, "4.4 in")
         XCTAssertTrue(firearm.purchasePriceText.contains("2,500"))
         XCTAssertEqual(firearm.lastCleanedDateText, firearm.lastCleanedDate?.formatted(date: .abbreviated, time: .omitted))
+        XCTAssertEqual(firearm.totalLinkedMagazineCount(using: [magazine]), 3)
+        XCTAssertEqual(firearm.totalLinkedMagazineCapacity(using: [magazine]), 51)
+        XCTAssertEqual(firearm.linkedMagazineCountText(using: [magazine]), "3 magazines")
+        XCTAssertEqual(firearm.linkedMagazineCapacityText(using: [magazine]), "51 Rounds")
         XCTAssertEqual(firearm.totalCardValueCents, 378000)
         XCTAssertTrue(firearm.totalCardValueText.contains("3,780"))
     }
@@ -189,6 +193,10 @@ final class FirearmModelsTests: XCTestCase {
         XCTAssertEqual(firearm.subtitle, "Other")
         XCTAssertEqual(firearm.roundsText, "0 Rounds")
         XCTAssertNil(firearm.barrelLengthText)
+        XCTAssertEqual(firearm.totalLinkedMagazineCount(using: [magazine]), 1)
+        XCTAssertEqual(firearm.totalLinkedMagazineCapacity(using: [magazine]), 30)
+        XCTAssertEqual(firearm.linkedMagazineCountText(using: [magazine]), "1 magazine")
+        XCTAssertEqual(firearm.linkedMagazineCapacityText(using: [magazine]), "30 Rounds")
         XCTAssertEqual(firearm.totalCardValueCents, 0)
         XCTAssertTrue(firearm.totalCardValueText.contains("0.00"))
         XCTAssertNil(firearm.lastCleanedDateText)
@@ -199,5 +207,27 @@ final class FirearmModelsTests: XCTestCase {
         XCTAssertNil(firearm.firearmColor)
         XCTAssertNil(firearm.colorDisplayName)
         XCTAssertNil(firearm.roundsText)
+    }
+
+    func testLinkedMagazineSummariesClampNegativeMagazineCounts() {
+        let firearm = Firearm(
+            brand: "Test",
+            modelName: "Host",
+            purchasePriceCents: 100000,
+            type: .pistol,
+            action: .semiAuto
+        )
+        let malformedMagazine = Magazine(
+            brand: "Broken",
+            modelName: "Input",
+            count: -2,
+            capacity: 17,
+            purchasePriceCents: 1000
+        )
+
+        XCTAssertEqual(firearm.totalLinkedMagazineCount(using: [malformedMagazine]), 0)
+        XCTAssertEqual(firearm.totalLinkedMagazineCapacity(using: [malformedMagazine]), 0)
+        XCTAssertEqual(firearm.linkedMagazineCountText(using: [malformedMagazine]), "0 magazines")
+        XCTAssertEqual(firearm.linkedMagazineCapacityText(using: [malformedMagazine]), "0 Rounds")
     }
 }

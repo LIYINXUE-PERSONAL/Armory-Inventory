@@ -91,6 +91,14 @@ final class Magazine {
         count == 1 ? "1 magazine" : "\(count) magazines"
     }
 
+    var totalRoundCapacity: Int {
+        max(0, count) * max(0, capacity)
+    }
+
+    var totalRoundCapacityText: String {
+        AmmoType.roundsText(for: totalRoundCapacity)
+    }
+
     var magazineColor: FirearmColor? {
         guard let color else {
             return nil
