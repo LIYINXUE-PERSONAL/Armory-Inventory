@@ -173,6 +173,9 @@ final class UserDataTransferService: UserDataTransferServicing {
                     id: $0.id ?? UUID(),
                     brand: $0.brand,
                     modelName: $0.modelName,
+                    patternID: $0.patternID,
+                    patternKind: $0.patternKind,
+                    patternDisplayName: $0.patternDisplayName,
                     count: $0.count,
                     capacity: $0.capacity,
                     purchaseDate: $0.purchaseDate,
@@ -304,6 +307,9 @@ final class UserDataTransferService: UserDataTransferServicing {
                 id: snapshot.id,
                 brand: snapshot.brand,
                 modelName: snapshot.modelName,
+                patternID: snapshot.patternID,
+                patternKind: snapshot.patternKind.flatMap(MagazinePatternKind.init(rawValue:)),
+                patternDisplayName: snapshot.patternDisplayName,
                 count: snapshot.count,
                 capacity: snapshot.capacity,
                 purchaseDate: snapshot.purchaseDate,
@@ -318,6 +324,8 @@ final class UserDataTransferService: UserDataTransferServicing {
             )
             context.insert(magazine)
         }
+
+        _ = MagazinePatternMigration.backfillMissingPatterns(in: context)
 
         for snapshot in snapshot.attachments {
             let attachment = Attachment(
@@ -588,6 +596,9 @@ private struct MagazineSnapshot: Codable {
     let id: UUID
     let brand: String
     let modelName: String
+    let patternID: String?
+    let patternKind: String?
+    let patternDisplayName: String?
     let count: Int
     let capacity: Int
     let purchaseDate: Date

@@ -107,6 +107,10 @@ struct ArmoryInventory: App {
             }
         }
 
+        if MagazinePatternMigration.backfillMissingPatterns(in: context) {
+            didChange = true
+        }
+
         if let attachments = try? context.fetch(FetchDescriptor<Attachment>()) {
             for attachment in attachments where attachment.id == nil {
                 attachment.id = UUID()

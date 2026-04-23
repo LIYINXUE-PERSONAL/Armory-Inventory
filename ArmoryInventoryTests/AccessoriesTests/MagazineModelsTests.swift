@@ -38,6 +38,8 @@ final class MagazineModelsTests: XCTestCase {
         XCTAssertTrue(magazine.purchasePriceText.contains("210"))
         XCTAssertTrue(magazine.caliber === caliber)
         XCTAssertTrue(magazine.firearm === firearm)
+        XCTAssertEqual(magazine.resolvedPattern.kind, .catalog)
+        XCTAssertEqual(magazine.resolvedPattern.id, "catalog:2011-double-stack-9mm")
     }
 
     func testMagazineComputedPropertiesFallbackForSingularAndInvalidColor() {
@@ -60,5 +62,7 @@ final class MagazineModelsTests: XCTestCase {
 
         XCTAssertNil(magazine.magazineColor)
         XCTAssertNil(magazine.colorDisplayName)
+        XCTAssertEqual(magazine.resolvedPattern.kind, .legacy)
+        XCTAssertEqual(magazine.resolvedPattern.displayName, "Glock OEM")
     }
 }

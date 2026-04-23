@@ -110,6 +110,8 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(magazines.first?.firearm?.displayName, "CZ P-10 C")
         XCTAssertEqual(magazines.first?.purchaseDate, purchaseDate)
         XCTAssertEqual(magazines.first?.sortOrder, 0)
+        XCTAssertEqual(magazines.first?.storedPatternKind, .legacy)
+        XCTAssertEqual(magazines.first?.patternDisplayName, "CZ OEM")
     }
 
     @MainActor
@@ -201,5 +203,8 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(magazine.caliber?.name, ".45 ACP")
         XCTAssertEqual(magazine.firearm?.displayName, "Staccato XC")
         XCTAssertEqual(magazine.notes, "Updated")
+        XCTAssertEqual(magazine.storedPatternKind, .legacy)
+        XCTAssertEqual(magazine.patternID, "legacy:atlas-premium")
+        XCTAssertEqual(magazine.patternDisplayName, "Atlas Premium")
     }
 }

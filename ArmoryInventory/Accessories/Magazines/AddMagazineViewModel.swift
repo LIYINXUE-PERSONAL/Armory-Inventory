@@ -151,6 +151,7 @@ final class AddMagazineViewModel {
             firearm: firearm,
             sortOrder: nextSortOrder(in: context)
         )
+        MagazinePatternMigration.applyResolvedPattern(to: magazine)
         context.insert(magazine)
 
         do {
@@ -194,6 +195,7 @@ final class AddMagazineViewModel {
         magazine.notes = notes
         magazine.caliber = caliber
         magazine.firearm = firearm
+        MagazinePatternMigration.applyResolvedPattern(to: magazine)
 
         do {
             try context.save()
