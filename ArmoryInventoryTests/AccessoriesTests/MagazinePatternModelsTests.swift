@@ -41,7 +41,7 @@ final class MagazinePatternModelsTests: XCTestCase {
         XCTAssertTrue(compact.compatibility.platformTags.contains("Glock 19"))
     }
 
-    func testSuggestedPatternsFilterByTypeActionAndCaliber() {
+    func testSuggestedPatternsFilterByCaliber() {
         let pistolPatterns = MagazinePatternCatalog.suggestedPatterns(
             firearmType: .pistol,
             action: .semiAuto,
@@ -51,6 +51,11 @@ final class MagazinePatternModelsTests: XCTestCase {
             firearmType: .rifle,
             action: .semiAuto,
             caliberName: KnownCaliber.blackout300.displayName
+        )
+        let arPistolPatterns = MagazinePatternCatalog.suggestedPatterns(
+            firearmType: .pistol,
+            action: .semiAuto,
+            caliberName: KnownCaliber.nato556.displayName
         )
 
         XCTAssertEqual(
@@ -63,6 +68,7 @@ final class MagazinePatternModelsTests: XCTestCase {
             ]
         )
         XCTAssertEqual(riflePatterns.map(\.id), ["catalog:ar15-stanag-223-556-300blk"])
+        XCTAssertEqual(arPistolPatterns.map(\.id), ["catalog:ar15-stanag-223-556-300blk"])
     }
 
     func testLegacyFallbackPreservesUserFacingDetails() {

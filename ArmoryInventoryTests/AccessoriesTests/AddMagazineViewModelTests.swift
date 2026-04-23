@@ -41,7 +41,7 @@ final class AddMagazineViewModelTests: XCTestCase {
                 purchasePriceText: "10",
                 patternSelection: .automatic,
                 manualPatternName: "",
-                selectedCaliber: nil,
+                compatibleCaliberNames: [],
                 firearm: nil
             )
         )
@@ -56,7 +56,7 @@ final class AddMagazineViewModelTests: XCTestCase {
                 purchasePriceText: "10",
                 patternSelection: .automatic,
                 manualPatternName: "",
-                selectedCaliber: nil,
+                compatibleCaliberNames: [],
                 firearm: nil
             )
         )
@@ -71,7 +71,7 @@ final class AddMagazineViewModelTests: XCTestCase {
                 purchasePriceText: "10",
                 patternSelection: .automatic,
                 manualPatternName: "",
-                selectedCaliber: nil,
+                compatibleCaliberNames: [],
                 firearm: nil
             )
         )
@@ -81,7 +81,6 @@ final class AddMagazineViewModelTests: XCTestCase {
 
     func testCanAddReturnsFalseForMagazineCaliberMismatchAgainstLinkedFirearm() {
         let viewModel = AddMagazineViewModel()
-        let magazineCaliber = Caliber(name: "9mm")
         let firearmCaliber = Caliber(name: ".45 ACP")
         let firearm = Firearm(
             brand: "Staccato",
@@ -101,9 +100,9 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: .black,
                 colorDetail: nil,
                 purchasePriceText: "75",
-                patternSelection: .automatic,
+                patternSelection: .catalog("catalog:2011-double-stack-9mm"),
                 manualPatternName: "",
-                selectedCaliber: magazineCaliber,
+                compatibleCaliberNames: [],
                 firearm: firearm
             )
         )
@@ -123,7 +122,7 @@ final class AddMagazineViewModelTests: XCTestCase {
                 purchasePriceText: "20",
                 patternSelection: .legacy,
                 manualPatternName: "",
-                selectedCaliber: nil,
+                compatibleCaliberNames: [],
                 firearm: nil
             )
         )
@@ -141,7 +140,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             modelName: "P-10 C",
             purchasePriceCents: 50000,
             type: .pistol,
-            action: .semiAuto
+            action: .semiAuto,
+            caliber: caliber
         )
         context.insert(caliber)
         context.insert(firearm)
@@ -158,7 +158,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             notes: "Range set",
             patternSelection: .automatic,
             manualPatternName: "",
-            caliber: caliber,
+            compatibleCaliberNames: [],
             firearm: firearm,
             canAdd: true,
             to: context
@@ -172,7 +172,7 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(magazines.first?.modelName, "OEM")
         XCTAssertEqual(magazines.first?.count, 5)
         XCTAssertEqual(magazines.first?.capacity, 15)
-        XCTAssertEqual(magazines.first?.caliber?.name, "9mm")
+        XCTAssertEqual(magazines.first?.supportedCaliberNames, ["9mm"])
         XCTAssertEqual(magazines.first?.firearm?.displayName, "CZ P-10 C")
         XCTAssertEqual(magazines.first?.purchaseDate, purchaseDate)
         XCTAssertEqual(magazines.first?.sortOrder, 0)
@@ -198,7 +198,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             notes: nil,
             patternSelection: .automatic,
             manualPatternName: "",
-            caliber: nil,
+            compatibleCaliberNames: [],
             firearm: nil,
             canAdd: false,
             to: context
@@ -212,9 +212,6 @@ final class AddMagazineViewModelTests: XCTestCase {
     func testAddMagazineAllowsUnlinkedCatalogPatternMagazine() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
-        let caliber = Caliber(name: "5.56 NATO")
-        context.insert(caliber)
-
         let viewModel = AddMagazineViewModel()
         let didAdd = viewModel.addMagazine(
             brand: "Magpul",
@@ -228,7 +225,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             notes: nil,
             patternSelection: .automatic,
             manualPatternName: "",
-            caliber: caliber,
+            compatibleCaliberNames: [],
             firearm: nil,
             canAdd: true,
             to: context
@@ -247,9 +244,6 @@ final class AddMagazineViewModelTests: XCTestCase {
     func testAddMagazinePersistsExplicitLegacyPattern() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
-        let caliber = Caliber(name: "9mm")
-        context.insert(caliber)
-
         let viewModel = AddMagazineViewModel()
         let didAdd = viewModel.addMagazine(
             brand: "Atlas",
@@ -263,7 +257,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             notes: nil,
             patternSelection: .legacy,
             manualPatternName: "Old Match Tube",
-            caliber: caliber,
+            compatibleCaliberNames: ["9mm", ".38 Super"],
             firearm: nil,
             canAdd: true,
             to: context
@@ -274,6 +268,7 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertTrue(didAdd)
         XCTAssertEqual(magazines.first?.storedPatternKind, .legacy)
         XCTAssertEqual(magazines.first?.patternDisplayName, "Old Match Tube")
+        XCTAssertEqual(magazines.first?.supportedCaliberNames, [".38 Super", "9mm"])
     }
 
     @MainActor
@@ -325,7 +320,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             notes: "Updated",
             patternSelection: .automatic,
             manualPatternName: "",
-            caliber: updatedCaliber,
+            compatibleCaliberNames: [],
             firearm: updatedFirearm,
             canSave: true,
             in: context
@@ -338,12 +333,12 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(magazine.capacity, 20)
         XCTAssertEqual(magazine.magazineColor, .other)
         XCTAssertEqual(magazine.colorDetail, "Nickel")
-        XCTAssertEqual(magazine.caliber?.name, ".45 ACP")
+        XCTAssertEqual(magazine.supportedCaliberNames, ["9mm"])
         XCTAssertEqual(magazine.firearm?.displayName, "Staccato XC")
         XCTAssertEqual(magazine.notes, "Updated")
-        XCTAssertEqual(magazine.storedPatternKind, .legacy)
-        XCTAssertEqual(magazine.patternID, "legacy:atlas-premium")
-        XCTAssertEqual(magazine.patternDisplayName, "Atlas Premium")
+        XCTAssertEqual(magazine.storedPatternKind, .catalog)
+        XCTAssertEqual(magazine.patternID, "catalog:2011-double-stack-9mm")
+        XCTAssertNil(magazine.patternDisplayName)
     }
 
     @MainActor
@@ -385,9 +380,9 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .black,
             colorDetail: nil,
             notes: "Updated",
-            patternSelection: .automatic,
+            patternSelection: .catalog("catalog:2011-double-stack-9mm"),
             manualPatternName: "",
-            caliber: originalCaliber,
+            compatibleCaliberNames: [],
             firearm: firearm,
             canSave: true,
             in: context
@@ -442,7 +437,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             notes: nil,
             patternSelection: .automatic,
             manualPatternName: "",
-            caliber: caliber,
+            compatibleCaliberNames: [],
             firearm: nil,
             canSave: true,
             in: context

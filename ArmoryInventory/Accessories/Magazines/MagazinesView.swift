@@ -10,6 +10,7 @@ import SwiftData
 
 struct MagazinesView: View {
     @Environment(\.modelContext) private var context
+    @Query(sort: [SortDescriptor(\Firearm.brand), SortDescriptor(\Firearm.modelName)]) private var firearms: [Firearm]
     @AppStorage(InventorySettingsKeys.showValueInCard) private var showValueInCard = true
     @AppStorage(InventorySettingsKeys.showTotalValue) private var showTotalValue = true
     @State private var showingAddMagazine = false
@@ -24,7 +25,7 @@ struct MagazinesView: View {
                 ContentUnavailableView(
                     "No Magazines Yet",
                     systemImage: "rectangle.stack.fill.badge.plus",
-                    description: Text("Add your first magazine to track capacity, caliber, and assigned firearm.")
+                    description: Text("Add your first magazine to track capacity, supported calibers, and linked firearms.")
                 )
             } else {
                 List {
@@ -32,12 +33,14 @@ struct MagazinesView: View {
                         Button {
                             selectedMagazine = magazine
                         } label: {
+                            let linkedFirearms = magazine.linkedFirearms(from: firearms)
+
                             VStack(alignment: .leading, spacing: 6) {
                                 Text(magazine.displayName)
                                     .font(.headline)
 
                                 HStack {
-                                    Text(magazine.caliber?.name ?? "No Caliber")
+                                    Text(magazine.caliberDisplayText)
                                     Text("•")
                                     Text(magazine.countText)
                                     Text("•")
@@ -50,8 +53,11 @@ struct MagazinesView: View {
                                     LabeledContent("Value", value: magazine.purchasePriceText)
                                 }
 
-                                if let firearm = magazine.firearm {
-                                    LabeledContent("Linked Firearm", value: firearm.displayName)
+                                if !linkedFirearms.isEmpty {
+                                    LabeledContent(
+                                        linkedFirearms.count == 1 ? "Linked Firearm" : "Linked Firearms",
+                                        value: linkedFirearms.map(\.displayName).joined(separator: ", ")
+                                    )
                                 }
                             }
                             .padding(.vertical, 6)

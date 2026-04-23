@@ -136,11 +136,14 @@ final class AddFirearmViewModel {
             let pattern = magazine.resolvedPattern
             let reference = FirearmMagazinePatternReference(pattern: pattern)
             let isSelected = selectedPatternMap[reference.id] != nil
-            let isCompatible = pattern.isCompatible(
-                with: firearmType,
+            let isCompatible = compatibilityValidator.validate(
+                pattern: pattern,
+                selectedMagazineCaliber: magazine.caliber,
+                firearmType: firearmType,
                 action: action,
-                caliberName: caliber?.name
-            )
+                caliber: caliber,
+                firearmDescription: ""
+            ).isCompatible
 
             if isSelected || isCompatible {
                 patternMap[reference.id] = patternMap[reference.id] ?? reference

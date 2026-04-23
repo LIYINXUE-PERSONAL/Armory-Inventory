@@ -19,9 +19,9 @@ struct AddMagazineView: View {
     @State private var modelName = ""
     @State private var countText = "1"
     @State private var capacityText = ""
-    @State private var selectedCaliber: Caliber?
     @State private var selectedPatternSelection: MagazinePatternSelection = .automatic
     @State private var manualPatternName = ""
+    @State private var selectedCompatibleCaliberNames: Set<String> = []
     @State private var selectedColor: FirearmColor?
     @State private var customColor = ""
     @State private var purchaseDate = Date.now
@@ -46,9 +46,9 @@ struct AddMagazineView: View {
         _modelName = State(initialValue: magazine?.modelName ?? "")
         _countText = State(initialValue: magazine.map { String($0.count) } ?? "1")
         _capacityText = State(initialValue: magazine.map { String($0.capacity) } ?? "")
-        _selectedCaliber = State(initialValue: magazine?.caliber)
         _selectedPatternSelection = State(initialValue: viewModel.initialPatternSelection(for: magazine))
         _manualPatternName = State(initialValue: viewModel.initialManualPatternName(for: magazine))
+        _selectedCompatibleCaliberNames = State(initialValue: viewModel.initialCompatibleCaliberNames(for: magazine))
         _selectedColor = State(initialValue: magazine?.magazineColor)
         _customColor = State(initialValue: magazine?.magazineColor == .other ? magazine?.colorDetail ?? "" : "")
         _purchaseDate = State(initialValue: magazine?.purchaseDate ?? .now)
@@ -81,13 +81,6 @@ struct AddMagazineView: View {
                 .disabled(isReadOnly)
 
                 Section("Configuration") {
-                    Picker("Caliber", selection: $selectedCaliber) {
-                        Text("None").tag(nil as Caliber?)
-                        ForEach(calibers) { caliber in
-                            Text(caliber.name).tag(Optional(caliber))
-                        }
-                    }
-
                     LabeledContent("Pattern") {
                         Menu {
                             Button {
@@ -169,6 +162,34 @@ struct AddMagazineView: View {
                             TextField("", text: $manualPatternName)
                                 .multilineTextAlignment(.trailing)
                         }
+                    }
+
+                    if selectedPatternSelection.allowsManualCaliberSelection {
+                        LabeledContent("Compatible Calibers") {
+                            Menu {
+                                ForEach(calibers) { caliber in
+                                    Button {
+                                        toggleCompatibleCaliberSelection(for: caliber.name)
+                                    } label: {
+                                        patternSelectionLabel(
+                                            title: caliber.name,
+                                            isSelected: selectedCompatibleCaliberNames.contains(caliber.name)
+                                        )
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Text(selectedCompatibleCaliberSummary)
+                                        .foregroundStyle(selectedCompatibleCaliberNames.isEmpty ? .secondary : .primary)
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    } else {
+                        LabeledContent("Compatible Calibers", value: selectedCompatibleCaliberSummary)
                     }
 
                     LabeledContent("Capacity") {
@@ -306,7 +327,7 @@ struct AddMagazineView: View {
             purchasePriceText: purchasePriceText,
             patternSelection: selectedPatternSelection,
             manualPatternName: manualPatternName,
-            selectedCaliber: selectedCaliber,
+            compatibleCaliberNames: selectedCompatibleCaliberNames,
             firearm: linkedFirearm,
             existingMagazine: magazine
         )
@@ -318,18 +339,18 @@ struct AddMagazineView: View {
             manualPatternName: manualPatternName,
             brand: brand,
             modelName: modelName,
-            selectedCaliber: selectedCaliber,
+            compatibleCaliberNames: selectedCompatibleCaliberNames,
             firearm: linkedFirearm,
             existingMagazine: magazine
         ).message
     }
 
     private var suggestedCatalogPatterns: [MagazinePattern] {
-        viewModel.suggestedCatalogPatterns(selectedCaliber: selectedCaliber, firearm: linkedFirearm)
+        viewModel.suggestedCatalogPatterns(firearm: linkedFirearm)
     }
 
     private var additionalCatalogPatterns: [MagazinePattern] {
-        viewModel.additionalCatalogPatterns(selectedCaliber: selectedCaliber, firearm: linkedFirearm)
+        viewModel.additionalCatalogPatterns(firearm: linkedFirearm)
     }
 
     private var selectedPatternTitle: String {
@@ -338,7 +359,7 @@ struct AddMagazineView: View {
             manualPatternName: manualPatternName,
             brand: brand,
             modelName: modelName,
-            selectedCaliber: selectedCaliber,
+            compatibleCaliberNames: selectedCompatibleCaliberNames,
             firearm: linkedFirearm,
             existingMagazine: magazine
         )
@@ -350,10 +371,27 @@ struct AddMagazineView: View {
             manualPatternName: manualPatternName,
             brand: brand,
             modelName: modelName,
-            selectedCaliber: selectedCaliber,
+            compatibleCaliberNames: selectedCompatibleCaliberNames,
             firearm: linkedFirearm,
             existingMagazine: magazine
         )
+    }
+
+    private var selectedCompatibleCaliberSummary: String {
+        let names = viewModel.resolvedSupportedCaliberNames(
+            selection: selectedPatternSelection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            compatibleCaliberNames: selectedCompatibleCaliberNames,
+            firearm: linkedFirearm,
+            existingMagazine: magazine
+        )
+        guard !names.isEmpty else {
+            return selectedPatternSelection.allowsManualCaliberSelection ? "None" : "No Caliber"
+        }
+
+        return names.joined(separator: ", ")
     }
 
     private func saveMagazine() {
@@ -378,7 +416,7 @@ struct AddMagazineView: View {
                 notes: resolvedNotes,
                 patternSelection: selectedPatternSelection,
                 manualPatternName: manualPatternName,
-                caliber: selectedCaliber,
+                compatibleCaliberNames: selectedCompatibleCaliberNames,
                 firearm: linkedFirearm,
                 canSave: canAdd,
                 in: context
@@ -396,7 +434,7 @@ struct AddMagazineView: View {
                 notes: resolvedNotes,
                 patternSelection: selectedPatternSelection,
                 manualPatternName: manualPatternName,
-                caliber: selectedCaliber,
+                compatibleCaliberNames: selectedCompatibleCaliberNames,
                 firearm: nil,
                 canAdd: canAdd,
                 to: context
@@ -420,6 +458,14 @@ struct AddMagazineView: View {
             return
         }
         saveMagazine()
+    }
+
+    private func toggleCompatibleCaliberSelection(for caliberName: String) {
+        selectedCompatibleCaliberNames = viewModel.toggledCompatibleCaliberSelection(
+            currentSelection: selectedCompatibleCaliberNames,
+            caliberName: caliberName,
+            isEditing: isEditing
+        )
     }
 
     private func reloadCalibers() {

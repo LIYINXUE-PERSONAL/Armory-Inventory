@@ -16,6 +16,7 @@ final class Magazine {
     var patternID: String?
     var patternKind: MagazinePatternKind.RawValue?
     var patternDisplayName: String?
+    var patternSupportedCaliberNamesData: String?
     var count: Int
     var capacity: Int
     var purchaseDate: Date
@@ -36,6 +37,7 @@ final class Magazine {
         patternID: String? = nil,
         patternKind: MagazinePatternKind? = nil,
         patternDisplayName: String? = nil,
+        patternSupportedCaliberNames: [String] = [],
         count: Int = 1,
         capacity: Int,
         purchaseDate: Date = .now,
@@ -54,6 +56,7 @@ final class Magazine {
         self.patternID = patternID
         self.patternKind = patternKind?.rawValue
         self.patternDisplayName = patternDisplayName
+        self.patternSupportedCaliberNamesData = Self.encodePatternSupportedCaliberNames(patternSupportedCaliberNames)
         self.count = count
         self.capacity = capacity
         self.purchaseDate = purchaseDate
@@ -83,6 +86,36 @@ final class Magazine {
         MagazinePatternMigration.resolvedPattern(for: self)
     }
 
+    var supportedCaliberNames: [String] {
+        let patternCalibers = resolvedPattern.compatibility.supportedCaliberNames
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        if !patternCalibers.isEmpty {
+            return patternCalibers
+        }
+
+        guard let caliberName = caliber?.name.trimmingCharacters(in: .whitespacesAndNewlines),
+              !caliberName.isEmpty else {
+            return []
+        }
+
+        return [caliberName]
+    }
+
+    var storedPatternSupportedCaliberNames: [String] {
+        get { Self.decodePatternSupportedCaliberNames(from: patternSupportedCaliberNamesData) }
+        set { patternSupportedCaliberNamesData = Self.encodePatternSupportedCaliberNames(newValue) }
+    }
+
+    var caliberDisplayText: String {
+        let names = supportedCaliberNames
+        guard !names.isEmpty else {
+            return "No Caliber"
+        }
+
+        return names.joined(separator: ", ")
+    }
+
     var capacityText: String {
         "\(capacity) rounds"
     }
@@ -97,6 +130,24 @@ final class Magazine {
 
     var totalRoundCapacityText: String {
         AmmoType.roundsText(for: totalRoundCapacity)
+    }
+
+    func linkedFirearms(from firearms: [Firearm]) -> [Firearm] {
+        var linkedByID: [PersistentIdentifier: Firearm] = [:]
+
+        for firearm in firearms {
+            let matchesPattern = firearm.supportedMagazinePatternIDs.contains(resolvedPattern.id)
+            let matchesLegacyLink = firearm.magazines.contains { $0.persistentModelID == persistentModelID }
+            guard matchesPattern || matchesLegacyLink else {
+                continue
+            }
+
+            linkedByID[firearm.persistentModelID] = firearm
+        }
+
+        return linkedByID.values.sorted {
+            $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+        }
     }
 
     var magazineColor: FirearmColor? {
@@ -119,5 +170,30 @@ final class Magazine {
     var purchasePriceText: String {
         let amount = Decimal(purchasePriceCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private static func encodePatternSupportedCaliberNames(_ caliberNames: [String]) -> String? {
+        let normalizedNames = caliberNames
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !normalizedNames.isEmpty,
+              let data = try? JSONEncoder().encode(normalizedNames),
+              let json = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return json
+    }
+
+    private static func decodePatternSupportedCaliberNames(from value: String?) -> [String] {
+        guard let value,
+              let data = value.data(using: .utf8),
+              let names = try? JSONDecoder().decode([String].self, from: data) else {
+            return []
+        }
+
+        return names
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
     }
 }

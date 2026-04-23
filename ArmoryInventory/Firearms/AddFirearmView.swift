@@ -320,7 +320,7 @@ struct AddFirearmView: View {
                         ForEach(resolvedMagazines) { magazine in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(magazine.displayName)
-                                Text("\(magazine.caliber?.name ?? "No Caliber") • \(magazine.countText) • \(magazine.capacityText)")
+                                Text("\(magazine.caliberDisplayText) • \(magazine.countText) • \(magazine.capacityText)")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -1094,7 +1094,7 @@ private struct FirearmSnapshotCard: View {
             }
 
             linkedSection("Linked Optics", items: optics.map { "\($0.displayName) • \($0.magnificationText)" })
-            linkedSection("Linked Magazines", items: magazines.map { "\($0.displayName) • \($0.countText) • \($0.capacityText)" })
+            linkedSection("Linked Magazines", items: magazines.map { "\($0.displayName) • \($0.caliberDisplayText) • \($0.countText) • \($0.capacityText)" })
             linkedSection("Linked Attachments", items: attachments.map { "\($0.displayName) • \($0.typeDisplayName)" })
             linkedSection("Linked Parts", items: parts.map { "\($0.displayName) • \($0.typeDisplayName)" })
 

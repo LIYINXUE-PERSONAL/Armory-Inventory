@@ -288,7 +288,7 @@ enum MagazinePatternCatalog {
         caliberName: String?
     ) -> [MagazinePattern] {
         canonicalPatterns.filter {
-            $0.isCompatible(with: firearmType, action: action, caliberName: caliberName)
+            $0.compatibility.supportedCaliberNames.isEmpty || caliberName == nil || $0.supports(caliberName: caliberName)
         }
     }
 }

@@ -53,6 +53,7 @@ struct MagazinePatternMigration {
         let id: String
         let kind: MagazinePatternKind
         let displayName: String?
+        let supportedCaliberNames: [String]
     }
 
     @discardableResult
@@ -76,10 +77,13 @@ struct MagazinePatternMigration {
         magazine.patternID = storedPattern.id
         magazine.patternKind = storedPattern.kind.rawValue
         magazine.patternDisplayName = storedPattern.displayName
+        magazine.storedPatternSupportedCaliberNames = storedPattern.supportedCaliberNames
     }
 
     static func resolvedPattern(for magazine: Magazine) -> MagazinePattern {
-        let caliberNames = supportedCaliberNames(for: magazine)
+        let caliberNames = storedSupportedCaliberNames(for: magazine).isEmpty
+            ? supportedCaliberNames(for: magazine)
+            : storedSupportedCaliberNames(for: magazine)
         let firearmTypes = compatibleFirearmTypes(for: magazine)
         let firearmActions = compatibleFirearmActions(for: magazine)
 
@@ -145,13 +149,15 @@ struct MagazinePatternMigration {
             return StoredPatternData(
                 id: pattern.id,
                 kind: pattern.kind,
-                displayName: nil
+                displayName: nil,
+                supportedCaliberNames: []
             )
         case .legacy, .custom:
             return StoredPatternData(
                 id: pattern.id,
                 kind: pattern.kind,
-                displayName: pattern.displayName
+                displayName: pattern.displayName,
+                supportedCaliberNames: pattern.compatibility.supportedCaliberNames
             )
         }
     }
@@ -171,7 +177,8 @@ struct MagazinePatternMigration {
             return StoredPatternData(
                 id: patternID,
                 kind: .catalog,
-                displayName: nil
+                displayName: nil,
+                supportedCaliberNames: []
             )
         case .legacy:
             guard let patternID = magazine.patternID, !patternID.isEmpty else {
@@ -182,20 +189,23 @@ struct MagazinePatternMigration {
             return StoredPatternData(
                 id: patternID,
                 kind: .legacy,
-                displayName: displayName
+                displayName: displayName,
+                supportedCaliberNames: storedSupportedCaliberNames(for: magazine)
             )
         case .custom:
             let displayName = resolvedStoredDisplayName(for: magazine)
             return StoredPatternData(
                 id: resolvedCustomPatternID(from: magazine.patternID, fallbackSeed: customFallbackSeed(for: magazine)),
                 kind: .custom,
-                displayName: displayName
+                displayName: displayName,
+                supportedCaliberNames: storedSupportedCaliberNames(for: magazine)
             )
         case .unknown:
             return StoredPatternData(
                 id: MagazinePattern.unknown.id,
                 kind: .unknown,
-                displayName: nil
+                displayName: nil,
+                supportedCaliberNames: []
             )
         }
     }
@@ -221,9 +231,6 @@ struct MagazinePatternMigration {
 
     private static func inferredCatalogPattern(for magazine: Magazine) -> MagazinePattern? {
         let caliberName = primaryCaliberName(for: magazine)
-        if caliberName == nil, magazine.firearm == nil {
-            return nil
-        }
 
         let candidates: [MagazinePattern]
         if let firearm = magazine.firearm {
@@ -364,6 +371,12 @@ struct MagazinePatternMigration {
         }
 
         return []
+    }
+
+    private static func storedSupportedCaliberNames(for magazine: Magazine) -> [String] {
+        magazine.storedPatternSupportedCaliberNames
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
     }
 
     private static func compatibleFirearmTypes(for magazine: Magazine) -> [FirearmType] {

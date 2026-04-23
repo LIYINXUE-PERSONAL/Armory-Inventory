@@ -177,6 +177,7 @@ final class UserDataTransferService: UserDataTransferServicing {
                     patternID: $0.patternID,
                     patternKind: $0.patternKind,
                     patternDisplayName: $0.patternDisplayName,
+                    patternSupportedCaliberNames: $0.storedPatternSupportedCaliberNames,
                     count: $0.count,
                     capacity: $0.capacity,
                     purchaseDate: $0.purchaseDate,
@@ -312,6 +313,7 @@ final class UserDataTransferService: UserDataTransferServicing {
                 patternID: snapshot.patternID,
                 patternKind: snapshot.patternKind.flatMap(MagazinePatternKind.init(rawValue:)),
                 patternDisplayName: snapshot.patternDisplayName,
+                patternSupportedCaliberNames: snapshot.patternSupportedCaliberNames ?? [],
                 count: snapshot.count,
                 capacity: snapshot.capacity,
                 purchaseDate: snapshot.purchaseDate,
@@ -685,6 +687,7 @@ private struct MagazineSnapshot: Codable {
     let patternID: String?
     let patternKind: String?
     let patternDisplayName: String?
+    let patternSupportedCaliberNames: [String]?
     let count: Int
     let capacity: Int
     let purchaseDate: Date

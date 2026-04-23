@@ -9,45 +9,6 @@ import XCTest
 @testable import ArmoryInventory
 
 final class MagazineCompatibilityValidatorTests: XCTestCase {
-    func testValidateReturnsLinkedToDifferentFirearmFailure() {
-        let validator = MagazineCompatibilityValidator()
-        let currentFirearm = Firearm(
-            brand: "Glock",
-            modelName: "19",
-            purchasePriceCents: 50000,
-            type: .pistol,
-            action: .semiAuto
-        )
-        let otherFirearm = Firearm(
-            brand: "SIG",
-            modelName: "P320",
-            purchasePriceCents: 65000,
-            type: .pistol,
-            action: .semiAuto
-        )
-        let magazine = Magazine(
-            brand: "SIG",
-            modelName: "OEM",
-            capacity: 17,
-            purchasePriceCents: 4500,
-            caliber: Caliber(name: "9mm"),
-            firearm: otherFirearm
-        )
-
-        let result = validator.validate(
-            magazine: magazine,
-            firearmType: .pistol,
-            action: .semiAuto,
-            caliber: currentFirearm.caliber,
-            owningFirearm: currentFirearm
-        )
-
-        XCTAssertEqual(
-            result.failure,
-            .linkedToDifferentFirearm(currentFirearmName: otherFirearm.displayName)
-        )
-    }
-
     func testValidateReturnsCaliberMismatchFailure() {
         let validator = MagazineCompatibilityValidator()
         let result = validator.validate(
@@ -65,7 +26,7 @@ final class MagazineCompatibilityValidatorTests: XCTestCase {
         )
     }
 
-    func testValidateReturnsIncompatiblePatternFailure() {
+    func testValidateUsesPatternSupportedCalibersWhenAvailable() {
         let validator = MagazineCompatibilityValidator()
         let arPattern = MagazinePattern(
             id: "catalog:test-ar-pattern",
@@ -82,30 +43,31 @@ final class MagazineCompatibilityValidatorTests: XCTestCase {
             aliases: [],
             notes: nil
         )
+
         let result = validator.validate(
             pattern: arPattern,
-            selectedMagazineCaliber: Caliber(name: "5.56 NATO"),
+            selectedMagazineCaliber: nil,
             firearmType: .pistol,
             action: .semiAuto,
-            caliber: Caliber(name: "5.56 NATO"),
-            firearmDescription: "Glock 19"
+            caliber: Caliber(name: ".300 Blackout"),
+            firearmDescription: "AR Pistol"
         )
 
         XCTAssertEqual(
             result.failure,
-            .incompatiblePattern(patternName: "Test AR Pattern", firearmDescription: "Glock 19")
+            .caliberMismatch(magazineCaliberName: "5.56 NATO", firearmCaliberName: ".300 Blackout")
         )
     }
 
     func testValidateReturnsCompatibleForMatchingPatternAndCaliber() {
         let validator = MagazineCompatibilityValidator()
         let result = validator.validate(
-            pattern: MagazinePatternCatalog.canonicalPatterns.first { $0.id == "catalog:glock-double-stack-9mm-full-size-compact" }!,
-            selectedMagazineCaliber: Caliber(name: "9mm"),
+            pattern: MagazinePatternCatalog.canonicalPatterns.first { $0.id == "catalog:ar15-stanag-223-556-300blk" }!,
+            selectedMagazineCaliber: nil,
             firearmType: .pistol,
             action: .semiAuto,
-            caliber: Caliber(name: "9mm"),
-            firearmDescription: "Glock 19"
+            caliber: Caliber(name: "5.56 NATO"),
+            firearmDescription: "AR Pistol"
         )
 
         XCTAssertTrue(result.isCompatible)
