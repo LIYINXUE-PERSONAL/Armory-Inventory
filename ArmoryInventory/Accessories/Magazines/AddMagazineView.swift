@@ -20,6 +20,8 @@ struct AddMagazineView: View {
     @State private var countText = "1"
     @State private var capacityText = ""
     @State private var selectedCaliber: Caliber?
+    @State private var selectedPatternSelection: MagazinePatternSelection = .automatic
+    @State private var manualPatternName = ""
     @State private var selectedColor: FirearmColor?
     @State private var customColor = ""
     @State private var purchaseDate = Date.now
@@ -45,6 +47,8 @@ struct AddMagazineView: View {
         _countText = State(initialValue: magazine.map { String($0.count) } ?? "1")
         _capacityText = State(initialValue: magazine.map { String($0.capacity) } ?? "")
         _selectedCaliber = State(initialValue: magazine?.caliber)
+        _selectedPatternSelection = State(initialValue: viewModel.initialPatternSelection(for: magazine))
+        _manualPatternName = State(initialValue: viewModel.initialManualPatternName(for: magazine))
         _selectedColor = State(initialValue: magazine?.magazineColor)
         _customColor = State(initialValue: magazine?.magazineColor == .other ? magazine?.colorDetail ?? "" : "")
         _purchaseDate = State(initialValue: magazine?.purchaseDate ?? .now)
@@ -81,6 +85,89 @@ struct AddMagazineView: View {
                         Text("None").tag(nil as Caliber?)
                         ForEach(calibers) { caliber in
                             Text(caliber.name).tag(Optional(caliber))
+                        }
+                    }
+
+                    LabeledContent("Pattern") {
+                        Menu {
+                            Button {
+                                selectedPatternSelection = .automatic
+                            } label: {
+                                patternSelectionLabel(
+                                    title: "Automatic",
+                                    isSelected: selectedPatternSelection == .automatic
+                                )
+                            }
+
+                            if !suggestedCatalogPatterns.isEmpty {
+                                Section("Suggested Catalog Patterns") {
+                                    ForEach(suggestedCatalogPatterns) { pattern in
+                                        Button {
+                                            selectedPatternSelection = .catalog(pattern.id)
+                                        } label: {
+                                            patternSelectionLabel(
+                                                title: pattern.displayName,
+                                                isSelected: selectedPatternSelection == .catalog(pattern.id)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            if !additionalCatalogPatterns.isEmpty {
+                                Section("Other Catalog Patterns") {
+                                    ForEach(additionalCatalogPatterns) { pattern in
+                                        Button {
+                                            selectedPatternSelection = .catalog(pattern.id)
+                                        } label: {
+                                            patternSelectionLabel(
+                                                title: pattern.displayName,
+                                                isSelected: selectedPatternSelection == .catalog(pattern.id)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Section("Manual Patterns") {
+                                Button {
+                                    selectedPatternSelection = .legacy
+                                } label: {
+                                    patternSelectionLabel(
+                                        title: "Legacy Pattern",
+                                        isSelected: selectedPatternSelection == .legacy
+                                    )
+                                }
+
+                                Button {
+                                    selectedPatternSelection = .custom
+                                } label: {
+                                    patternSelectionLabel(
+                                        title: "Custom Pattern",
+                                        isSelected: selectedPatternSelection == .custom
+                                    )
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(selectedPatternTitle)
+                                    .foregroundStyle(.primary)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Text(selectedPatternDescription)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+
+                    if selectedPatternSelection.requiresManualName {
+                        LabeledContent(selectedPatternSelection == .legacy ? "Legacy Name" : "Custom Name") {
+                            TextField("", text: $manualPatternName)
+                                .multilineTextAlignment(.trailing)
                         }
                     }
 
@@ -217,6 +304,8 @@ struct AddMagazineView: View {
             selectedColor: selectedColor,
             colorDetail: resolvedColorDetail,
             purchasePriceText: purchasePriceText,
+            patternSelection: selectedPatternSelection,
+            manualPatternName: manualPatternName,
             selectedCaliber: selectedCaliber,
             firearm: linkedFirearm,
             existingMagazine: magazine
@@ -225,12 +314,46 @@ struct AddMagazineView: View {
 
     private var compatibilityMessage: String? {
         viewModel.compatibilityValidationResult(
+            patternSelection: selectedPatternSelection,
+            manualPatternName: manualPatternName,
             brand: brand,
             modelName: modelName,
             selectedCaliber: selectedCaliber,
             firearm: linkedFirearm,
             existingMagazine: magazine
         ).message
+    }
+
+    private var suggestedCatalogPatterns: [MagazinePattern] {
+        viewModel.suggestedCatalogPatterns(selectedCaliber: selectedCaliber, firearm: linkedFirearm)
+    }
+
+    private var additionalCatalogPatterns: [MagazinePattern] {
+        viewModel.additionalCatalogPatterns(selectedCaliber: selectedCaliber, firearm: linkedFirearm)
+    }
+
+    private var selectedPatternTitle: String {
+        viewModel.selectedPatternTitle(
+            selection: selectedPatternSelection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            selectedCaliber: selectedCaliber,
+            firearm: linkedFirearm,
+            existingMagazine: magazine
+        )
+    }
+
+    private var selectedPatternDescription: String {
+        viewModel.selectedPatternDescription(
+            selection: selectedPatternSelection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            selectedCaliber: selectedCaliber,
+            firearm: linkedFirearm,
+            existingMagazine: magazine
+        )
     }
 
     private func saveMagazine() {
@@ -253,6 +376,8 @@ struct AddMagazineView: View {
                 color: selectedColor,
                 colorDetail: resolvedColorDetail,
                 notes: resolvedNotes,
+                patternSelection: selectedPatternSelection,
+                manualPatternName: manualPatternName,
                 caliber: selectedCaliber,
                 firearm: linkedFirearm,
                 canSave: canAdd,
@@ -269,6 +394,8 @@ struct AddMagazineView: View {
                 color: selectedColor,
                 colorDetail: resolvedColorDetail,
                 notes: resolvedNotes,
+                patternSelection: selectedPatternSelection,
+                manualPatternName: manualPatternName,
                 caliber: selectedCaliber,
                 firearm: nil,
                 canAdd: canAdd,
@@ -300,6 +427,15 @@ struct AddMagazineView: View {
             calibers = try caliberQueryService.fetchCalibers(in: context)
         } catch {
             print("Calibers fetch error: \(error)")
+        }
+    }
+
+    @ViewBuilder
+    private func patternSelectionLabel(title: String, isSelected: Bool) -> some View {
+        if isSelected {
+            Label(title, systemImage: "checkmark")
+        } else {
+            Text(title)
         }
     }
 }

@@ -39,6 +39,8 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: nil,
                 colorDetail: nil,
                 purchasePriceText: "10",
+                patternSelection: .automatic,
+                manualPatternName: "",
                 selectedCaliber: nil,
                 firearm: nil
             )
@@ -52,6 +54,8 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: .other,
                 colorDetail: nil,
                 purchasePriceText: "10",
+                patternSelection: .automatic,
+                manualPatternName: "",
                 selectedCaliber: nil,
                 firearm: nil
             )
@@ -65,10 +69,14 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: .black,
                 colorDetail: nil,
                 purchasePriceText: "10",
+                patternSelection: .automatic,
+                manualPatternName: "",
                 selectedCaliber: nil,
                 firearm: nil
             )
         )
+        XCTAssertEqual(viewModel.initialPatternSelection(for: nil), .automatic)
+        XCTAssertEqual(viewModel.initialManualPatternName(for: nil), "")
     }
 
     func testCanAddReturnsFalseForMagazineCaliberMismatchAgainstLinkedFirearm() {
@@ -93,8 +101,30 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: .black,
                 colorDetail: nil,
                 purchasePriceText: "75",
+                patternSelection: .automatic,
+                manualPatternName: "",
                 selectedCaliber: magazineCaliber,
                 firearm: firearm
+            )
+        )
+    }
+
+    func testCanAddRequiresManualPatternNameForLegacySelection() {
+        let viewModel = AddMagazineViewModel()
+
+        XCTAssertFalse(
+            viewModel.canAdd(
+                brand: "Magpul",
+                modelName: "PMAG",
+                countText: "1",
+                capacityText: "30",
+                selectedColor: .black,
+                colorDetail: nil,
+                purchasePriceText: "20",
+                patternSelection: .legacy,
+                manualPatternName: "",
+                selectedCaliber: nil,
+                firearm: nil
             )
         )
     }
@@ -126,6 +156,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .black,
             colorDetail: nil,
             notes: "Range set",
+            patternSelection: .automatic,
+            manualPatternName: "",
             caliber: caliber,
             firearm: firearm,
             canAdd: true,
@@ -164,6 +196,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: nil,
             colorDetail: nil,
             notes: nil,
+            patternSelection: .automatic,
+            manualPatternName: "",
             caliber: nil,
             firearm: nil,
             canAdd: false,
@@ -192,6 +226,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .black,
             colorDetail: nil,
             notes: nil,
+            patternSelection: .automatic,
+            manualPatternName: "",
             caliber: caliber,
             firearm: nil,
             canAdd: true,
@@ -205,6 +241,39 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertNil(magazines.first?.firearm)
         XCTAssertEqual(magazines.first?.storedPatternKind, .catalog)
         XCTAssertEqual(magazines.first?.patternID, "catalog:ar15-stanag-223-556-300blk")
+    }
+
+    @MainActor
+    func testAddMagazinePersistsExplicitLegacyPattern() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let caliber = Caliber(name: "9mm")
+        context.insert(caliber)
+
+        let viewModel = AddMagazineViewModel()
+        let didAdd = viewModel.addMagazine(
+            brand: "Atlas",
+            modelName: "Premium",
+            count: 2,
+            capacity: 20,
+            purchaseDate: .now,
+            purchasePriceCents: 12000,
+            color: .black,
+            colorDetail: nil,
+            notes: nil,
+            patternSelection: .legacy,
+            manualPatternName: "Old Match Tube",
+            caliber: caliber,
+            firearm: nil,
+            canAdd: true,
+            to: context
+        )
+
+        let magazines = try context.fetch(FetchDescriptor<Magazine>())
+
+        XCTAssertTrue(didAdd)
+        XCTAssertEqual(magazines.first?.storedPatternKind, .legacy)
+        XCTAssertEqual(magazines.first?.patternDisplayName, "Old Match Tube")
     }
 
     @MainActor
@@ -254,6 +323,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .other,
             colorDetail: "Nickel",
             notes: "Updated",
+            patternSelection: .automatic,
+            manualPatternName: "",
             caliber: updatedCaliber,
             firearm: updatedFirearm,
             canSave: true,
@@ -314,6 +385,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .black,
             colorDetail: nil,
             notes: "Updated",
+            patternSelection: .automatic,
+            manualPatternName: "",
             caliber: originalCaliber,
             firearm: firearm,
             canSave: true,
@@ -367,6 +440,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: nil,
             colorDetail: nil,
             notes: nil,
+            patternSelection: .automatic,
+            manualPatternName: "",
             caliber: caliber,
             firearm: nil,
             canSave: true,
@@ -377,5 +452,21 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertNil(magazine.firearm)
         XCTAssertEqual(magazine.storedPatternKind, .catalog)
         XCTAssertEqual(magazine.patternID, "catalog:ar15-stanag-223-556-300blk")
+    }
+
+    func testInitialPatternHelpersExposeLegacyValues() {
+        let magazine = Magazine(
+            brand: "CZ",
+            modelName: "OEM",
+            patternID: "legacy:cz-oem",
+            patternKind: .legacy,
+            patternDisplayName: "Legacy CZ Tube",
+            capacity: 17,
+            purchasePriceCents: 3200
+        )
+        let viewModel = AddMagazineViewModel()
+
+        XCTAssertEqual(viewModel.initialPatternSelection(for: magazine), .legacy)
+        XCTAssertEqual(viewModel.initialManualPatternName(for: magazine), "Legacy CZ Tube")
     }
 }
