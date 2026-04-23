@@ -133,6 +133,11 @@ struct AddMagazineView: View {
                 if let linkedFirearm = linkedFirearm {
                     Section("Linked Firearm") {
                         Text(linkedFirearm.displayName)
+                        if let compatibilityMessage {
+                            Text(compatibilityMessage)
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                        }
                         if isEditing {
                             Button(role: .destructive) {
                                 unlinkFirearm = true
@@ -211,8 +216,21 @@ struct AddMagazineView: View {
             capacityText: capacityText,
             selectedColor: selectedColor,
             colorDetail: resolvedColorDetail,
-            purchasePriceText: purchasePriceText
+            purchasePriceText: purchasePriceText,
+            selectedCaliber: selectedCaliber,
+            firearm: linkedFirearm,
+            existingMagazine: magazine
         )
+    }
+
+    private var compatibilityMessage: String? {
+        viewModel.compatibilityValidationResult(
+            brand: brand,
+            modelName: modelName,
+            selectedCaliber: selectedCaliber,
+            firearm: linkedFirearm,
+            existingMagazine: magazine
+        ).message
     }
 
     private func saveMagazine() {

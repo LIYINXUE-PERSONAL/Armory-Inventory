@@ -38,7 +38,9 @@ final class AddMagazineViewModelTests: XCTestCase {
                 capacityText: "30",
                 selectedColor: nil,
                 colorDetail: nil,
-                purchasePriceText: "10"
+                purchasePriceText: "10",
+                selectedCaliber: nil,
+                firearm: nil
             )
         )
         XCTAssertFalse(
@@ -49,7 +51,9 @@ final class AddMagazineViewModelTests: XCTestCase {
                 capacityText: "30",
                 selectedColor: .other,
                 colorDetail: nil,
-                purchasePriceText: "10"
+                purchasePriceText: "10",
+                selectedCaliber: nil,
+                firearm: nil
             )
         )
         XCTAssertTrue(
@@ -60,7 +64,37 @@ final class AddMagazineViewModelTests: XCTestCase {
                 capacityText: "30",
                 selectedColor: .black,
                 colorDetail: nil,
-                purchasePriceText: "10"
+                purchasePriceText: "10",
+                selectedCaliber: nil,
+                firearm: nil
+            )
+        )
+    }
+
+    func testCanAddReturnsFalseForMagazineCaliberMismatchAgainstLinkedFirearm() {
+        let viewModel = AddMagazineViewModel()
+        let magazineCaliber = Caliber(name: "9mm")
+        let firearmCaliber = Caliber(name: ".45 ACP")
+        let firearm = Firearm(
+            brand: "Staccato",
+            modelName: "P",
+            purchasePriceCents: 250000,
+            type: .pistol,
+            action: .semiAuto,
+            caliber: firearmCaliber
+        )
+
+        XCTAssertFalse(
+            viewModel.canAdd(
+                brand: "Atlas",
+                modelName: "2011",
+                countText: "2",
+                capacityText: "20",
+                selectedColor: .black,
+                colorDetail: nil,
+                purchasePriceText: "75",
+                selectedCaliber: magazineCaliber,
+                firearm: firearm
             )
         )
     }
@@ -206,5 +240,58 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(magazine.storedPatternKind, .legacy)
         XCTAssertEqual(magazine.patternID, "legacy:atlas-premium")
         XCTAssertEqual(magazine.patternDisplayName, "Atlas Premium")
+    }
+
+    @MainActor
+    func testUpdateMagazineReturnsFalseWithoutMutatingWhenCompatibilityFails() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let originalCaliber = Caliber(name: "9mm")
+        let firearmCaliber = Caliber(name: ".45 ACP")
+        let firearm = Firearm(
+            brand: "Staccato",
+            modelName: "P",
+            purchasePriceCents: 250000,
+            type: .pistol,
+            action: .semiAuto,
+            caliber: firearmCaliber
+        )
+        let magazine = Magazine(
+            brand: "Glock",
+            modelName: "OEM",
+            count: 2,
+            capacity: 17,
+            purchasePriceCents: 5000,
+            caliber: originalCaliber
+        )
+        context.insert(originalCaliber)
+        context.insert(firearmCaliber)
+        context.insert(firearm)
+        context.insert(magazine)
+
+        let viewModel = AddMagazineViewModel()
+        let didSave = viewModel.updateMagazine(
+            magazine,
+            brand: "Atlas",
+            modelName: "2011",
+            count: 3,
+            capacity: 20,
+            purchaseDate: Date(timeIntervalSince1970: 9_999),
+            purchasePriceCents: 21000,
+            color: .black,
+            colorDetail: nil,
+            notes: "Updated",
+            caliber: originalCaliber,
+            firearm: firearm,
+            canSave: true,
+            in: context
+        )
+
+        XCTAssertFalse(didSave)
+        XCTAssertEqual(magazine.brand, "Glock")
+        XCTAssertEqual(magazine.modelName, "OEM")
+        XCTAssertEqual(magazine.count, 2)
+        XCTAssertEqual(magazine.capacity, 17)
+        XCTAssertNil(magazine.firearm)
     }
 }

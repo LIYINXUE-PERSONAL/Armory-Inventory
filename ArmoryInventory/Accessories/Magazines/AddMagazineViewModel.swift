@@ -10,9 +10,14 @@ import SwiftData
 
 final class AddMagazineViewModel {
     private let priceInputParser: PriceInputParsing
+    private let compatibilityValidator: MagazineCompatibilityValidator
 
-    init(priceInputParser: PriceInputParsing = PriceInputParserService()) {
+    init(
+        priceInputParser: PriceInputParsing = PriceInputParserService(),
+        compatibilityValidator: MagazineCompatibilityValidator = MagazineCompatibilityValidator()
+    ) {
         self.priceInputParser = priceInputParser
+        self.compatibilityValidator = compatibilityValidator
     }
 
     func initialPurchasePriceText(for magazine: Magazine?) -> String {
@@ -105,7 +110,10 @@ final class AddMagazineViewModel {
         capacityText: String,
         selectedColor: FirearmColor?,
         colorDetail: String?,
-        purchasePriceText: String
+        purchasePriceText: String,
+        selectedCaliber: Caliber?,
+        firearm: Firearm?,
+        existingMagazine: Magazine? = nil
     ) -> Bool {
         guard !trimmedValue(brand).isEmpty else { return false }
         guard !trimmedValue(modelName).isEmpty else { return false }
@@ -115,7 +123,50 @@ final class AddMagazineViewModel {
         if selectedColor == .other, colorDetail == nil {
             return false
         }
-        return true
+
+        return compatibilityValidationResult(
+            brand: brand,
+            modelName: modelName,
+            selectedCaliber: selectedCaliber,
+            firearm: firearm,
+            existingMagazine: existingMagazine
+        ).isCompatible
+    }
+
+    func compatibilityValidationResult(
+        brand: String,
+        modelName: String,
+        selectedCaliber: Caliber?,
+        firearm: Firearm?,
+        existingMagazine: Magazine? = nil
+    ) -> MagazineCompatibilityValidationResult {
+        guard let firearm else {
+            return .compatible
+        }
+
+        let workingMagazine = Magazine(
+            brand: trimmedValue(brand),
+            modelName: trimmedValue(modelName),
+            patternID: existingMagazine?.patternID,
+            patternKind: existingMagazine?.storedPatternKind,
+            patternDisplayName: existingMagazine?.patternDisplayName,
+            capacity: existingMagazine?.capacity ?? 1,
+            purchasePriceCents: existingMagazine?.purchasePriceCents ?? 0,
+            caliber: selectedCaliber,
+            firearm: firearm
+        )
+        if existingMagazine == nil {
+            MagazinePatternMigration.applyResolvedPattern(to: workingMagazine)
+        }
+
+        return compatibilityValidator.validate(
+            pattern: workingMagazine.resolvedPattern,
+            selectedMagazineCaliber: selectedCaliber,
+            firearmType: firearm.firearmType,
+            action: firearm.firearmAction,
+            caliber: firearm.caliber,
+            firearmDescription: firearm.displayName
+        )
     }
 
     func addMagazine(
@@ -152,6 +203,16 @@ final class AddMagazineViewModel {
             sortOrder: nextSortOrder(in: context)
         )
         MagazinePatternMigration.applyResolvedPattern(to: magazine)
+        guard compatibilityValidator.validate(
+            pattern: magazine.resolvedPattern,
+            selectedMagazineCaliber: caliber,
+            firearmType: firearm?.firearmType ?? .other,
+            action: firearm?.firearmAction ?? .other,
+            caliber: firearm?.caliber,
+            firearmDescription: firearm?.displayName ?? "this firearm"
+        ).isCompatible else {
+            return false
+        }
         context.insert(magazine)
 
         do {
@@ -184,6 +245,37 @@ final class AddMagazineViewModel {
             return false
         }
 
+        let candidateMagazine = Magazine(
+            id: magazine.id,
+            brand: trimmedValue(brand),
+            modelName: trimmedValue(modelName),
+            count: count,
+            capacity: capacity,
+            purchaseDate: purchaseDate,
+            purchasePriceCents: purchasePriceCents,
+            color: color,
+            colorDetail: colorDetail,
+            notes: notes,
+            caliber: caliber,
+            firearm: firearm,
+            sortOrder: magazine.sortOrder,
+            createdAt: magazine.createdAt
+        )
+        candidateMagazine.patternID = magazine.patternID
+        candidateMagazine.patternKind = magazine.patternKind
+        candidateMagazine.patternDisplayName = magazine.patternDisplayName
+        MagazinePatternMigration.applyResolvedPattern(to: candidateMagazine)
+        guard compatibilityValidator.validate(
+            pattern: candidateMagazine.resolvedPattern,
+            selectedMagazineCaliber: caliber,
+            firearmType: firearm?.firearmType ?? .other,
+            action: firearm?.firearmAction ?? .other,
+            caliber: firearm?.caliber,
+            firearmDescription: firearm?.displayName ?? "this firearm"
+        ).isCompatible else {
+            return false
+        }
+
         magazine.brand = trimmedValue(brand)
         magazine.modelName = trimmedValue(modelName)
         magazine.count = count
@@ -195,7 +287,9 @@ final class AddMagazineViewModel {
         magazine.notes = notes
         magazine.caliber = caliber
         magazine.firearm = firearm
-        MagazinePatternMigration.applyResolvedPattern(to: magazine)
+        magazine.patternID = candidateMagazine.patternID
+        magazine.patternKind = candidateMagazine.patternKind
+        magazine.patternDisplayName = candidateMagazine.patternDisplayName
 
         do {
             try context.save()
