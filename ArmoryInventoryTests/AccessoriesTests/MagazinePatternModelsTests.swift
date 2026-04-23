@@ -83,11 +83,33 @@ final class MagazinePatternModelsTests: XCTestCase {
         XCTAssertTrue(legacyPattern.isFallback)
     }
 
+    func testLegacyFallbackGeneratesDistinctIDsWhenSlugWouldBeEmpty() {
+        let punctuationPattern = MagazinePattern.legacy(displayName: "!!!")
+        let cjkPattern = MagazinePattern.legacy(displayName: "弹匣")
+
+        XCTAssertNotEqual(punctuationPattern.id, cjkPattern.id)
+        XCTAssertEqual(punctuationPattern.id, "legacy:legacy-002100210021")
+        XCTAssertEqual(cjkPattern.id, "legacy:legacy-5f395323")
+    }
+
     func testUnknownFallbackIsAvailableForUnmappedRecords() {
         XCTAssertEqual(MagazinePattern.unknown.kind, .unknown)
         XCTAssertEqual(MagazinePattern.unknown.familyLabel, "Unknown")
         XCTAssertTrue(MagazinePattern.unknown.compatibility.supportedCaliberNames.isEmpty)
         XCTAssertTrue(MagazinePattern.unknown.compatibility.platformTags.isEmpty)
         XCTAssertTrue(MagazinePattern.unknown.isFallback)
+    }
+
+    func testEmptyCaliberConstraintsActAsWildcard() {
+        let unknownPattern = MagazinePattern.unknown
+        let legacyPattern = MagazinePattern.legacy(
+            displayName: "Imported Pattern",
+            compatibleFirearmTypes: [.pistol],
+            compatibleFirearmActions: [.semiAuto]
+        )
+
+        XCTAssertTrue(unknownPattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: "9mm"))
+        XCTAssertTrue(legacyPattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: ".45 ACP"))
+        XCTAssertFalse(legacyPattern.isCompatible(with: .rifle, action: .semiAuto, caliberName: ".45 ACP"))
     }
 }

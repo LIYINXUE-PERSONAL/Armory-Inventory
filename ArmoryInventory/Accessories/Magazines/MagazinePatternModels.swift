@@ -32,6 +32,8 @@ struct MagazinePatternCompatibility: Codable, Hashable {
 }
 
 struct MagazinePattern: Identifiable, Codable, Hashable {
+    private static let normalizationLocale = Locale(identifier: "en_US_POSIX")
+
     let id: String
     let kind: MagazinePatternKind
     let displayName: String
@@ -64,7 +66,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
     ) -> Bool {
         let typeMatches = compatibility.compatibleFirearmTypes.isEmpty || compatibility.compatibleFirearmTypes.contains(firearmType)
         let actionMatches = compatibility.compatibleFirearmActions.isEmpty || compatibility.compatibleFirearmActions.contains(action)
-        let caliberMatches = caliberName == nil || supports(caliberName: caliberName)
+        let caliberMatches = compatibility.supportedCaliberNames.isEmpty || caliberName == nil || supports(caliberName: caliberName)
         return typeMatches && actionMatches && caliberMatches
     }
 
@@ -91,7 +93,7 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
         let trimmedDisplayName = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
         let resolvedName = trimmedDisplayName.isEmpty ? "Legacy Pattern" : trimmedDisplayName
         let normalizedID = normalize(resolvedName)
-        let legacyID = normalizedID.isEmpty ? "legacy-pattern" : normalizedID
+        let legacyID = normalizedID.isEmpty ? fallbackLegacyID(for: resolvedName) : normalizedID
 
         return MagazinePattern(
             id: "legacy:\(legacyID)",
@@ -112,9 +114,21 @@ struct MagazinePattern: Identifiable, Codable, Hashable {
 
     private static func normalize(_ value: String) -> String {
         value
-            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+            .folding(options: [.caseInsensitive, .diacriticInsensitive], locale: normalizationLocale)
             .replacingOccurrences(of: "[^a-z0-9]+", with: "-", options: .regularExpression)
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+    }
+
+    private static func fallbackLegacyID(for value: String) -> String {
+        let scalarFingerprint = value.unicodeScalars
+            .map { String(format: "%04x", $0.value) }
+            .joined(separator: "")
+
+        if scalarFingerprint.isEmpty {
+            return "legacy-empty"
+        }
+
+        return "legacy-\(scalarFingerprint)"
     }
 }
 
