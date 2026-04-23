@@ -8,6 +8,27 @@
 import Foundation
 import SwiftData
 
+enum KnownCaliber: String, CaseIterable, Codable, Hashable {
+    case lr22 = ".22 LR"
+    case rem223 = ".223 Rem"
+    case nato556 = "5.56 NATO"
+    case blackout300 = ".300 Blackout"
+    case creedmoor65 = "6.5 Creedmoor"
+    case x39_762 = "7.62x39"
+    case win308 = ".308 Win"
+    case acp380 = ".380 ACP"
+    case mm9 = "9mm"
+    case sw40 = ".40 S&W"
+    case acp45 = ".45 ACP"
+    case gauge12 = "12 Gauge"
+
+    var displayName: String { rawValue }
+
+    var normalizedName: String {
+        displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+    }
+}
+
 @Model
 final class Caliber {
     @Attribute(.unique) var name: String
@@ -107,20 +128,9 @@ final class AmmoAdjustmentRecord {
 }
 
 enum CommonAmmoCatalog {
-    static let defaultCaliberNames: [String] = [
-        ".22 LR",
-        ".223 Rem",
-        "5.56 NATO",
-        ".300 Blackout",
-        "6.5 Creedmoor",
-        "7.62x39",
-        ".308 Win",
-        ".380 ACP",
-        "9mm",
-        ".40 S&W",
-        ".45 ACP",
-        "12 Gauge"
-    ]
+    static let defaultCalibers: [KnownCaliber] = KnownCaliber.allCases
+
+    static let defaultCaliberNames: [String] = defaultCalibers.map(\.displayName)
 
     static let commonBrands: [String] = [
         "AAC",
@@ -194,18 +204,22 @@ enum CommonAmmoCatalog {
         referenceGrainRangesByCaliber[caliberName]
     }
 
+    static func referenceGrainRange(for caliber: KnownCaliber) -> ClosedRange<Int>? {
+        referenceGrainRangesByCaliber[caliber.displayName]
+    }
+
     private static let referenceGrainRangesByCaliber: [String: ClosedRange<Int>] = [
-        "9mm": 115...150,
-        ".223 Rem": 55...77,
-        "5.56 NATO": 55...77,
-        ".300 Blackout": 110...220,
-        ".45 ACP": 185...230,
-        ".40 S&W": 155...205,
-        ".380 ACP": 85...99,
-        ".22 LR": 32...45,
-        "7.62x39": 123...124,
-        ".308 Win": 150...180,
-        "6.5 Creedmoor": 120...147
+        KnownCaliber.mm9.displayName: 115...150,
+        KnownCaliber.rem223.displayName: 55...77,
+        KnownCaliber.nato556.displayName: 55...77,
+        KnownCaliber.blackout300.displayName: 110...220,
+        KnownCaliber.acp45.displayName: 185...230,
+        KnownCaliber.sw40.displayName: 155...205,
+        KnownCaliber.acp380.displayName: 85...99,
+        KnownCaliber.lr22.displayName: 32...45,
+        KnownCaliber.x39_762.displayName: 123...124,
+        KnownCaliber.win308.displayName: 150...180,
+        KnownCaliber.creedmoor65.displayName: 120...147
     ]
 
 }

@@ -13,21 +13,25 @@ final class MagazinePatternModelsTests: XCTestCase {
         let pattern = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "catalog:ar15-stanag-223-556-300blk"))
 
         XCTAssertEqual(pattern.familyLabel, "AR-15 STANAG")
-        XCTAssertTrue(pattern.supports(caliberName: ".223 Rem"))
-        XCTAssertTrue(pattern.supports(caliberName: "5.56 NATO"))
-        XCTAssertTrue(pattern.supports(caliberName: ".300 Blackout"))
-        XCTAssertFalse(pattern.supports(caliberName: "9mm"))
+        XCTAssertEqual(
+            pattern.compatibility.supportedCaliberNames,
+            [KnownCaliber.rem223.displayName, KnownCaliber.nato556.displayName, KnownCaliber.blackout300.displayName]
+        )
+        XCTAssertTrue(pattern.supports(caliberName: KnownCaliber.rem223.displayName))
+        XCTAssertTrue(pattern.supports(caliberName: KnownCaliber.nato556.displayName))
+        XCTAssertTrue(pattern.supports(caliberName: KnownCaliber.blackout300.displayName))
+        XCTAssertFalse(pattern.supports(caliberName: KnownCaliber.mm9.displayName))
         XCTAssertTrue(pattern.compatibility.platformTags.contains("AR-15"))
-        XCTAssertTrue(pattern.isCompatible(with: .rifle, action: .semiAuto, caliberName: "5.56 NATO"))
-        XCTAssertFalse(pattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: "5.56 NATO"))
+        XCTAssertTrue(pattern.isCompatible(with: .rifle, action: .semiAuto, caliberName: KnownCaliber.nato556.displayName))
+        XCTAssertFalse(pattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: KnownCaliber.nato556.displayName))
     }
 
     func testCatalogCanRepresentDistinctPatternsForSameCaliber() throws {
         let fullSize = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "catalog:glock-double-stack-9mm-full-size-compact"))
         let compact = try XCTUnwrap(MagazinePatternCatalog.pattern(id: "catalog:glock-double-stack-9mm-compact"))
 
-        XCTAssertEqual(fullSize.compatibility.supportedCaliberNames, ["9mm"])
-        XCTAssertEqual(compact.compatibility.supportedCaliberNames, ["9mm"])
+        XCTAssertEqual(fullSize.compatibility.supportedCaliberNames, [KnownCaliber.mm9.displayName])
+        XCTAssertEqual(compact.compatibility.supportedCaliberNames, [KnownCaliber.mm9.displayName])
         XCTAssertEqual(fullSize.familyLabel, "Glock Double-Stack 9mm")
         XCTAssertEqual(compact.familyLabel, "Glock Double-Stack 9mm")
         XCTAssertNotEqual(fullSize.id, compact.id)
@@ -41,12 +45,12 @@ final class MagazinePatternModelsTests: XCTestCase {
         let pistolPatterns = MagazinePatternCatalog.suggestedPatterns(
             firearmType: .pistol,
             action: .semiAuto,
-            caliberName: "9mm"
+            caliberName: KnownCaliber.mm9.displayName
         )
         let riflePatterns = MagazinePatternCatalog.suggestedPatterns(
             firearmType: .rifle,
             action: .semiAuto,
-            caliberName: ".300 Blackout"
+            caliberName: KnownCaliber.blackout300.displayName
         )
 
         XCTAssertEqual(
@@ -65,7 +69,7 @@ final class MagazinePatternModelsTests: XCTestCase {
         let legacyPattern = MagazinePattern.legacy(
             displayName: "CZ 75 Pattern",
             familyLabel: "CZ 75",
-            supportedCaliberNames: ["9mm"],
+            supportedCaliberNames: [KnownCaliber.mm9.displayName],
             compatibleFirearmTypes: [.pistol],
             compatibleFirearmActions: [.semiAuto],
             platformTags: ["CZ 75", "Shadow 2"],
@@ -76,7 +80,7 @@ final class MagazinePatternModelsTests: XCTestCase {
         XCTAssertEqual(legacyPattern.kind, .legacy)
         XCTAssertEqual(legacyPattern.familyLabel, "CZ 75")
         XCTAssertEqual(legacyPattern.displayName, "CZ 75 Pattern")
-        XCTAssertEqual(legacyPattern.compatibility.supportedCaliberNames, ["9mm"])
+        XCTAssertEqual(legacyPattern.compatibility.supportedCaliberNames, [KnownCaliber.mm9.displayName])
         XCTAssertEqual(legacyPattern.compatibility.platformTags, ["CZ 75", "Shadow 2"])
         XCTAssertEqual(legacyPattern.compatibility.fitDescriptors, ["double-stack steel-frame pistol"])
         XCTAssertTrue(legacyPattern.id.hasPrefix("legacy:"))
@@ -88,7 +92,7 @@ final class MagazinePatternModelsTests: XCTestCase {
             id: UUID(uuidString: "12345678-1234-1234-1234-1234567890AB")!,
             displayName: "My PCC Pattern",
             familyLabel: "AR9 Lower",
-            supportedCaliberNames: ["9mm"],
+            supportedCaliberNames: [KnownCaliber.mm9.displayName],
             compatibleFirearmTypes: [.rifle],
             compatibleFirearmActions: [.semiAuto],
             platformTags: ["AR9", "Colt-style"],
@@ -129,8 +133,8 @@ final class MagazinePatternModelsTests: XCTestCase {
             compatibleFirearmActions: [.semiAuto]
         )
 
-        XCTAssertTrue(unknownPattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: "9mm"))
-        XCTAssertTrue(legacyPattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: ".45 ACP"))
-        XCTAssertFalse(legacyPattern.isCompatible(with: .rifle, action: .semiAuto, caliberName: ".45 ACP"))
+        XCTAssertTrue(unknownPattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: KnownCaliber.mm9.displayName))
+        XCTAssertTrue(legacyPattern.isCompatible(with: .pistol, action: .semiAuto, caliberName: KnownCaliber.acp45.displayName))
+        XCTAssertFalse(legacyPattern.isCompatible(with: .rifle, action: .semiAuto, caliberName: KnownCaliber.acp45.displayName))
     }
 }

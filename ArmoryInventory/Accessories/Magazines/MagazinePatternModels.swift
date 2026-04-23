@@ -23,6 +23,36 @@ struct MagazinePatternCompatibility: Codable, Hashable {
     let platformTags: [String]
     let fitDescriptors: [String]
 
+    init(
+        supportedCaliberNames: [String],
+        compatibleFirearmTypes: [FirearmType],
+        compatibleFirearmActions: [FirearmAction],
+        platformTags: [String],
+        fitDescriptors: [String]
+    ) {
+        self.supportedCaliberNames = supportedCaliberNames
+        self.compatibleFirearmTypes = compatibleFirearmTypes
+        self.compatibleFirearmActions = compatibleFirearmActions
+        self.platformTags = platformTags
+        self.fitDescriptors = fitDescriptors
+    }
+
+    init(
+        supportedCalibers: [KnownCaliber],
+        compatibleFirearmTypes: [FirearmType],
+        compatibleFirearmActions: [FirearmAction],
+        platformTags: [String],
+        fitDescriptors: [String]
+    ) {
+        self.init(
+            supportedCaliberNames: supportedCalibers.map(\.displayName),
+            compatibleFirearmTypes: compatibleFirearmTypes,
+            compatibleFirearmActions: compatibleFirearmActions,
+            platformTags: platformTags,
+            fitDescriptors: fitDescriptors
+        )
+    }
+
     static let empty = MagazinePatternCompatibility(
         supportedCaliberNames: [],
         compatibleFirearmTypes: [],
@@ -176,7 +206,7 @@ enum MagazinePatternCatalog {
             displayName: "AR-15 STANAG",
             familyLabel: "AR-15 STANAG",
             compatibility: MagazinePatternCompatibility(
-                supportedCaliberNames: [".223 Rem", "5.56 NATO", ".300 Blackout"],
+                supportedCalibers: [.rem223, .nato556, .blackout300],
                 compatibleFirearmTypes: [.rifle],
                 compatibleFirearmActions: [.semiAuto, .selectFire],
                 platformTags: ["AR-15", "STANAG", "AR-15 pattern lower"],
@@ -191,7 +221,7 @@ enum MagazinePatternCatalog {
             displayName: "Glock Double-Stack 9mm Full-Size",
             familyLabel: "Glock Double-Stack 9mm",
             compatibility: MagazinePatternCompatibility(
-                supportedCaliberNames: ["9mm"],
+                supportedCalibers: [.mm9],
                 compatibleFirearmTypes: [.pistol],
                 compatibleFirearmActions: [.semiAuto],
                 platformTags: ["Glock 17", "Glock 19", "Glock 34", "Glock 45"],
@@ -206,7 +236,7 @@ enum MagazinePatternCatalog {
             displayName: "Glock Double-Stack 9mm Compact",
             familyLabel: "Glock Double-Stack 9mm",
             compatibility: MagazinePatternCompatibility(
-                supportedCaliberNames: ["9mm"],
+                supportedCalibers: [.mm9],
                 compatibleFirearmTypes: [.pistol],
                 compatibleFirearmActions: [.semiAuto],
                 platformTags: ["Glock 19", "Glock 26", "Glock 49"],
@@ -221,7 +251,7 @@ enum MagazinePatternCatalog {
             displayName: "SIG P320 9mm",
             familyLabel: "SIG P320 9mm",
             compatibility: MagazinePatternCompatibility(
-                supportedCaliberNames: ["9mm"],
+                supportedCalibers: [.mm9],
                 compatibleFirearmTypes: [.pistol],
                 compatibleFirearmActions: [.semiAuto],
                 platformTags: ["SIG P320", "SIG M17", "SIG M18", "AXG Pro"],
@@ -236,7 +266,7 @@ enum MagazinePatternCatalog {
             displayName: "2011 / Double-Stack 1911 9mm",
             familyLabel: "2011 / Double-Stack 1911 9mm",
             compatibility: MagazinePatternCompatibility(
-                supportedCaliberNames: ["9mm"],
+                supportedCalibers: [.mm9],
                 compatibleFirearmTypes: [.pistol],
                 compatibleFirearmActions: [.semiAuto],
                 platformTags: ["2011", "Staccato", "Atlas", "double-stack 1911"],
