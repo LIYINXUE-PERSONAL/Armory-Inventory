@@ -160,10 +160,10 @@
     "All Calibers (%lld)" : {
 
     },
-    "All saved attachments are linked to other firearms or none have been added yet." : {
+    "All compatible magazines are linked to other firearms or none have been added yet." : {
 
     },
-    "All saved magazines are linked to other firearms or none have been added yet." : {
+    "All saved attachments are linked to other firearms or none have been added yet." : {
 
     },
     "All saved optics are linked to other firearms or none have been added yet." : {
@@ -289,6 +289,9 @@
     "Custom Caliber" : {
 
     },
+    "Custom Name" : {
+
+    },
     "Custom percent" : {
 
     },
@@ -403,6 +406,9 @@
     "Last cleaned" : {
 
     },
+    "Legacy Name" : {
+
+    },
     "Legal" : {
 
     },
@@ -455,6 +461,9 @@
 
     },
     "Manage Parts" : {
+
+    },
+    "Manual Patterns" : {
 
     },
     "Max" : {
@@ -514,6 +523,9 @@
     "No common grain options are available for %@. Enter a custom weight below." : {
 
     },
+    "No compatible magazines are currently available." : {
+
+    },
     "No Firearms Yet" : {
 
     },
@@ -545,9 +557,6 @@
 
     },
     "No unlinked attachments available." : {
-
-    },
-    "No unlinked magazines available." : {
 
     },
     "No unlinked optics available." : {
@@ -592,6 +601,9 @@
     "Ordering" : {
 
     },
+    "Other Catalog Patterns" : {
+
+    },
     "Overview" : {
 
     },
@@ -605,6 +617,9 @@
 
     },
     "Parts Sorting" : {
+
+    },
+    "Pattern" : {
 
     },
     "Post-Tax Total" : {
@@ -683,6 +698,9 @@
 
     },
     "Starting Quantity" : {
+
+    },
+    "Suggested Catalog Patterns" : {
 
     },
     "Tax Rate" : {

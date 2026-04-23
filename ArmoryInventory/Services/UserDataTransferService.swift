@@ -138,6 +138,7 @@ final class UserDataTransferService: UserDataTransferServicing {
                     colorDetail: $0.colorDetail,
                     barrelLengthInches: $0.barrelLengthInches,
                     notes: $0.notes,
+                    supportedMagazinePatterns: $0.supportedMagazinePatterns,
                     sortOrder: $0.sortOrder,
                     createdAt: $0.createdAt,
                     caliberName: $0.caliber?.name
@@ -252,6 +253,7 @@ final class UserDataTransferService: UserDataTransferServicing {
                 colorDetail: snapshot.colorDetail,
                 barrelLengthInches: snapshot.barrelLengthInches,
                 notes: snapshot.notes,
+                supportedMagazinePatterns: snapshot.supportedMagazinePatterns,
                 caliber: snapshot.caliberName.flatMap { calibers[$0] },
                 sortOrder: snapshot.sortOrder,
                 createdAt: snapshot.createdAt
@@ -549,6 +551,27 @@ private struct AmmoAdjustmentRecordSnapshot: Codable {
 }
 
 private struct FirearmSnapshot: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case id
+        case brand
+        case modelName
+        case nickname
+        case serialNumber
+        case purchaseDate
+        case purchasePriceCents
+        case type
+        case action
+        case actionDetail
+        case color
+        case colorDetail
+        case barrelLengthInches
+        case notes
+        case supportedMagazinePatterns
+        case sortOrder
+        case createdAt
+        case caliberName
+    }
+
     let id: UUID
     let brand: String
     let modelName: String
@@ -563,9 +586,72 @@ private struct FirearmSnapshot: Codable {
     let colorDetail: String?
     let barrelLengthInches: Double?
     let notes: String?
+    let supportedMagazinePatterns: [FirearmMagazinePatternReference]
     let sortOrder: Int
     let createdAt: Date
     let caliberName: String?
+
+    init(
+        id: UUID,
+        brand: String,
+        modelName: String,
+        nickname: String?,
+        serialNumber: String?,
+        purchaseDate: Date,
+        purchasePriceCents: Int,
+        type: String,
+        action: String,
+        actionDetail: String?,
+        color: String?,
+        colorDetail: String?,
+        barrelLengthInches: Double?,
+        notes: String?,
+        supportedMagazinePatterns: [FirearmMagazinePatternReference],
+        sortOrder: Int,
+        createdAt: Date,
+        caliberName: String?
+    ) {
+        self.id = id
+        self.brand = brand
+        self.modelName = modelName
+        self.nickname = nickname
+        self.serialNumber = serialNumber
+        self.purchaseDate = purchaseDate
+        self.purchasePriceCents = purchasePriceCents
+        self.type = type
+        self.action = action
+        self.actionDetail = actionDetail
+        self.color = color
+        self.colorDetail = colorDetail
+        self.barrelLengthInches = barrelLengthInches
+        self.notes = notes
+        self.supportedMagazinePatterns = supportedMagazinePatterns
+        self.sortOrder = sortOrder
+        self.createdAt = createdAt
+        self.caliberName = caliberName
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        brand = try container.decode(String.self, forKey: .brand)
+        modelName = try container.decode(String.self, forKey: .modelName)
+        nickname = try container.decodeIfPresent(String.self, forKey: .nickname)
+        serialNumber = try container.decodeIfPresent(String.self, forKey: .serialNumber)
+        purchaseDate = try container.decode(Date.self, forKey: .purchaseDate)
+        purchasePriceCents = try container.decode(Int.self, forKey: .purchasePriceCents)
+        type = try container.decode(String.self, forKey: .type)
+        action = try container.decode(String.self, forKey: .action)
+        actionDetail = try container.decodeIfPresent(String.self, forKey: .actionDetail)
+        color = try container.decodeIfPresent(String.self, forKey: .color)
+        colorDetail = try container.decodeIfPresent(String.self, forKey: .colorDetail)
+        barrelLengthInches = try container.decodeIfPresent(Double.self, forKey: .barrelLengthInches)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        supportedMagazinePatterns = try container.decodeIfPresent([FirearmMagazinePatternReference].self, forKey: .supportedMagazinePatterns) ?? []
+        sortOrder = try container.decode(Int.self, forKey: .sortOrder)
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        caliberName = try container.decodeIfPresent(String.self, forKey: .caliberName)
+    }
 }
 
 private struct OpticSnapshot: Codable {

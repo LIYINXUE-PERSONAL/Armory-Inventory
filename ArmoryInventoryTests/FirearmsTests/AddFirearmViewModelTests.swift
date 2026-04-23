@@ -50,6 +50,7 @@ final class AddFirearmViewModelTests: XCTestCase {
                 barrelLengthText: "bad",
                 duplicateExists: false,
                 magazines: [],
+                selectedMagazinePatterns: [],
                 caliber: nil,
                 owningFirearm: nil
             )
@@ -68,6 +69,7 @@ final class AddFirearmViewModelTests: XCTestCase {
                 barrelLengthText: "",
                 duplicateExists: false,
                 magazines: [],
+                selectedMagazinePatterns: [],
                 caliber: nil,
                 owningFirearm: nil
             )
@@ -86,6 +88,7 @@ final class AddFirearmViewModelTests: XCTestCase {
                 barrelLengthText: "",
                 duplicateExists: false,
                 magazines: [],
+                selectedMagazinePatterns: [],
                 caliber: nil,
                 owningFirearm: nil
             )
@@ -104,6 +107,7 @@ final class AddFirearmViewModelTests: XCTestCase {
                 barrelLengthText: "",
                 duplicateExists: false,
                 magazines: [],
+                selectedMagazinePatterns: [],
                 caliber: nil,
                 owningFirearm: nil
             )
@@ -250,11 +254,13 @@ final class AddFirearmViewModelTests: XCTestCase {
 
         let selectedOpticIDs = viewModel.selectedOpticIDs(for: currentFirearm)
         let selectedMagazineIDs = viewModel.selectedMagazineIDs(for: currentFirearm)
+        let selectedMagazinePatterns = viewModel.selectedMagazinePatterns(for: currentFirearm)
         let selectedAttachmentIDs = viewModel.selectedAttachmentIDs(for: currentFirearm)
         let selectedPartIDs = viewModel.selectedPartIDs(for: currentFirearm)
 
         XCTAssertEqual(selectedOpticIDs, [currentOptic.persistentModelID])
         XCTAssertEqual(selectedMagazineIDs, [currentMagazine.persistentModelID])
+        XCTAssertTrue(selectedMagazinePatterns.isEmpty)
         XCTAssertEqual(selectedAttachmentIDs, [currentAttachment.persistentModelID])
         XCTAssertEqual(selectedPartIDs, [currentPart.persistentModelID])
 
@@ -274,6 +280,7 @@ final class AddFirearmViewModelTests: XCTestCase {
                 viewModel.availableMagazines(
                     from: [freeMagazine, currentMagazine, otherMagazine],
                     selectedIDs: selectedMagazineIDs,
+                    selectedPatterns: [],
                     firearm: currentFirearm,
                     firearmType: .pistol,
                     action: .semiAuto,
@@ -473,6 +480,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             colorDetail: nil,
             barrelLengthInches: 4.02,
             notes: "Optics ready",
+            supportedMagazinePatterns: [],
             caliber: caliber,
             optics: [optic],
             magazines: [magazine],
@@ -524,6 +532,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             colorDetail: nil,
             barrelLengthInches: 18.5,
             notes: nil,
+            supportedMagazinePatterns: [],
             caliber: nil,
             optics: [],
             magazines: [],
@@ -576,6 +585,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             colorDetail: "Two Tone",
             barrelLengthInches: 4.25,
             notes: "Updated",
+            supportedMagazinePatterns: [],
             caliber: caliber,
             optics: [],
             magazines: [],
@@ -625,10 +635,144 @@ final class AddFirearmViewModelTests: XCTestCase {
                 barrelLengthText: "",
                 duplicateExists: false,
                 magazines: [incompatibleMagazine],
+                selectedMagazinePatterns: [],
                 caliber: caliber,
                 owningFirearm: nil
             )
         )
+    }
+
+    func testCanAddReturnsFalseWhenSelectedMagazinePatternExcludesLinkedMagazine() {
+        let viewModel = AddFirearmViewModel()
+        let caliber = Caliber(name: "9mm")
+        let magazine = Magazine(
+            brand: "Staccato",
+            modelName: "2011",
+            patternID: "catalog:2011-double-stack-9mm",
+            patternKind: .catalog,
+            capacity: 20,
+            purchasePriceCents: 8000,
+            caliber: caliber
+        )
+        let selectedPatterns = [
+            FirearmMagazinePatternReference(
+                id: "catalog:glock-double-stack-9mm-full-size-compact",
+                kind: .catalog,
+                displayName: nil
+            )
+        ]
+
+        XCTAssertFalse(
+            viewModel.canAdd(
+                brand: "Staccato",
+                modelName: "P",
+                serialNumber: "",
+                selectedType: .pistol,
+                selectedAction: .semiAuto,
+                actionDetail: nil,
+                selectedColor: nil,
+                colorDetail: nil,
+                purchasePriceText: "500",
+                barrelLengthText: "",
+                duplicateExists: false,
+                magazines: [magazine],
+                selectedMagazinePatterns: selectedPatterns,
+                caliber: caliber,
+                owningFirearm: nil
+            )
+        )
+    }
+
+    func testAvailableMagazinesFiltersToSelectedPatterns() {
+        let viewModel = AddFirearmViewModel()
+        let caliber = Caliber(name: "9mm")
+        let glockMagazine = Magazine(
+            brand: "Glock",
+            modelName: "OEM",
+            patternID: "catalog:glock-double-stack-9mm-full-size-compact",
+            patternKind: .catalog,
+            capacity: 17,
+            purchasePriceCents: 2500,
+            caliber: caliber
+        )
+        let staccatoMagazine = Magazine(
+            brand: "Staccato",
+            modelName: "2011",
+            patternID: "catalog:2011-double-stack-9mm",
+            patternKind: .catalog,
+            capacity: 20,
+            purchasePriceCents: 8000,
+            caliber: caliber
+        )
+        let selectedPatterns = [
+            FirearmMagazinePatternReference(
+                id: "catalog:glock-double-stack-9mm-full-size-compact",
+                kind: .catalog,
+                displayName: nil
+            )
+        ]
+
+        XCTAssertEqual(
+            viewModel.availableMagazines(
+                from: [glockMagazine, staccatoMagazine],
+                selectedIDs: [],
+                selectedPatterns: selectedPatterns,
+                firearm: nil,
+                firearmType: .pistol,
+                action: .semiAuto,
+                caliber: caliber
+            ).map(\.displayName),
+            ["Glock OEM"]
+        )
+    }
+
+    @MainActor
+    func testAddFirearmPersistsSelectedMagazinePatterns() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+        let selectedPatterns = [
+            FirearmMagazinePatternReference(
+                id: "catalog:glock-double-stack-9mm-full-size-compact",
+                kind: .catalog,
+                displayName: nil
+            ),
+            FirearmMagazinePatternReference(
+                id: "legacy:cz-shadow-pattern",
+                kind: .legacy,
+                displayName: "CZ Shadow Legacy"
+            )
+        ]
+
+        let didAdd = viewModel.addFirearm(
+            brand: "CZ",
+            modelName: "Shadow 2",
+            nickname: nil,
+            serialNumber: "",
+            purchaseDate: .now,
+            lastCleanedDate: nil,
+            purchasePriceCents: 150000,
+            type: .pistol,
+            action: .semiAuto,
+            actionDetail: nil,
+            color: nil,
+            colorDetail: nil,
+            barrelLengthInches: nil,
+            notes: nil,
+            supportedMagazinePatterns: selectedPatterns,
+            caliber: nil,
+            optics: [],
+            magazines: [],
+            attachments: [],
+            parts: [],
+            canAdd: true,
+            to: context
+        )
+
+        let firearms = try context.fetch(FetchDescriptor<Firearm>())
+
+        XCTAssertTrue(didAdd)
+        XCTAssertEqual(firearms.first?.supportedMagazinePatterns, selectedPatterns)
     }
 
     @MainActor
@@ -675,6 +819,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             colorDetail: nil,
             barrelLengthInches: 4.4,
             notes: nil,
+            supportedMagazinePatterns: [],
             caliber: updatedCaliber,
             optics: [],
             magazines: [magazine],

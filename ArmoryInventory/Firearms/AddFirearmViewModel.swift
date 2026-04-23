@@ -40,6 +40,10 @@ final class AddFirearmViewModel {
         Set(firearm?.magazines.map(\.persistentModelID) ?? [])
     }
 
+    func selectedMagazinePatterns(for firearm: Firearm?) -> [FirearmMagazinePatternReference] {
+        firearm?.supportedMagazinePatterns ?? []
+    }
+
     func selectedAttachmentIDs(for firearm: Firearm?) -> Set<PersistentIdentifier> {
         Set(firearm?.attachments.map(\.persistentModelID) ?? [])
     }
@@ -110,6 +114,54 @@ final class AddFirearmViewModel {
         magazines.filter { selectedIDs.contains($0.persistentModelID) }
     }
 
+    func availableMagazinePatterns(
+        from magazines: [Magazine],
+        firearmType: FirearmType,
+        action: FirearmAction,
+        caliber: Caliber?,
+        selectedPatterns: [FirearmMagazinePatternReference]
+    ) -> [FirearmMagazinePatternReference] {
+        let selectedPatternMap = Dictionary(uniqueKeysWithValues: selectedPatterns.map { ($0.id, $0) })
+        var patternMap = selectedPatternMap
+
+        for pattern in MagazinePatternCatalog.suggestedPatterns(
+            firearmType: firearmType,
+            action: action,
+            caliberName: caliber?.name
+        ) {
+            patternMap[pattern.id] = patternMap[pattern.id] ?? FirearmMagazinePatternReference(pattern: pattern)
+        }
+
+        for magazine in magazines {
+            let pattern = magazine.resolvedPattern
+            let reference = FirearmMagazinePatternReference(pattern: pattern)
+            let isSelected = selectedPatternMap[reference.id] != nil
+            let isCompatible = pattern.isCompatible(
+                with: firearmType,
+                action: action,
+                caliberName: caliber?.name
+            )
+
+            if isSelected || isCompatible {
+                patternMap[reference.id] = patternMap[reference.id] ?? reference
+            }
+        }
+
+        return patternMap.values.sorted {
+            let lhsSelected = selectedPatternMap[$0.id] != nil
+            let rhsSelected = selectedPatternMap[$1.id] != nil
+            if lhsSelected != rhsSelected {
+                return lhsSelected && !rhsSelected
+            }
+
+            if $0.kind != $1.kind {
+                return $0.kind.rawValue < $1.kind.rawValue
+            }
+
+            return $0.resolvedDisplayName.localizedCaseInsensitiveCompare($1.resolvedDisplayName) == .orderedAscending
+        }
+    }
+
     func resolvedAttachments(from attachments: [Attachment], selectedIDs: Set<PersistentIdentifier>) -> [Attachment] {
         attachments.filter { selectedIDs.contains($0.persistentModelID) }
     }
@@ -143,14 +195,20 @@ final class AddFirearmViewModel {
     func availableMagazines(
         from magazines: [Magazine],
         selectedIDs: Set<PersistentIdentifier>,
+        selectedPatterns: [FirearmMagazinePatternReference],
         firearm: Firearm?,
         firearmType: FirearmType,
         action: FirearmAction,
         caliber: Caliber?
     ) -> [Magazine] {
-        magazines.filter { magazine in
+        let selectedPatternIDs = Set(selectedPatterns.map(\.id))
+        return magazines.filter { magazine in
             if selectedIDs.contains(magazine.persistentModelID) {
                 return true
+            }
+
+            if !selectedPatternIDs.isEmpty, !selectedPatternIDs.contains(magazine.resolvedPattern.id) {
+                return false
             }
 
             return compatibilityValidator.validate(
@@ -165,12 +223,19 @@ final class AddFirearmViewModel {
 
     func selectedMagazineValidationResult(
         magazines: [Magazine],
+        selectedPatterns: [FirearmMagazinePatternReference],
         firearmType: FirearmType,
         action: FirearmAction,
         caliber: Caliber?,
         owningFirearm: Firearm?
     ) -> MagazineCompatibilityValidationResult {
-        compatibilityValidator.firstFailure(
+        let selectedPatternIDs = Set(selectedPatterns.map(\.id))
+        if !selectedPatternIDs.isEmpty,
+           let magazine = magazines.first(where: { !selectedPatternIDs.contains($0.resolvedPattern.id) }) {
+            return .init(failure: .patternNotSelected(patternName: magazine.resolvedPattern.displayName))
+        }
+
+        return compatibilityValidator.firstFailure(
             magazines: magazines,
             firearmType: firearmType,
             action: action,
@@ -241,6 +306,27 @@ final class AddFirearmViewModel {
         return updatedSelection
     }
 
+    func toggledMagazinePatternSelection(
+        currentSelection: [FirearmMagazinePatternReference],
+        pattern: FirearmMagazinePatternReference,
+        isEditing: Bool
+    ) -> [FirearmMagazinePatternReference] {
+        guard isEditing else {
+            return currentSelection
+        }
+
+        var updatedSelection = currentSelection
+        if let index = updatedSelection.firstIndex(where: { $0.id == pattern.id }) {
+            updatedSelection.remove(at: index)
+        } else {
+            updatedSelection.append(pattern)
+        }
+
+        return updatedSelection.sorted {
+            $0.resolvedDisplayName.localizedCaseInsensitiveCompare($1.resolvedDisplayName) == .orderedAscending
+        }
+    }
+
     func isReadOnly(hasFirearm: Bool, isEditing: Bool) -> Bool {
         hasFirearm && !isEditing
     }
@@ -302,6 +388,7 @@ final class AddFirearmViewModel {
         barrelLengthText: String,
         duplicateExists: Bool,
         magazines: [Magazine],
+        selectedMagazinePatterns: [FirearmMagazinePatternReference],
         caliber: Caliber?,
         owningFirearm: Firearm?
     ) -> Bool {
@@ -322,6 +409,7 @@ final class AddFirearmViewModel {
 
         return selectedMagazineValidationResult(
             magazines: magazines,
+            selectedPatterns: selectedMagazinePatterns,
             firearmType: selectedType,
             action: selectedAction,
             caliber: caliber,
@@ -344,6 +432,7 @@ final class AddFirearmViewModel {
         colorDetail: String?,
         barrelLengthInches: Double?,
         notes: String?,
+        supportedMagazinePatterns: [FirearmMagazinePatternReference],
         caliber: Caliber?,
         optics: [Optic],
         magazines: [Magazine],
@@ -357,6 +446,7 @@ final class AddFirearmViewModel {
         }
         guard selectedMagazineValidationResult(
             magazines: magazines,
+            selectedPatterns: supportedMagazinePatterns,
             firearmType: type,
             action: action,
             caliber: caliber,
@@ -380,6 +470,7 @@ final class AddFirearmViewModel {
             colorDetail: colorDetail,
             barrelLengthInches: barrelLengthInches,
             notes: notes,
+            supportedMagazinePatterns: supportedMagazinePatterns,
             caliber: caliber,
             optics: optics,
             magazines: magazines,
@@ -415,6 +506,7 @@ final class AddFirearmViewModel {
         colorDetail: String?,
         barrelLengthInches: Double?,
         notes: String?,
+        supportedMagazinePatterns: [FirearmMagazinePatternReference],
         caliber: Caliber?,
         optics: [Optic],
         magazines: [Magazine],
@@ -428,6 +520,7 @@ final class AddFirearmViewModel {
         }
         guard selectedMagazineValidationResult(
             magazines: magazines,
+            selectedPatterns: supportedMagazinePatterns,
             firearmType: type,
             action: action,
             caliber: caliber,
@@ -450,6 +543,7 @@ final class AddFirearmViewModel {
         firearm.colorDetail = colorDetail
         firearm.barrelLengthInches = barrelLengthInches
         firearm.notes = notes
+        firearm.supportedMagazinePatterns = supportedMagazinePatterns
         firearm.caliber = caliber
         firearm.optics = optics
         firearm.magazines = magazines

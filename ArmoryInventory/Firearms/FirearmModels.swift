@@ -8,6 +8,36 @@
 import Foundation
 import SwiftData
 
+struct FirearmMagazinePatternReference: Codable, Hashable, Identifiable {
+    let id: String
+    let kind: MagazinePatternKind
+    let displayName: String?
+
+    init(id: String, kind: MagazinePatternKind, displayName: String?) {
+        self.id = id
+        self.kind = kind
+        self.displayName = displayName
+    }
+
+    init(pattern: MagazinePattern) {
+        self.id = pattern.id
+        self.kind = pattern.kind
+        self.displayName = pattern.kind == .catalog ? nil : pattern.displayName
+    }
+
+    var resolvedDisplayName: String {
+        if kind == .catalog, let pattern = MagazinePatternCatalog.pattern(id: id) {
+            return pattern.displayName
+        }
+
+        if let displayName, !displayName.isEmpty {
+            return displayName
+        }
+
+        return id
+    }
+}
+
 enum FirearmType: String, Codable, CaseIterable, Identifiable {
     case rifle
     case pistol
@@ -127,6 +157,7 @@ final class Firearm {
     var colorDetail: String?
     var barrelLengthInches: Double?
     var notes: String?
+    var supportedMagazinePatternsData: String?
     var sortOrder: Int
     var createdAt: Date
 
@@ -152,6 +183,7 @@ final class Firearm {
         colorDetail: String? = nil,
         barrelLengthInches: Double? = nil,
         notes: String? = nil,
+        supportedMagazinePatterns: [FirearmMagazinePatternReference] = [],
         caliber: Caliber? = nil,
         optics: [Optic] = [],
         magazines: [Magazine] = [],
@@ -175,6 +207,7 @@ final class Firearm {
         self.colorDetail = colorDetail
         self.barrelLengthInches = barrelLengthInches
         self.notes = notes
+        self.supportedMagazinePatternsData = Self.encodeMagazinePatterns(supportedMagazinePatterns)
         self.caliber = caliber
         self.optics = optics
         self.magazines = magazines
@@ -272,6 +305,15 @@ final class Firearm {
         notes?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
+    var supportedMagazinePatterns: [FirearmMagazinePatternReference] {
+        get { Self.decodeMagazinePatterns(from: supportedMagazinePatternsData) }
+        set { supportedMagazinePatternsData = Self.encodeMagazinePatterns(newValue) }
+    }
+
+    var supportedMagazinePatternIDs: Set<String> {
+        Set(supportedMagazinePatterns.map(\.id))
+    }
+
     var totalCardValueCents: Int {
         let opticsValue = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let magazinesValue = magazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
@@ -283,5 +325,25 @@ final class Firearm {
     var totalCardValueText: String {
         let amount = Decimal(totalCardValueCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private static func encodeMagazinePatterns(_ patterns: [FirearmMagazinePatternReference]) -> String? {
+        guard !patterns.isEmpty,
+              let data = try? JSONEncoder().encode(patterns),
+              let json = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+
+        return json
+    }
+
+    private static func decodeMagazinePatterns(from value: String?) -> [FirearmMagazinePatternReference] {
+        guard let value,
+              let data = value.data(using: .utf8),
+              let patterns = try? JSONDecoder().decode([FirearmMagazinePatternReference].self, from: data) else {
+            return []
+        }
+
+        return patterns
     }
 }

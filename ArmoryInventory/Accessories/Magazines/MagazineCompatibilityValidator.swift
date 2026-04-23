@@ -13,6 +13,7 @@ struct MagazineCompatibilityValidationResult: Equatable {
         case linkedToDifferentFirearm(currentFirearmName: String)
         case caliberMismatch(magazineCaliberName: String, firearmCaliberName: String)
         case incompatiblePattern(patternName: String, firearmDescription: String)
+        case patternNotSelected(patternName: String)
 
         var message: String {
             switch self {
@@ -22,6 +23,8 @@ struct MagazineCompatibilityValidationResult: Equatable {
                 return "Magazine caliber \(magazineCaliberName) does not match firearm caliber \(firearmCaliberName)."
             case let .incompatiblePattern(patternName, firearmDescription):
                 return "\(patternName) is not compatible with \(firearmDescription)."
+            case let .patternNotSelected(patternName):
+                return "\(patternName) is not included in this firearm's selected magazine patterns."
             }
         }
     }
