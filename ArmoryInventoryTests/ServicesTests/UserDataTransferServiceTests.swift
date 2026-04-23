@@ -147,6 +147,8 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertEqual(importedFirearms.first?.caliber?.name, "9mm")
         XCTAssertEqual(importedOptics.first?.firearm?.id, firearmID)
         XCTAssertEqual(importedMagazines.first?.caliber?.name, "9mm")
+        XCTAssertEqual(importedMagazines.first?.storedPatternKind, .legacy)
+        XCTAssertEqual(importedMagazines.first?.patternDisplayName, "Magpul PMAG")
         XCTAssertEqual(importedAttachments.first?.firearm?.id, firearmID)
         XCTAssertEqual(importedParts.first?.firearm?.id, firearmID)
         XCTAssertEqual(importedRecords.first?.ammoType?.brand, "Federal")

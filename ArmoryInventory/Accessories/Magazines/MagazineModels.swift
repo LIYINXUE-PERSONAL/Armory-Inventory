@@ -13,6 +13,9 @@ final class Magazine {
     var id: UUID?
     var brand: String
     var modelName: String
+    var patternID: String?
+    var patternKind: MagazinePatternKind.RawValue?
+    var patternDisplayName: String?
     var count: Int
     var capacity: Int
     var purchaseDate: Date
@@ -30,6 +33,9 @@ final class Magazine {
         id: UUID? = UUID(),
         brand: String,
         modelName: String,
+        patternID: String? = nil,
+        patternKind: MagazinePatternKind? = nil,
+        patternDisplayName: String? = nil,
         count: Int = 1,
         capacity: Int,
         purchaseDate: Date = .now,
@@ -45,6 +51,9 @@ final class Magazine {
         self.id = id
         self.brand = brand
         self.modelName = modelName
+        self.patternID = patternID
+        self.patternKind = patternKind?.rawValue
+        self.patternDisplayName = patternDisplayName
         self.count = count
         self.capacity = capacity
         self.purchaseDate = purchaseDate
@@ -60,6 +69,18 @@ final class Magazine {
 
     var displayName: String {
         "\(brand) \(modelName)"
+    }
+
+    var storedPatternKind: MagazinePatternKind? {
+        guard let patternKind else {
+            return nil
+        }
+
+        return MagazinePatternKind(rawValue: patternKind)
+    }
+
+    var resolvedPattern: MagazinePattern {
+        MagazinePatternMigration.resolvedPattern(for: self)
     }
 
     var capacityText: String {
