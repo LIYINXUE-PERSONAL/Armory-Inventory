@@ -289,7 +289,7 @@ struct AddFirearmView: View {
                         ForEach(selectedMagazinePatterns, id: \.id) { pattern in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(pattern.resolvedDisplayName)
-                                Text(pattern.kind == .catalog ? "Catalog pattern" : pattern.kind.id.capitalized)
+                                Text(patternDetailText(for: pattern))
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -317,9 +317,6 @@ struct AddFirearmView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
-                        LabeledContent("Magazine Count", value: firearmMagazineCountText)
-                        LabeledContent("Total Capacity", value: firearmMagazineCapacityText)
-
                         ForEach(resolvedMagazines) { magazine in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(magazine.displayName)
@@ -784,14 +781,6 @@ struct AddFirearmView: View {
         return opticsTotal + magazinesTotal + attachmentsTotal + partsTotal
     }
 
-    private var firearmMagazineCountText: String {
-        currentFirearmForSummary.linkedMagazineCountText(using: resolvedMagazines)
-    }
-
-    private var firearmMagazineCapacityText: String {
-        currentFirearmForSummary.linkedMagazineCapacityText(using: resolvedMagazines)
-    }
-
     private var currentFirearmForSummary: Firearm {
         firearm ?? Firearm(
             brand: brand,
@@ -836,6 +825,16 @@ struct AddFirearmView: View {
 
     private func taxedAmountCents(baseAmountCents: Int, taxRate: Double) -> Int {
         Int((Double(baseAmountCents) * (1 + max(0, taxRate) / 100)).rounded())
+    }
+
+    private func patternDetailText(for pattern: FirearmMagazinePatternReference) -> String {
+        let magazines = resolvedMagazines.filter { $0.resolvedPattern.id == pattern.id }
+        let patternKindText = pattern.kind == .catalog ? "Catalog pattern" : pattern.kind.id.capitalized
+        guard !magazines.isEmpty else {
+            return patternKindText
+        }
+
+        return "\(patternKindText) • \(currentFirearmForSummary.linkedMagazineCountText(using: magazines)) • \(currentFirearmForSummary.linkedMagazineCapacityText(using: magazines))"
     }
 
     private func saveFirearm() {
