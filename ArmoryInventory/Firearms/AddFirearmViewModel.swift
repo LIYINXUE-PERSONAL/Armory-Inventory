@@ -10,9 +10,14 @@ import SwiftData
 
 final class AddFirearmViewModel {
     private let priceInputParser: PriceInputParsing
+    private let compatibilityValidator: MagazineCompatibilityValidator
 
-    init(priceInputParser: PriceInputParsing = PriceInputParserService()) {
+    init(
+        priceInputParser: PriceInputParsing = PriceInputParserService(),
+        compatibilityValidator: MagazineCompatibilityValidator = MagazineCompatibilityValidator()
+    ) {
         self.priceInputParser = priceInputParser
+        self.compatibilityValidator = compatibilityValidator
     }
 
     func initialPurchasePriceText(for firearm: Firearm?) -> String {
@@ -138,23 +143,40 @@ final class AddFirearmViewModel {
     func availableMagazines(
         from magazines: [Magazine],
         selectedIDs: Set<PersistentIdentifier>,
-        firearm: Firearm?
+        firearm: Firearm?,
+        firearmType: FirearmType,
+        action: FirearmAction,
+        caliber: Caliber?
     ) -> [Magazine] {
         magazines.filter { magazine in
             if selectedIDs.contains(magazine.persistentModelID) {
                 return true
             }
 
-            guard let linkedFirearm = magazine.firearm else {
-                return true
-            }
-
-            guard let firearm else {
-                return false
-            }
-
-            return linkedFirearm.persistentModelID == firearm.persistentModelID
+            return compatibilityValidator.validate(
+                magazine: magazine,
+                firearmType: firearmType,
+                action: action,
+                caliber: caliber,
+                owningFirearm: firearm
+            ).isCompatible
         }
+    }
+
+    func selectedMagazineValidationResult(
+        magazines: [Magazine],
+        firearmType: FirearmType,
+        action: FirearmAction,
+        caliber: Caliber?,
+        owningFirearm: Firearm?
+    ) -> MagazineCompatibilityValidationResult {
+        compatibilityValidator.firstFailure(
+            magazines: magazines,
+            firearmType: firearmType,
+            action: action,
+            caliber: caliber,
+            owningFirearm: owningFirearm
+        )
     }
 
     func availableAttachments(
@@ -271,13 +293,17 @@ final class AddFirearmViewModel {
         brand: String,
         modelName: String,
         serialNumber: String,
+        selectedType: FirearmType,
         selectedAction: FirearmAction,
         actionDetail: String?,
         selectedColor: FirearmColor?,
         colorDetail: String?,
         purchasePriceText: String,
         barrelLengthText: String,
-        duplicateExists: Bool
+        duplicateExists: Bool,
+        magazines: [Magazine],
+        caliber: Caliber?,
+        owningFirearm: Firearm?
     ) -> Bool {
         guard !trimmedValue(brand).isEmpty else { return false }
         guard !trimmedValue(modelName).isEmpty else { return false }
@@ -294,7 +320,13 @@ final class AddFirearmViewModel {
             return false
         }
 
-        return true
+        return selectedMagazineValidationResult(
+            magazines: magazines,
+            firearmType: selectedType,
+            action: selectedAction,
+            caliber: caliber,
+            owningFirearm: owningFirearm
+        ).isCompatible
     }
 
     func addFirearm(
@@ -321,6 +353,15 @@ final class AddFirearmViewModel {
         to context: ModelContext
     ) -> Bool {
         guard canAdd else {
+            return false
+        }
+        guard selectedMagazineValidationResult(
+            magazines: magazines,
+            firearmType: type,
+            action: action,
+            caliber: caliber,
+            owningFirearm: nil
+        ).isCompatible else {
             return false
         }
 
@@ -383,6 +424,15 @@ final class AddFirearmViewModel {
         in context: ModelContext
     ) -> Bool {
         guard canSave else {
+            return false
+        }
+        guard selectedMagazineValidationResult(
+            magazines: magazines,
+            firearmType: type,
+            action: action,
+            caliber: caliber,
+            owningFirearm: firearm
+        ).isCompatible else {
             return false
         }
 

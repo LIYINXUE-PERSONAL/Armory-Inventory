@@ -278,12 +278,18 @@ struct AddFirearmView: View {
                         }
                     }
 
+                    if let compatibilityMessage = selectedMagazineCompatibilityMessage {
+                        Text(compatibilityMessage)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                    }
+
                     if lookupData.magazines.isEmpty {
                         Text("Add magazines first to link them to this firearm.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else if availableMagazines.isEmpty {
-                        Text("No unlinked magazines available.")
+                        Text("No compatible magazines are currently available.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else if resolvedMagazines.isEmpty {
@@ -479,7 +485,7 @@ struct AddFirearmView: View {
                             ContentUnavailableView(
                                 "No Magazines Available",
                                 systemImage: "rectangle.stack.fill.badge.plus",
-                                description: Text("All saved magazines are linked to other firearms or none have been added yet.")
+                                description: Text("All compatible magazines are linked to other firearms or none have been added yet.")
                             )
                         } else {
                             List {
@@ -684,7 +690,24 @@ struct AddFirearmView: View {
     }
 
     private var availableMagazines: [Magazine] {
-        viewModel.availableMagazines(from: lookupData.magazines, selectedIDs: selectedMagazineIDs, firearm: firearm)
+        viewModel.availableMagazines(
+            from: lookupData.magazines,
+            selectedIDs: selectedMagazineIDs,
+            firearm: firearm,
+            firearmType: selectedType,
+            action: selectedAction,
+            caliber: selectedCaliber
+        )
+    }
+
+    private var selectedMagazineCompatibilityMessage: String? {
+        viewModel.selectedMagazineValidationResult(
+            magazines: resolvedMagazines,
+            firearmType: selectedType,
+            action: selectedAction,
+            caliber: selectedCaliber,
+            owningFirearm: firearm
+        ).message
     }
 
     private var availableAttachments: [Attachment] {
@@ -741,13 +764,17 @@ struct AddFirearmView: View {
             brand: brand,
             modelName: modelName,
             serialNumber: serialNumber,
+            selectedType: selectedType,
             selectedAction: selectedAction,
             actionDetail: resolvedActionDetail,
             selectedColor: selectedColor,
             colorDetail: resolvedColorDetail,
             purchasePriceText: purchasePriceText,
             barrelLengthText: barrelLengthText,
-            duplicateExists: duplicateExists
+            duplicateExists: duplicateExists,
+            magazines: resolvedMagazines,
+            caliber: selectedCaliber,
+            owningFirearm: firearm
         )
     }
 

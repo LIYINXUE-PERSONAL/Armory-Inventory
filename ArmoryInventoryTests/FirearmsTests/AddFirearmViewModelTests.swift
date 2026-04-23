@@ -41,13 +41,17 @@ final class AddFirearmViewModelTests: XCTestCase {
                 brand: "Glock",
                 modelName: "19",
                 serialNumber: "ABC123",
+                selectedType: .pistol,
                 selectedAction: .semiAuto,
                 actionDetail: nil,
                 selectedColor: nil,
                 colorDetail: nil,
                 purchasePriceText: "bad",
                 barrelLengthText: "bad",
-                duplicateExists: false
+                duplicateExists: false,
+                magazines: [],
+                caliber: nil,
+                owningFirearm: nil
             )
         )
         XCTAssertFalse(
@@ -55,13 +59,17 @@ final class AddFirearmViewModelTests: XCTestCase {
                 brand: "Glock",
                 modelName: "19",
                 serialNumber: "ABC123",
+                selectedType: .pistol,
                 selectedAction: .other,
                 actionDetail: nil,
                 selectedColor: nil,
                 colorDetail: nil,
                 purchasePriceText: "100",
                 barrelLengthText: "",
-                duplicateExists: false
+                duplicateExists: false,
+                magazines: [],
+                caliber: nil,
+                owningFirearm: nil
             )
         )
         XCTAssertTrue(
@@ -69,13 +77,17 @@ final class AddFirearmViewModelTests: XCTestCase {
                 brand: "Glock",
                 modelName: "19",
                 serialNumber: "",
+                selectedType: .pistol,
                 selectedAction: .semiAuto,
                 actionDetail: nil,
                 selectedColor: nil,
                 colorDetail: nil,
                 purchasePriceText: "100",
                 barrelLengthText: "",
-                duplicateExists: false
+                duplicateExists: false,
+                magazines: [],
+                caliber: nil,
+                owningFirearm: nil
             )
         )
         XCTAssertFalse(
@@ -83,13 +95,17 @@ final class AddFirearmViewModelTests: XCTestCase {
                 brand: "Glock",
                 modelName: "19",
                 serialNumber: "ABC123",
+                selectedType: .pistol,
                 selectedAction: .semiAuto,
                 actionDetail: nil,
                 selectedColor: .other,
                 colorDetail: nil,
                 purchasePriceText: "100",
                 barrelLengthText: "",
-                duplicateExists: false
+                duplicateExists: false,
+                magazines: [],
+                caliber: nil,
+                owningFirearm: nil
             )
         )
     }
@@ -143,17 +159,21 @@ final class AddFirearmViewModelTests: XCTestCase {
             purchasePriceCents: 55000,
             firearm: otherFirearm
         )
+        let rifleCaliber = Caliber(name: "5.56 NATO")
+        let pistolCaliber = Caliber(name: "9mm")
         let freeMagazine = Magazine(
             brand: "Magpul",
             modelName: "PMAG",
             capacity: 30,
-            purchasePriceCents: 1500
+            purchasePriceCents: 1500,
+            caliber: rifleCaliber
         )
         let currentMagazine = Magazine(
             brand: "Glock",
             modelName: "OEM",
             capacity: 17,
             purchasePriceCents: 2500,
+            caliber: pistolCaliber,
             firearm: currentFirearm
         )
         let otherMagazine = Magazine(
@@ -161,6 +181,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             modelName: "CZ 75",
             capacity: 16,
             purchasePriceCents: 3200,
+            caliber: pistolCaliber,
             firearm: otherFirearm
         )
         let freeAttachment = Attachment(
@@ -206,6 +227,8 @@ final class AddFirearmViewModelTests: XCTestCase {
 
         context.insert(currentFirearm)
         context.insert(otherFirearm)
+        context.insert(rifleCaliber)
+        context.insert(pistolCaliber)
         context.insert(freeOptic)
         context.insert(currentOptic)
         context.insert(otherOptic)
@@ -250,12 +273,15 @@ final class AddFirearmViewModelTests: XCTestCase {
             Set(
                 viewModel.availableMagazines(
                     from: [freeMagazine, currentMagazine, otherMagazine],
-                    selectedIDs: [],
-                    firearm: currentFirearm
+                    selectedIDs: selectedMagazineIDs,
+                    firearm: currentFirearm,
+                    firearmType: .pistol,
+                    action: .semiAuto,
+                    caliber: currentMagazine.caliber
                 )
                 .map(\.persistentModelID)
             ),
-            [freeMagazine.persistentModelID, currentMagazine.persistentModelID]
+            [currentMagazine.persistentModelID]
         )
         XCTAssertEqual(
             Set(
@@ -572,5 +598,95 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertEqual(firearm.colorDetail, "Two Tone")
         XCTAssertEqual(firearm.caliber?.name, ".45 ACP")
         XCTAssertEqual(firearm.notes, "Updated")
+    }
+
+    func testCanAddReturnsFalseForSelectedMagazineCompatibilityFailure() {
+        let viewModel = AddFirearmViewModel()
+        let caliber = Caliber(name: "9mm")
+        let incompatibleMagazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            capacity: 30,
+            purchasePriceCents: 1500,
+            caliber: Caliber(name: "5.56 NATO")
+        )
+
+        XCTAssertFalse(
+            viewModel.canAdd(
+                brand: "Glock",
+                modelName: "19",
+                serialNumber: "",
+                selectedType: .pistol,
+                selectedAction: .semiAuto,
+                actionDetail: nil,
+                selectedColor: nil,
+                colorDetail: nil,
+                purchasePriceText: "500",
+                barrelLengthText: "",
+                duplicateExists: false,
+                magazines: [incompatibleMagazine],
+                caliber: caliber,
+                owningFirearm: nil
+            )
+        )
+    }
+
+    @MainActor
+    func testUpdateFirearmReturnsFalseWithoutMutatingWhenSelectedMagazineBecomesInvalid() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let originalCaliber = Caliber(name: "9mm")
+        let updatedCaliber = Caliber(name: ".45 ACP")
+        let firearm = Firearm(
+            brand: "Glock",
+            modelName: "19",
+            purchasePriceCents: 50000,
+            type: .pistol,
+            action: .semiAuto,
+            caliber: originalCaliber
+        )
+        let magazine = Magazine(
+            brand: "Glock",
+            modelName: "OEM",
+            capacity: 17,
+            purchasePriceCents: 2500,
+            caliber: originalCaliber,
+            firearm: firearm
+        )
+        context.insert(originalCaliber)
+        context.insert(updatedCaliber)
+        context.insert(firearm)
+        context.insert(magazine)
+
+        let viewModel = AddFirearmViewModel()
+        let didSave = viewModel.updateFirearm(
+            firearm,
+            brand: "Staccato",
+            modelName: "P",
+            nickname: nil,
+            serialNumber: "",
+            purchaseDate: .now,
+            lastCleanedDate: nil,
+            purchasePriceCents: 250000,
+            type: .pistol,
+            action: .semiAuto,
+            actionDetail: nil,
+            color: nil,
+            colorDetail: nil,
+            barrelLengthInches: 4.4,
+            notes: nil,
+            caliber: updatedCaliber,
+            optics: [],
+            magazines: [magazine],
+            attachments: [],
+            parts: [],
+            canSave: true,
+            in: context
+        )
+
+        XCTAssertFalse(didSave)
+        XCTAssertEqual(firearm.brand, "Glock")
+        XCTAssertEqual(firearm.modelName, "19")
+        XCTAssertEqual(firearm.caliber?.name, "9mm")
     }
 }
