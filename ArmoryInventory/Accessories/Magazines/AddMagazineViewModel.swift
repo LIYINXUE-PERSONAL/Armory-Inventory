@@ -203,15 +203,17 @@ final class AddMagazineViewModel {
             sortOrder: nextSortOrder(in: context)
         )
         MagazinePatternMigration.applyResolvedPattern(to: magazine)
-        guard compatibilityValidator.validate(
-            pattern: magazine.resolvedPattern,
-            selectedMagazineCaliber: caliber,
-            firearmType: firearm?.firearmType ?? .other,
-            action: firearm?.firearmAction ?? .other,
-            caliber: firearm?.caliber,
-            firearmDescription: firearm?.displayName ?? "this firearm"
-        ).isCompatible else {
-            return false
+        if let firearm {
+            guard compatibilityValidator.validate(
+                pattern: magazine.resolvedPattern,
+                selectedMagazineCaliber: caliber,
+                firearmType: firearm.firearmType,
+                action: firearm.firearmAction,
+                caliber: firearm.caliber,
+                firearmDescription: firearm.displayName
+            ).isCompatible else {
+                return false
+            }
         }
         context.insert(magazine)
 
@@ -265,15 +267,17 @@ final class AddMagazineViewModel {
         candidateMagazine.patternKind = magazine.patternKind
         candidateMagazine.patternDisplayName = magazine.patternDisplayName
         MagazinePatternMigration.applyResolvedPattern(to: candidateMagazine)
-        guard compatibilityValidator.validate(
-            pattern: candidateMagazine.resolvedPattern,
-            selectedMagazineCaliber: caliber,
-            firearmType: firearm?.firearmType ?? .other,
-            action: firearm?.firearmAction ?? .other,
-            caliber: firearm?.caliber,
-            firearmDescription: firearm?.displayName ?? "this firearm"
-        ).isCompatible else {
-            return false
+        if let firearm {
+            guard compatibilityValidator.validate(
+                pattern: candidateMagazine.resolvedPattern,
+                selectedMagazineCaliber: caliber,
+                firearmType: firearm.firearmType,
+                action: firearm.firearmAction,
+                caliber: firearm.caliber,
+                firearmDescription: firearm.displayName
+            ).isCompatible else {
+                return false
+            }
         }
 
         magazine.brand = trimmedValue(brand)

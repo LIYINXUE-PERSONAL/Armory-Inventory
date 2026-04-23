@@ -175,6 +175,39 @@ final class AddMagazineViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testAddMagazineAllowsUnlinkedCatalogPatternMagazine() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let caliber = Caliber(name: "5.56 NATO")
+        context.insert(caliber)
+
+        let viewModel = AddMagazineViewModel()
+        let didAdd = viewModel.addMagazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            count: 3,
+            capacity: 30,
+            purchaseDate: .now,
+            purchasePriceCents: 4500,
+            color: .black,
+            colorDetail: nil,
+            notes: nil,
+            caliber: caliber,
+            firearm: nil,
+            canAdd: true,
+            to: context
+        )
+
+        let magazines = try context.fetch(FetchDescriptor<Magazine>())
+
+        XCTAssertTrue(didAdd)
+        XCTAssertEqual(magazines.count, 1)
+        XCTAssertNil(magazines.first?.firearm)
+        XCTAssertEqual(magazines.first?.storedPatternKind, .catalog)
+        XCTAssertEqual(magazines.first?.patternID, "catalog:ar15-stanag-223-556-300blk")
+    }
+
+    @MainActor
     func testUpdateMagazinePersistsEditedValues() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
@@ -293,5 +326,56 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(magazine.count, 2)
         XCTAssertEqual(magazine.capacity, 17)
         XCTAssertNil(magazine.firearm)
+    }
+
+    @MainActor
+    func testUpdateMagazineAllowsUnlinkingCatalogPatternMagazine() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let caliber = Caliber(name: "5.56 NATO")
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 180000,
+            type: .rifle,
+            action: .semiAuto,
+            caliber: caliber
+        )
+        let magazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            patternID: "catalog:ar15-stanag-223-556-300blk",
+            patternKind: .catalog,
+            capacity: 30,
+            purchasePriceCents: 1500,
+            caliber: caliber,
+            firearm: firearm
+        )
+        context.insert(caliber)
+        context.insert(firearm)
+        context.insert(magazine)
+
+        let viewModel = AddMagazineViewModel()
+        let didSave = viewModel.updateMagazine(
+            magazine,
+            brand: "Magpul",
+            modelName: "PMAG",
+            count: 1,
+            capacity: 30,
+            purchaseDate: .now,
+            purchasePriceCents: 1500,
+            color: nil,
+            colorDetail: nil,
+            notes: nil,
+            caliber: caliber,
+            firearm: nil,
+            canSave: true,
+            in: context
+        )
+
+        XCTAssertTrue(didSave)
+        XCTAssertNil(magazine.firearm)
+        XCTAssertEqual(magazine.storedPatternKind, .catalog)
+        XCTAssertEqual(magazine.patternID, "catalog:ar15-stanag-223-556-300blk")
     }
 }
