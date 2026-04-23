@@ -27,6 +27,16 @@
         }
       }
     },
+    "%@ • %@ • %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ • %2$@ • %3$@"
+          }
+        }
+      }
+    },
     "%@ currently on hand" : {
 
     },
@@ -109,10 +119,10 @@
     "Add Magazine" : {
 
     },
-    "Add Magazines" : {
+    "Add magazines first to link them to this firearm." : {
 
     },
-    "Add magazines first to link them to this firearm." : {
+    "Add magazines or select a caliber to surface compatible patterns." : {
 
     },
     "Add Optic" : {
@@ -142,7 +152,7 @@
     "Add your first firearm to start tracking your collection." : {
 
     },
-    "Add your first magazine to track capacity, caliber, and assigned firearm." : {
+    "Add your first magazine to track capacity, supported calibers, and linked firearms." : {
 
     },
     "Add your first optic to start tracking mounts, magnification, and purchase cost." : {
@@ -158,9 +168,6 @@
 
     },
     "All Calibers (%lld)" : {
-
-    },
-    "All compatible magazines are linked to other firearms or none have been added yet." : {
 
     },
     "All saved attachments are linked to other firearms or none have been added yet." : {
@@ -269,6 +276,9 @@
 
     },
     "Common Calibers" : {
+
+    },
+    "Compatible Calibers" : {
 
     },
     "Configuration" : {
@@ -415,9 +425,6 @@
     "Link Attachments" : {
 
     },
-    "Link Magazines" : {
-
-    },
     "Link Optics" : {
 
     },
@@ -428,6 +435,9 @@
 
     },
     "Linked Firearm" : {
+
+    },
+    "Linked Firearms" : {
 
     },
     "Linked Magazines" : {
@@ -442,6 +452,9 @@
     "Magazine Details" : {
 
     },
+    "Magazine Patterns" : {
+
+    },
     "Magazines" : {
 
     },
@@ -454,7 +467,7 @@
     "Manage Attachments" : {
 
     },
-    "Manage Magazines" : {
+    "Manage Magazine Patterns" : {
 
     },
     "Manage Optics" : {
@@ -523,16 +536,16 @@
     "No common grain options are available for %@. Enter a custom weight below." : {
 
     },
-    "No compatible magazines are currently available." : {
-
-    },
     "No Firearms Yet" : {
 
     },
-    "No Magazines Available" : {
+    "No Magazine Patterns Available" : {
 
     },
-    "No magazines linked." : {
+    "No magazine patterns selected." : {
+
+    },
+    "No magazines currently match the selected patterns." : {
 
     },
     "No Magazines Yet" : {
@@ -659,6 +672,12 @@
 
     },
     "Select" : {
+
+    },
+    "Select Magazine Patterns" : {
+
+    },
+    "Select one or more magazine patterns to see linked magazines." : {
 
     },
     "Send Feedback" : {
