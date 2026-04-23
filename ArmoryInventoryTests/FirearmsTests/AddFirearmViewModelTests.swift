@@ -175,6 +175,8 @@ final class AddFirearmViewModelTests: XCTestCase {
         let currentMagazine = Magazine(
             brand: "Glock",
             modelName: "OEM",
+            patternID: "catalog:glock-double-stack-9mm-full-size-compact",
+            patternKind: .catalog,
             capacity: 17,
             purchasePriceCents: 2500,
             caliber: pistolCaliber,
@@ -253,14 +255,12 @@ final class AddFirearmViewModelTests: XCTestCase {
         currentFirearm.parts = [currentPart]
 
         let selectedOpticIDs = viewModel.selectedOpticIDs(for: currentFirearm)
-        let selectedMagazineIDs = viewModel.selectedMagazineIDs(for: currentFirearm)
         let selectedMagazinePatterns = viewModel.selectedMagazinePatterns(for: currentFirearm)
         let selectedAttachmentIDs = viewModel.selectedAttachmentIDs(for: currentFirearm)
         let selectedPartIDs = viewModel.selectedPartIDs(for: currentFirearm)
 
         XCTAssertEqual(selectedOpticIDs, [currentOptic.persistentModelID])
-        XCTAssertEqual(selectedMagazineIDs, [currentMagazine.persistentModelID])
-        XCTAssertTrue(selectedMagazinePatterns.isEmpty)
+        XCTAssertEqual(selectedMagazinePatterns, [FirearmMagazinePatternReference(pattern: currentMagazine.resolvedPattern)])
         XCTAssertEqual(selectedAttachmentIDs, [currentAttachment.persistentModelID])
         XCTAssertEqual(selectedPartIDs, [currentPart.persistentModelID])
 
@@ -277,11 +277,9 @@ final class AddFirearmViewModelTests: XCTestCase {
         )
         XCTAssertEqual(
             Set(
-                viewModel.availableMagazines(
+                viewModel.linkedMagazines(
                     from: [freeMagazine, currentMagazine, otherMagazine],
-                    selectedIDs: selectedMagazineIDs,
-                    selectedPatterns: [],
-                    firearm: currentFirearm,
+                    selectedPatterns: selectedMagazinePatterns,
                     firearmType: .pistol,
                     action: .semiAuto,
                     caliber: currentMagazine.caliber
@@ -320,14 +318,6 @@ final class AddFirearmViewModelTests: XCTestCase {
             )
             .map(\.persistentModelID),
             [freeOptic.persistentModelID, otherOptic.persistentModelID]
-        )
-        XCTAssertEqual(
-            viewModel.resolvedMagazines(
-                from: [freeMagazine, currentMagazine, otherMagazine],
-                selectedIDs: [otherMagazine.persistentModelID]
-            )
-            .map(\.persistentModelID),
-            [otherMagazine.persistentModelID]
         )
         XCTAssertEqual(
             viewModel.resolvedAttachments(
@@ -480,7 +470,7 @@ final class AddFirearmViewModelTests: XCTestCase {
             colorDetail: nil,
             barrelLengthInches: 4.02,
             notes: "Optics ready",
-            supportedMagazinePatterns: [],
+            supportedMagazinePatterns: [FirearmMagazinePatternReference(pattern: magazine.resolvedPattern)],
             caliber: caliber,
             optics: [optic],
             magazines: [magazine],
@@ -506,7 +496,10 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertEqual(firearms.first?.purchaseDate, purchaseDate)
         XCTAssertEqual(firearms.first?.lastCleanedDate, Date(timeIntervalSince1970: 22_222))
         XCTAssertEqual(firearms.first?.optics.map(\.displayName), ["Holosun 507C"])
-        XCTAssertEqual(firearms.first?.magazines.map(\.displayName), ["CZ P-10"])
+        XCTAssertEqual(
+            firearms.first?.supportedMagazinePatterns,
+            [FirearmMagazinePatternReference(pattern: magazine.resolvedPattern)]
+        )
         XCTAssertEqual(firearms.first?.attachments.map(\.displayName), ["Streamlight TLR-7A"])
         XCTAssertEqual(firearms.first?.parts.map(\.displayName), ["Apex Action Enhancement"])
     }
@@ -713,11 +706,9 @@ final class AddFirearmViewModelTests: XCTestCase {
         ]
 
         XCTAssertEqual(
-            viewModel.availableMagazines(
+            viewModel.linkedMagazines(
                 from: [glockMagazine, staccatoMagazine],
-                selectedIDs: [],
                 selectedPatterns: selectedPatterns,
-                firearm: nil,
                 firearmType: .pistol,
                 action: .semiAuto,
                 caliber: caliber

@@ -36,12 +36,16 @@ final class AddFirearmViewModel {
         Set(firearm?.optics.map(\.persistentModelID) ?? [])
     }
 
-    func selectedMagazineIDs(for firearm: Firearm?) -> Set<PersistentIdentifier> {
-        Set(firearm?.magazines.map(\.persistentModelID) ?? [])
-    }
-
     func selectedMagazinePatterns(for firearm: Firearm?) -> [FirearmMagazinePatternReference] {
-        firearm?.supportedMagazinePatterns ?? []
+        guard let firearm else {
+            return []
+        }
+
+        if !firearm.supportedMagazinePatterns.isEmpty {
+            return firearm.supportedMagazinePatterns
+        }
+
+        return inferredMagazinePatterns(from: firearm.magazines)
     }
 
     func selectedAttachmentIDs(for firearm: Firearm?) -> Set<PersistentIdentifier> {
@@ -108,10 +112,6 @@ final class AddFirearmViewModel {
 
     func resolvedOptics(from optics: [Optic], selectedIDs: Set<PersistentIdentifier>) -> [Optic] {
         optics.filter { selectedIDs.contains($0.persistentModelID) }
-    }
-
-    func resolvedMagazines(from magazines: [Magazine], selectedIDs: Set<PersistentIdentifier>) -> [Magazine] {
-        magazines.filter { selectedIDs.contains($0.persistentModelID) }
     }
 
     func availableMagazinePatterns(
@@ -192,31 +192,34 @@ final class AddFirearmViewModel {
         }
     }
 
-    func availableMagazines(
+    func linkedMagazines(
         from magazines: [Magazine],
-        selectedIDs: Set<PersistentIdentifier>,
         selectedPatterns: [FirearmMagazinePatternReference],
-        firearm: Firearm?,
         firearmType: FirearmType,
         action: FirearmAction,
         caliber: Caliber?
     ) -> [Magazine] {
-        let selectedPatternIDs = Set(selectedPatterns.map(\.id))
-        return magazines.filter { magazine in
-            if selectedIDs.contains(magazine.persistentModelID) {
-                return true
-            }
+        let effectivePatterns = effectiveSelectedMagazinePatterns(
+            selectedPatterns: selectedPatterns,
+            magazines: []
+        )
+        let selectedPatternIDs = Set(effectivePatterns.map(\.id))
+        guard !selectedPatternIDs.isEmpty else {
+            return []
+        }
 
-            if !selectedPatternIDs.isEmpty, !selectedPatternIDs.contains(magazine.resolvedPattern.id) {
+        return magazines.filter { magazine in
+            if !selectedPatternIDs.contains(magazine.resolvedPattern.id) {
                 return false
             }
 
             return compatibilityValidator.validate(
-                magazine: magazine,
+                pattern: magazine.resolvedPattern,
+                selectedMagazineCaliber: magazine.caliber,
                 firearmType: firearmType,
                 action: action,
                 caliber: caliber,
-                owningFirearm: firearm
+                firearmDescription: "\(firearmType.displayName) (\(action.displayName))"
             ).isCompatible
         }
     }
@@ -229,7 +232,12 @@ final class AddFirearmViewModel {
         caliber: Caliber?,
         owningFirearm: Firearm?
     ) -> MagazineCompatibilityValidationResult {
-        let selectedPatternIDs = Set(selectedPatterns.map(\.id))
+        let selectedPatternIDs = Set(
+            effectiveSelectedMagazinePatterns(
+                selectedPatterns: selectedPatterns,
+                magazines: magazines
+            ).map(\.id)
+        )
         if !selectedPatternIDs.isEmpty,
            let magazine = magazines.first(where: { !selectedPatternIDs.contains($0.resolvedPattern.id) }) {
             return .init(failure: .patternNotSelected(patternName: magazine.resolvedPattern.displayName))
@@ -455,6 +463,10 @@ final class AddFirearmViewModel {
             return false
         }
 
+        let persistedMagazinePatterns = effectiveSelectedMagazinePatterns(
+            selectedPatterns: supportedMagazinePatterns,
+            magazines: magazines
+        )
         let firearm = Firearm(
             brand: trimmedValue(brand),
             modelName: trimmedValue(modelName),
@@ -470,10 +482,10 @@ final class AddFirearmViewModel {
             colorDetail: colorDetail,
             barrelLengthInches: barrelLengthInches,
             notes: notes,
-            supportedMagazinePatterns: supportedMagazinePatterns,
+            supportedMagazinePatterns: persistedMagazinePatterns,
             caliber: caliber,
             optics: optics,
-            magazines: magazines,
+            magazines: [],
             attachments: attachments,
             parts: parts,
             sortOrder: nextSortOrder(in: context)
@@ -529,6 +541,10 @@ final class AddFirearmViewModel {
             return false
         }
 
+        let persistedMagazinePatterns = effectiveSelectedMagazinePatterns(
+            selectedPatterns: supportedMagazinePatterns,
+            magazines: magazines
+        )
         firearm.brand = trimmedValue(brand)
         firearm.modelName = trimmedValue(modelName)
         firearm.nickname = optionalValue(nickname ?? "")
@@ -543,10 +559,9 @@ final class AddFirearmViewModel {
         firearm.colorDetail = colorDetail
         firearm.barrelLengthInches = barrelLengthInches
         firearm.notes = notes
-        firearm.supportedMagazinePatterns = supportedMagazinePatterns
+        firearm.supportedMagazinePatterns = persistedMagazinePatterns
         firearm.caliber = caliber
         firearm.optics = optics
-        firearm.magazines = magazines
         firearm.attachments = attachments
         firearm.parts = parts
 
@@ -557,6 +572,33 @@ final class AddFirearmViewModel {
         } catch {
             print("Save error: \(error)")
             return false
+        }
+    }
+
+    private func effectiveSelectedMagazinePatterns(
+        selectedPatterns: [FirearmMagazinePatternReference],
+        magazines: [Magazine]
+    ) -> [FirearmMagazinePatternReference] {
+        if !selectedPatterns.isEmpty {
+            return selectedPatterns
+        }
+
+        return inferredMagazinePatterns(from: magazines)
+    }
+
+    private func inferredMagazinePatterns(from magazines: [Magazine]) -> [FirearmMagazinePatternReference] {
+        var seenIDs: Set<String> = []
+        var patterns: [FirearmMagazinePatternReference] = []
+
+        for magazine in magazines {
+            let reference = FirearmMagazinePatternReference(pattern: magazine.resolvedPattern)
+            if seenIDs.insert(reference.id).inserted {
+                patterns.append(reference)
+            }
+        }
+
+        return patterns.sorted {
+            $0.resolvedDisplayName.localizedCaseInsensitiveCompare($1.resolvedDisplayName) == .orderedAscending
         }
     }
 }
