@@ -31,6 +31,7 @@ struct AddMagazineView: View {
     @State private var isEditing = false
     @State private var calibers: [Caliber] = []
     @State private var savedCustomPatterns: [MagazinePattern] = []
+    @State private var editingCustomPatternID: UUID?
 
     let viewModel: AddMagazineViewModel
     private let caliberQueryService: CaliberQueryServicing
@@ -85,6 +86,7 @@ struct AddMagazineView: View {
                     LabeledContent("Pattern") {
                         Menu {
                             Button {
+                                editingCustomPatternID = nil
                                 selectedPatternSelection = .automatic
                             } label: {
                                 patternSelectionLabel(
@@ -97,6 +99,7 @@ struct AddMagazineView: View {
                                 Section("Suggested Catalog Patterns") {
                                     ForEach(suggestedCatalogPatterns) { pattern in
                                         Button {
+                                            editingCustomPatternID = nil
                                             selectedPatternSelection = .catalog(pattern.id)
                                         } label: {
                                             patternSelectionLabel(
@@ -112,6 +115,7 @@ struct AddMagazineView: View {
                                 Section("Other Catalog Patterns") {
                                     ForEach(additionalCatalogPatterns) { pattern in
                                         Button {
+                                            editingCustomPatternID = nil
                                             selectedPatternSelection = .catalog(pattern.id)
                                         } label: {
                                             patternSelectionLabel(
@@ -127,6 +131,7 @@ struct AddMagazineView: View {
                                 Section("Saved Custom Patterns") {
                                     ForEach(savedCustomPatterns) { pattern in
                                         Button {
+                                            editingCustomPatternID = nil
                                             selectedPatternSelection = .existingCustom(pattern)
                                         } label: {
                                             patternSelectionLabel(
@@ -140,6 +145,7 @@ struct AddMagazineView: View {
 
                             Section("Manual Patterns") {
                                 Button {
+                                    editingCustomPatternID = nil
                                     selectedPatternSelection = .legacy
                                 } label: {
                                     patternSelectionLabel(
@@ -149,6 +155,7 @@ struct AddMagazineView: View {
                                 }
 
                                 Button {
+                                    editingCustomPatternID = nil
                                     selectedPatternSelection = .custom
                                 } label: {
                                     patternSelectionLabel(
@@ -177,6 +184,14 @@ struct AddMagazineView: View {
                         LabeledContent(selectedPatternSelection == .legacy ? "Legacy Name" : "Custom Name") {
                             TextField("", text: $manualPatternName)
                                 .multilineTextAlignment(.trailing)
+                        }
+                    }
+
+                    if case let .existingCustom(pattern) = selectedPatternSelection, isEditing {
+                        Button {
+                            beginEditingCustomPattern(pattern)
+                        } label: {
+                            Text("Edit Saved Pattern")
                         }
                     }
 
@@ -433,6 +448,7 @@ struct AddMagazineView: View {
                 patternSelection: selectedPatternSelection,
                 manualPatternName: manualPatternName,
                 compatibleCaliberNames: selectedCompatibleCaliberNames,
+                existingCustomPatternIDOverride: editingCustomPatternID,
                 firearm: linkedFirearm,
                 canSave: canAdd,
                 in: context
@@ -451,6 +467,7 @@ struct AddMagazineView: View {
                 patternSelection: selectedPatternSelection,
                 manualPatternName: manualPatternName,
                 compatibleCaliberNames: selectedCompatibleCaliberNames,
+                existingCustomPatternIDOverride: editingCustomPatternID,
                 firearm: nil,
                 canAdd: canAdd,
                 to: context
@@ -495,6 +512,13 @@ struct AddMagazineView: View {
     private func reloadPickerData() {
         reloadCalibers()
         savedCustomPatterns = viewModel.availableCustomPatterns(in: context)
+    }
+
+    private func beginEditingCustomPattern(_ pattern: MagazinePattern) {
+        selectedPatternSelection = .custom
+        manualPatternName = pattern.displayName
+        selectedCompatibleCaliberNames = Set(pattern.compatibility.supportedCaliberNames)
+        editingCustomPatternID = viewModel.customPatternUUID(from: pattern.id)
     }
 
     @ViewBuilder

@@ -184,6 +184,14 @@ final class AddMagazineViewModel {
         }
     }
 
+    func customPatternUUID(from patternID: String) -> UUID? {
+        guard patternID.hasPrefix("custom:") else {
+            return nil
+        }
+
+        return UUID(uuidString: String(patternID.dropFirst("custom:".count)))
+    }
+
     func initialManualPatternName(for magazine: Magazine?) -> String {
         guard let magazine,
               let patternKind = magazine.storedPatternKind,
@@ -253,6 +261,7 @@ final class AddMagazineViewModel {
             brand: brand,
             modelName: modelName,
             compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
             firearm: firearm,
             existingMagazine: existingMagazine
         ).pattern.displayName
@@ -273,6 +282,7 @@ final class AddMagazineViewModel {
             brand: brand,
             modelName: modelName,
             compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
             firearm: firearm,
             existingMagazine: existingMagazine
         )
@@ -308,6 +318,7 @@ final class AddMagazineViewModel {
             brand: brand,
             modelName: modelName,
             compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
             firearm: firearm,
             existingMagazine: existingMagazine
         ).pattern.compatibility.supportedCaliberNames
@@ -378,6 +389,7 @@ final class AddMagazineViewModel {
             brand: brand,
             modelName: modelName,
             compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
             firearm: firearm,
             existingMagazine: existingMagazine
         )
@@ -405,6 +417,7 @@ final class AddMagazineViewModel {
         patternSelection: MagazinePatternSelection,
         manualPatternName: String,
         compatibleCaliberNames: Set<String>,
+        existingCustomPatternIDOverride: UUID? = nil,
         firearm: Firearm? = nil,
         canAdd: Bool,
         to context: ModelContext
@@ -419,6 +432,7 @@ final class AddMagazineViewModel {
             brand: brand,
             modelName: modelName,
             compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: existingCustomPatternIDOverride,
             firearm: firearm,
             existingMagazine: nil
         )
@@ -453,6 +467,7 @@ final class AddMagazineViewModel {
             }
         }
         context.insert(magazine)
+        synchronizeCustomPatternIfNeeded(definition.pattern, in: context)
 
         do {
             try context.save()
@@ -478,6 +493,7 @@ final class AddMagazineViewModel {
         patternSelection: MagazinePatternSelection,
         manualPatternName: String,
         compatibleCaliberNames: Set<String>,
+        existingCustomPatternIDOverride: UUID? = nil,
         firearm: Firearm?,
         canSave: Bool,
         in context: ModelContext
@@ -492,6 +508,7 @@ final class AddMagazineViewModel {
             brand: brand,
             modelName: modelName,
             compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: existingCustomPatternIDOverride,
             firearm: firearm,
             existingMagazine: magazine
         )
@@ -523,6 +540,7 @@ final class AddMagazineViewModel {
         magazine.patternKind = definition.patternKind.rawValue
         magazine.patternDisplayName = definition.patternDisplayName
         magazine.storedPatternSupportedCaliberNames = definition.pattern.compatibility.supportedCaliberNames
+        synchronizeCustomPatternIfNeeded(definition.pattern, in: context)
 
         do {
             try context.save()
@@ -547,6 +565,7 @@ final class AddMagazineViewModel {
         brand: String,
         modelName: String,
         compatibleCaliberNames: Set<String>,
+        existingCustomPatternIDOverride: UUID?,
         firearm: Firearm?,
         existingMagazine: Magazine?
     ) -> ResolvedPatternDefinition {
@@ -607,7 +626,7 @@ final class AddMagazineViewModel {
                 fallback: "Custom Pattern"
             )
             let pattern = MagazinePattern.custom(
-                id: existingCustomPatternID(for: existingMagazine),
+                id: existingCustomPatternIDOverride ?? existingCustomPatternID(for: existingMagazine),
                 displayName: name,
                 familyLabel: name,
                 supportedCaliberNames: supportedCaliberNames(for: compatibleCaliberNames),
@@ -642,6 +661,39 @@ final class AddMagazineViewModel {
             patternKind: workingMagazine.storedPatternKind ?? workingMagazine.resolvedPattern.kind,
             patternDisplayName: workingMagazine.patternDisplayName
         )
+    }
+
+    private func synchronizeCustomPatternIfNeeded(_ pattern: MagazinePattern, in context: ModelContext) {
+        guard pattern.kind == .custom else {
+            return
+        }
+
+        if let magazines = try? context.fetch(FetchDescriptor<Magazine>()) {
+            for magazine in magazines where magazine.storedPatternKind == .custom && magazine.patternID == pattern.id {
+                magazine.patternDisplayName = pattern.displayName
+                magazine.storedPatternSupportedCaliberNames = pattern.compatibility.supportedCaliberNames
+            }
+        }
+
+        if let firearms = try? context.fetch(FetchDescriptor<Firearm>()) {
+            for firearm in firearms {
+                let updatedPatterns = firearm.supportedMagazinePatterns.map { reference in
+                    guard reference.id == pattern.id else {
+                        return reference
+                    }
+
+                    return FirearmMagazinePatternReference(
+                        id: reference.id,
+                        kind: reference.kind,
+                        displayName: pattern.displayName
+                    )
+                }
+
+                if updatedPatterns != firearm.supportedMagazinePatterns {
+                    firearm.supportedMagazinePatterns = updatedPatterns
+                }
+            }
+        }
     }
 
     private func resolvedManualPatternName(
