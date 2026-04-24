@@ -182,7 +182,25 @@ struct MagazinesView: View {
                 )
             }
             .sorted {
-                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+                switch ($0.primaryCaliberName, $1.primaryCaliberName) {
+                case let (lhs?, rhs?):
+                    if lhs.caseInsensitiveCompare(rhs) != .orderedSame {
+                        return CaliberSort.areInAscendingOrder(lhs, rhs)
+                    }
+                case (.some, .none):
+                    return true
+                case (.none, .some):
+                    return false
+                case (.none, .none):
+                    break
+                }
+
+                let nameComparison = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
+                if nameComparison != .orderedSame {
+                    return nameComparison == .orderedAscending
+                }
+
+                return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
             }
     }
 }
@@ -208,5 +226,14 @@ private struct MagazinePatternGroup: Identifiable {
         }
 
         return "\(caliberText) • \(countText)"
+    }
+
+    var primaryCaliberName: String? {
+        let caliberNames = caliberText
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        return caliberNames.first
     }
 }
