@@ -219,8 +219,8 @@ enum MagazinePatternCatalog {
         MagazinePattern(
             id: "catalog:glock-double-stack-9mm-full-size-compact",
             kind: .catalog,
-            displayName: "Glock Double-Stack 9mm Full-Size",
-            familyLabel: "Glock Double-Stack 9mm",
+            displayName: "Glock 17 Pattern",
+            familyLabel: "Glock 17 Pattern",
             compatibility: MagazinePatternCompatibility(
                 supportedCalibers: [.mm9],
                 compatibleFirearmTypes: [.pistol],
@@ -234,8 +234,8 @@ enum MagazinePatternCatalog {
         MagazinePattern(
             id: "catalog:glock-double-stack-9mm-compact",
             kind: .catalog,
-            displayName: "Glock Double-Stack 9mm Compact",
-            familyLabel: "Glock Double-Stack 9mm",
+            displayName: "Glock 19 Pattern",
+            familyLabel: "Glock 19 Pattern",
             compatibility: MagazinePatternCompatibility(
                 supportedCalibers: [.mm9],
                 compatibleFirearmTypes: [.pistol],
@@ -245,21 +245,6 @@ enum MagazinePatternCatalog {
             ),
             aliases: ["G19-only 9mm", "Glock OEM 15-round", "Glock compact 9mm"],
             notes: "Shorter Glock-pattern 9mm magazines that do not fit the same set of firearms as full-size bodies."
-        ),
-        MagazinePattern(
-            id: "catalog:sig-p320-double-stack-9mm",
-            kind: .catalog,
-            displayName: "SIG P320 9mm",
-            familyLabel: "SIG P320 9mm",
-            compatibility: MagazinePatternCompatibility(
-                supportedCalibers: [.mm9],
-                compatibleFirearmTypes: [.pistol],
-                compatibleFirearmActions: [.semiAuto],
-                platformTags: ["SIG P320", "SIG M17", "SIG M18", "AXG Pro"],
-                fitDescriptors: ["double-stack service pistol body"]
-            ),
-            aliases: ["P320 9mm", "M17/M18 9mm", "SIG 320 full-size 9mm"],
-            notes: "Double-stack SIG P320 family magazines."
         ),
         MagazinePattern(
             id: "catalog:2011-double-stack-9mm",

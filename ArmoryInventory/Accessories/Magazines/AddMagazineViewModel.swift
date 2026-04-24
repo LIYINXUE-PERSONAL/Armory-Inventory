@@ -9,7 +9,6 @@ import Foundation
 import SwiftData
 
 enum MagazinePatternSelection: Equatable, Identifiable {
-    case automatic
     case catalog(String)
     case existingCustom(MagazinePattern)
     case legacy
@@ -17,8 +16,6 @@ enum MagazinePatternSelection: Equatable, Identifiable {
 
     var id: String {
         switch self {
-        case .automatic:
-            return "automatic"
         case let .catalog(patternID):
             return "catalog:\(patternID)"
         case let .existingCustom(pattern):
@@ -34,7 +31,7 @@ enum MagazinePatternSelection: Equatable, Identifiable {
         switch self {
         case .legacy, .custom:
             return true
-        case .automatic, .catalog, .existingCustom:
+        case .catalog, .existingCustom:
             return false
         }
     }
@@ -43,7 +40,7 @@ enum MagazinePatternSelection: Equatable, Identifiable {
         switch self {
         case .legacy, .custom:
             return true
-        case .automatic, .catalog, .existingCustom:
+        case .catalog, .existingCustom:
             return false
         }
     }
@@ -136,9 +133,7 @@ final class AddMagazineViewModel {
     }
 
     func initialPatternSelection(for magazine: Magazine?) -> MagazinePatternSelection {
-        guard let magazine else {
-            return .automatic
-        }
+        guard let magazine else { return .custom }
 
         switch magazine.storedPatternKind {
         case .catalog:
@@ -146,13 +141,19 @@ final class AddMagazineViewModel {
                MagazinePatternCatalog.pattern(id: patternID) != nil {
                 return .catalog(patternID)
             }
-            return .automatic
+            if magazine.resolvedPattern.kind == .catalog {
+                return .catalog(magazine.resolvedPattern.id)
+            }
+            return .custom
         case .legacy:
             return .legacy
         case .custom:
             return .existingCustom(magazine.resolvedPattern)
         case .unknown, nil:
-            return .automatic
+            if magazine.resolvedPattern.kind == .catalog {
+                return .catalog(magazine.resolvedPattern.id)
+            }
+            return .custom
         }
     }
 
@@ -288,8 +289,6 @@ final class AddMagazineViewModel {
         )
 
         switch selection {
-        case .automatic:
-            return "Automatically inferred from the magazine details and existing pattern catalog."
         case .catalog:
             let calibers = definition.pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
             return calibers.isEmpty ? definition.pattern.familyLabel : calibers
@@ -570,12 +569,6 @@ final class AddMagazineViewModel {
         existingMagazine: Magazine?
     ) -> ResolvedPatternDefinition {
         switch selection {
-        case .automatic:
-            return inferredPatternDefinition(
-                brand: brand,
-                modelName: modelName,
-                firearm: firearm
-            )
         case let .catalog(patternID):
             if let pattern = MagazinePatternCatalog.pattern(id: patternID) {
                 return ResolvedPatternDefinition(
@@ -586,10 +579,25 @@ final class AddMagazineViewModel {
                 )
             }
 
-            return inferredPatternDefinition(
+            let fallbackName = resolvedManualPatternName(
+                manualPatternName,
                 brand: brand,
                 modelName: modelName,
-                firearm: firearm
+                fallback: "Custom Pattern"
+            )
+            let fallbackPattern = MagazinePattern.custom(
+                id: existingCustomPatternIDOverride ?? existingCustomPatternID(for: existingMagazine),
+                displayName: fallbackName,
+                familyLabel: fallbackName,
+                supportedCaliberNames: supportedCaliberNames(for: compatibleCaliberNames),
+                compatibleFirearmTypes: compatibleFirearmTypes(for: firearm),
+                compatibleFirearmActions: compatibleFirearmActions(for: firearm)
+            )
+            return ResolvedPatternDefinition(
+                pattern: fallbackPattern,
+                patternID: fallbackPattern.id,
+                patternKind: .custom,
+                patternDisplayName: fallbackPattern.displayName
             )
         case let .existingCustom(pattern):
             return ResolvedPatternDefinition(
@@ -640,27 +648,6 @@ final class AddMagazineViewModel {
                 patternDisplayName: pattern.displayName
             )
         }
-    }
-
-    private func inferredPatternDefinition(
-        brand: String,
-        modelName: String,
-        firearm: Firearm?
-    ) -> ResolvedPatternDefinition {
-        let workingMagazine = Magazine(
-            brand: trimmedValue(brand),
-            modelName: trimmedValue(modelName),
-            capacity: 1,
-            purchasePriceCents: 0,
-            firearm: firearm
-        )
-        MagazinePatternMigration.applyResolvedPattern(to: workingMagazine)
-        return ResolvedPatternDefinition(
-            pattern: workingMagazine.resolvedPattern,
-            patternID: workingMagazine.patternID ?? workingMagazine.resolvedPattern.id,
-            patternKind: workingMagazine.storedPatternKind ?? workingMagazine.resolvedPattern.kind,
-            patternDisplayName: workingMagazine.patternDisplayName
-        )
     }
 
     private func synchronizeCustomPatternIfNeeded(_ pattern: MagazinePattern, in context: ModelContext) {

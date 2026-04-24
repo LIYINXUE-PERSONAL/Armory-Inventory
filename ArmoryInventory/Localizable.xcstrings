@@ -302,6 +302,9 @@
     "Custom Name" : {
 
     },
+    "Custom Patterns" : {
+
+    },
     "Custom percent" : {
 
     },
@@ -324,6 +327,9 @@
 
     },
     "Done" : {
+
+    },
+    "Edit Saved Pattern" : {
 
     },
     "Enter dollars and cents, for example 1299.99." : {
@@ -474,9 +480,6 @@
 
     },
     "Manage Parts" : {
-
-    },
-    "Manual Patterns" : {
 
     },
     "Max" : {
@@ -669,6 +672,9 @@
 
     },
     "Rounds" : {
+
+    },
+    "Saved Custom Patterns" : {
 
     },
     "Select" : {

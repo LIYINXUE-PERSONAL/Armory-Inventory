@@ -39,7 +39,7 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: nil,
                 colorDetail: nil,
                 purchasePriceText: "10",
-                patternSelection: .automatic,
+                patternSelection: .catalog("catalog:ar15-stanag-223-556-300blk"),
                 manualPatternName: "",
                 compatibleCaliberNames: [],
                 firearm: nil
@@ -54,7 +54,7 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: .other,
                 colorDetail: nil,
                 purchasePriceText: "10",
-                patternSelection: .automatic,
+                patternSelection: .catalog("catalog:ar15-stanag-223-556-300blk"),
                 manualPatternName: "",
                 compatibleCaliberNames: [],
                 firearm: nil
@@ -69,13 +69,13 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: .black,
                 colorDetail: nil,
                 purchasePriceText: "10",
-                patternSelection: .automatic,
+                patternSelection: .catalog("catalog:ar15-stanag-223-556-300blk"),
                 manualPatternName: "",
                 compatibleCaliberNames: [],
                 firearm: nil
             )
         )
-        XCTAssertEqual(viewModel.initialPatternSelection(for: nil), .automatic)
+        XCTAssertEqual(viewModel.initialPatternSelection(for: nil), .custom)
         XCTAssertEqual(viewModel.initialManualPatternName(for: nil), "")
     }
 
@@ -108,7 +108,7 @@ final class AddMagazineViewModelTests: XCTestCase {
         )
     }
 
-    func testCanAddRequiresManualPatternNameForLegacySelection() {
+    func testCanAddRequiresManualPatternNameForCustomSelection() {
         let viewModel = AddMagazineViewModel()
 
         XCTAssertFalse(
@@ -120,7 +120,7 @@ final class AddMagazineViewModelTests: XCTestCase {
                 selectedColor: .black,
                 colorDetail: nil,
                 purchasePriceText: "20",
-                patternSelection: .legacy,
+                patternSelection: .custom,
                 manualPatternName: "",
                 compatibleCaliberNames: [],
                 firearm: nil
@@ -156,9 +156,9 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .black,
             colorDetail: nil,
             notes: "Range set",
-            patternSelection: .automatic,
-            manualPatternName: "",
-            compatibleCaliberNames: [],
+            patternSelection: .custom,
+            manualPatternName: "CZ OEM",
+            compatibleCaliberNames: ["9mm"],
             firearm: firearm,
             canAdd: true,
             to: context
@@ -176,7 +176,7 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(magazines.first?.firearm?.displayName, "CZ P-10 C")
         XCTAssertEqual(magazines.first?.purchaseDate, purchaseDate)
         XCTAssertEqual(magazines.first?.sortOrder, 0)
-        XCTAssertEqual(magazines.first?.storedPatternKind, .legacy)
+        XCTAssertEqual(magazines.first?.storedPatternKind, .custom)
         XCTAssertEqual(magazines.first?.patternDisplayName, "CZ OEM")
     }
 
@@ -196,7 +196,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: nil,
             colorDetail: nil,
             notes: nil,
-            patternSelection: .automatic,
+            patternSelection: .catalog("catalog:glock-double-stack-9mm-full-size-compact"),
             manualPatternName: "",
             compatibleCaliberNames: [],
             firearm: nil,
@@ -223,7 +223,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .black,
             colorDetail: nil,
             notes: nil,
-            patternSelection: .automatic,
+            patternSelection: .catalog("catalog:ar15-stanag-223-556-300blk"),
             manualPatternName: "",
             compatibleCaliberNames: [],
             firearm: nil,
@@ -241,7 +241,7 @@ final class AddMagazineViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testAddMagazinePersistsExplicitLegacyPattern() throws {
+    func testAddMagazinePersistsExplicitCustomPattern() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
         let viewModel = AddMagazineViewModel()
@@ -255,8 +255,8 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .black,
             colorDetail: nil,
             notes: nil,
-            patternSelection: .legacy,
-            manualPatternName: "Old Match Tube",
+            patternSelection: .custom,
+            manualPatternName: "Match Tube",
             compatibleCaliberNames: ["9mm", ".38 Super"],
             firearm: nil,
             canAdd: true,
@@ -266,8 +266,8 @@ final class AddMagazineViewModelTests: XCTestCase {
         let magazines = try context.fetch(FetchDescriptor<Magazine>())
 
         XCTAssertTrue(didAdd)
-        XCTAssertEqual(magazines.first?.storedPatternKind, .legacy)
-        XCTAssertEqual(magazines.first?.patternDisplayName, "Old Match Tube")
+        XCTAssertEqual(magazines.first?.storedPatternKind, .custom)
+        XCTAssertEqual(magazines.first?.patternDisplayName, "Match Tube")
         XCTAssertEqual(magazines.first?.supportedCaliberNames, [".38 Super", "9mm"])
     }
 
@@ -318,7 +318,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: .other,
             colorDetail: "Nickel",
             notes: "Updated",
-            patternSelection: .automatic,
+            patternSelection: .catalog("catalog:2011-double-stack-9mm"),
             manualPatternName: "",
             compatibleCaliberNames: [],
             firearm: updatedFirearm,
@@ -435,7 +435,7 @@ final class AddMagazineViewModelTests: XCTestCase {
             color: nil,
             colorDetail: nil,
             notes: nil,
-            patternSelection: .automatic,
+            patternSelection: .catalog("catalog:ar15-stanag-223-556-300blk"),
             manualPatternName: "",
             compatibleCaliberNames: [],
             firearm: nil,

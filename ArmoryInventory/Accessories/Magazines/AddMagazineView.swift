@@ -19,7 +19,7 @@ struct AddMagazineView: View {
     @State private var modelName = ""
     @State private var countText = "1"
     @State private var capacityText = ""
-    @State private var selectedPatternSelection: MagazinePatternSelection = .automatic
+    @State private var selectedPatternSelection: MagazinePatternSelection = .custom
     @State private var manualPatternName = ""
     @State private var selectedCompatibleCaliberNames: Set<String> = []
     @State private var selectedColor: FirearmColor?
@@ -85,16 +85,6 @@ struct AddMagazineView: View {
                 Section("Configuration") {
                     LabeledContent("Pattern") {
                         Menu {
-                            Button {
-                                editingCustomPatternID = nil
-                                selectedPatternSelection = .automatic
-                            } label: {
-                                patternSelectionLabel(
-                                    title: "Automatic",
-                                    isSelected: selectedPatternSelection == .automatic
-                                )
-                            }
-
                             if !suggestedCatalogPatterns.isEmpty {
                                 Section("Suggested Catalog Patterns") {
                                     ForEach(suggestedCatalogPatterns) { pattern in
@@ -143,17 +133,7 @@ struct AddMagazineView: View {
                                 }
                             }
 
-                            Section("Manual Patterns") {
-                                Button {
-                                    editingCustomPatternID = nil
-                                    selectedPatternSelection = .legacy
-                                } label: {
-                                    patternSelectionLabel(
-                                        title: "Legacy Pattern",
-                                        isSelected: selectedPatternSelection == .legacy
-                                    )
-                                }
-
+                            Section("Custom Patterns") {
                                 Button {
                                     editingCustomPatternID = nil
                                     selectedPatternSelection = .custom
