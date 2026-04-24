@@ -164,4 +164,45 @@ final class MagazinePatternMigrationTests: XCTestCase {
         XCTAssertEqual(firstPattern.id, secondPattern.id)
         XCTAssertTrue(firstPattern.id.hasPrefix("custom:"))
     }
+
+    func testResolvedPatternPreservesStoredCustomSupportedCalibers() {
+        let magazine = Magazine(
+            brand: "Custom",
+            modelName: "Multi-Cal",
+            patternID: "custom:12345678-1234-1234-1234-1234567890ab",
+            patternKind: .custom,
+            patternDisplayName: "Competition PCC",
+            patternSupportedCaliberNames: ["9mm", ".357 SIG"],
+            count: 2,
+            capacity: 35,
+            purchasePriceCents: 4_000
+        )
+
+        let pattern = MagazinePatternMigration.resolvedPattern(for: magazine)
+
+        XCTAssertEqual(pattern.compatibility.supportedCaliberNames, ["9mm", ".357 SIG"])
+    }
+
+    @MainActor
+    func testBackfillRepairsCustomPatternMissingDisplayNameWithoutDiscardingStoredCalibers() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let magazine = Magazine(
+            brand: "Custom",
+            modelName: "Multi-Cal",
+            patternID: "custom:12345678-1234-1234-1234-1234567890ab",
+            patternKind: .custom,
+            patternDisplayName: nil,
+            patternSupportedCaliberNames: ["9mm", ".357 SIG"],
+            count: 2,
+            capacity: 35,
+            purchasePriceCents: 4_000
+        )
+        context.insert(magazine)
+
+        XCTAssertTrue(MagazinePatternMigration.backfillMissingPatterns(in: context))
+        XCTAssertEqual(magazine.storedPatternKind, .custom)
+        XCTAssertEqual(magazine.patternDisplayName, "Custom Multi-Cal")
+        XCTAssertEqual(magazine.storedPatternSupportedCaliberNames, ["9mm", ".357 SIG"])
+    }
 }

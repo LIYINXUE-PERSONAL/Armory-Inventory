@@ -18,6 +18,7 @@ struct MagazinesView: View {
     @State private var magazines: [Magazine] = []
 
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
+    private let viewModel = MagazinesViewModel()
 
     var body: some View {
         Group {
@@ -65,11 +66,9 @@ struct MagazinesView: View {
                                 Text(group.summaryText)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
-                                if let linkedFirearmsText = group.linkedFirearmsText {
-                                    Text(linkedFirearmsText)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
+                                Text(group.linkedFirearmsText)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -156,110 +155,7 @@ struct MagazinesView: View {
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
     }
 
-    private func linkedFirearmNames(for magazines: [Magazine]) -> [String] {
-        var uniqueNames: Set<String> = []
-
-        for magazine in magazines {
-            for firearm in magazine.linkedFirearms(from: firearms) {
-                uniqueNames.insert(firearm.displayName)
-            }
-        }
-
-        return uniqueNames.sorted {
-            $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
-        }
-    }
-
-    private var groupedMagazines: [MagazinePatternGroup] {
-        let grouped = Dictionary(grouping: magazines) { magazine in
-            magazine.resolvedPattern.id
-        }
-
-        return grouped
-            .compactMap { _, magazines in
-                guard let firstMagazine = magazines.first else {
-                    return nil
-                }
-
-                let pattern = firstMagazine.resolvedPattern
-                return MagazinePatternGroup(
-                    id: pattern.id,
-                    displayName: pattern.displayName,
-                    caliberText: pattern.compatibility.supportedCaliberNames.joined(separator: ", "),
-                    linkedFirearmNames: linkedFirearmNames(for: magazines),
-                    magazines: magazines
-                )
-            }
-            .sorted {
-                switch ($0.primaryCaliberName, $1.primaryCaliberName) {
-                case let (lhs?, rhs?):
-                    if lhs.caseInsensitiveCompare(rhs) != .orderedSame {
-                        return CaliberSort.areInAscendingOrder(lhs, rhs)
-                    }
-                case (.some, .none):
-                    return true
-                case (.none, .some):
-                    return false
-                case (.none, .none):
-                    break
-                }
-
-                let nameComparison = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
-                if nameComparison != .orderedSame {
-                    return nameComparison == .orderedAscending
-                }
-
-                return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
-            }
-    }
-}
-
-private struct MagazinePatternGroup: Identifiable {
-    let id: String
-    let displayName: String
-    let caliberText: String
-    let linkedFirearmNames: [String]
-    let magazines: [Magazine]
-
-    init(id: String, displayName: String, caliberText: String, linkedFirearmNames: [String] = [], magazines: [Magazine] = []) {
-        self.id = id
-        self.displayName = displayName
-        self.caliberText = caliberText
-        self.linkedFirearmNames = linkedFirearmNames
-        self.magazines = magazines
-    }
-
-    var summaryText: String {
-        let totalCount = magazines.reduce(0) { $0 + max(0, $1.count) }
-        let countText = String.localizedStringWithFormat(
-            String(localized: "magazineCount"),
-            Int64(totalCount)
-        )
-        guard !caliberText.isEmpty else {
-            return countText
-        }
-
-        return "\(caliberText) • \(countText)"
-    }
-
-    var primaryCaliberName: String? {
-        let caliberNames = caliberText
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-
-        return caliberNames.first
-    }
-
-    var linkedFirearmsText: String? {
-        let baseText = String.localizedStringWithFormat(
-            String(localized: "usedByFirearm"),
-            Int64(linkedFirearmNames.count)
-        )
-        guard !linkedFirearmNames.isEmpty else {
-            return baseText
-        }
-
-        return "\(baseText)\(linkedFirearmNames.joined(separator: ", "))"
+    private var groupedMagazines: [MagazinePatternGroupSummary] {
+        viewModel.groupedMagazines(magazines, firearms: firearms)
     }
 }

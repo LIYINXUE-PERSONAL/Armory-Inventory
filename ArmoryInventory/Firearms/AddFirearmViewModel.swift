@@ -227,6 +227,19 @@ final class AddFirearmViewModel {
         }
     }
 
+    func magazinePatternDetailText(
+        for pattern: FirearmMagazinePatternReference,
+        magazines: [Magazine],
+        summaryFirearm: Firearm
+    ) -> String {
+        let matchingMagazines = magazines.filter { $0.resolvedPattern.id == pattern.id }
+        guard !matchingMagazines.isEmpty else {
+            return ""
+        }
+
+        return "\(summaryFirearm.linkedMagazineCountText(using: matchingMagazines)) • \(summaryFirearm.linkedMagazineCapacityText(using: matchingMagazines))"
+    }
+
     func selectedMagazineValidationResult(
         magazines: [Magazine],
         selectedPatterns: [FirearmMagazinePatternReference],
