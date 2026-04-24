@@ -33,6 +33,7 @@ final class MagazineModelsTests: XCTestCase {
         XCTAssertEqual(magazine.displayName, "Atlas Premium")
         XCTAssertEqual(magazine.capacityText, "20 rounds")
         XCTAssertEqual(magazine.countText, "3 magazines")
+        XCTAssertEqual(magazine.countCapacityText, "3 20-round magazines")
         XCTAssertEqual(magazine.totalRoundCapacity, 60)
         XCTAssertEqual(magazine.totalRoundCapacityText, "60 Rounds")
         XCTAssertEqual(magazine.supportedCaliberNames, ["9mm"])
@@ -59,6 +60,7 @@ final class MagazineModelsTests: XCTestCase {
 
         XCTAssertEqual(magazine.countText, "1 magazine")
         XCTAssertEqual(magazine.capacityText, "17 rounds")
+        XCTAssertEqual(magazine.countCapacityText, "1 17-round magazine")
         XCTAssertEqual(magazine.totalRoundCapacity, 17)
         XCTAssertEqual(magazine.totalRoundCapacityText, "17 Rounds")
         XCTAssertEqual(magazine.caliberDisplayText, "No Caliber")

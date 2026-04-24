@@ -42,9 +42,7 @@ struct MagazinesView: View {
                                         HStack {
                                             Text(magazine.caliberDisplayText)
                                             Text("•")
-                                            Text(magazine.countText)
-                                            Text("•")
-                                            Text(magazine.capacityText)
+                                            Text(magazine.countCapacityText)
                                         }
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
@@ -233,7 +231,10 @@ private struct MagazinePatternGroup: Identifiable {
 
     var summaryText: String {
         let totalCount = magazines.reduce(0) { $0 + max(0, $1.count) }
-        let countText = totalCount == 1 ? "1 magazine" : "\(totalCount) magazines"
+        let countText = String.localizedStringWithFormat(
+            String(localized: "magazineCount"),
+            Int64(totalCount)
+        )
         guard !caliberText.isEmpty else {
             return countText
         }

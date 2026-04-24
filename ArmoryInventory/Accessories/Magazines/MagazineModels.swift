@@ -117,11 +117,25 @@ final class Magazine {
     }
 
     var capacityText: String {
-        "\(capacity) rounds"
+        String.localizedStringWithFormat(
+            String(localized: "magazineCapacityText"),
+            Int64(capacity)
+        )
     }
 
     var countText: String {
-        count == 1 ? "1 magazine" : "\(count) magazines"
+        String.localizedStringWithFormat(
+            String(localized: "magazineCount"),
+            Int64(count)
+        )
+    }
+
+    var countCapacityText: String {
+        String.localizedStringWithFormat(
+            String(localized: "magazineCountAndCapacity"),
+            Int64(count),
+            Int64(capacity)
+        )
     }
 
     var totalRoundCapacity: Int {

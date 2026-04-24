@@ -27,16 +27,6 @@
         }
       }
     },
-    "%@ • %@ • %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ • %2$@ • %3$@"
-          }
-        }
-      }
-    },
     "%@ currently on hand" : {
 
     },
@@ -119,7 +109,7 @@
     "Add Magazine" : {
 
     },
-    "Add magazines first to link them to this firearm." : {
+    "Add magazines first to see which ones are compatible with this firearm." : {
 
     },
     "Add magazines or select a caliber to surface compatible patterns." : {
@@ -279,6 +269,9 @@
 
     },
     "Compatible Calibers" : {
+
+    },
+    "Compatible Magazines" : {
 
     },
     "Configuration" : {
@@ -443,9 +436,6 @@
     "Linked Firearm" : {
 
     },
-    "Linked Magazines" : {
-
-    },
     "Linked Optics" : {
 
     },
@@ -457,6 +447,85 @@
     },
     "Magazine Patterns" : {
 
+    },
+    "magazineCapacityText" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld round"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rounds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "magazineCount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld magazine"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld magazines"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "magazineCountAndCapacity" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@count@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%1$lld %2$lld-round magazine"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%1$lld %2$lld-round magazines"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Magazines" : {
 
@@ -545,7 +614,7 @@
     "No magazine patterns selected." : {
 
     },
-    "No magazines currently match the selected patterns." : {
+    "No magazines are currently compatible with the selected patterns." : {
 
     },
     "No Magazines Yet" : {
@@ -680,7 +749,7 @@
     "Select Magazine Patterns" : {
 
     },
-    "Select one or more magazine patterns to see linked magazines." : {
+    "Select one or more magazine patterns to see compatible magazines." : {
 
     },
     "Send Feedback" : {
