@@ -164,17 +164,22 @@ struct MagazinesView: View {
 
     private var groupedMagazines: [MagazinePatternGroup] {
         let grouped = Dictionary(grouping: magazines) { magazine in
-            let pattern = magazine.resolvedPattern
-            return MagazinePatternGroup(
-                id: pattern.id,
-                displayName: pattern.displayName,
-                caliberText: pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
-            )
+            magazine.resolvedPattern.id
         }
 
         return grouped
-            .map { key, magazines in
-                key.with(magazines: magazines)
+            .compactMap { _, magazines in
+                guard let firstMagazine = magazines.first else {
+                    return nil
+                }
+
+                let pattern = firstMagazine.resolvedPattern
+                return MagazinePatternGroup(
+                    id: pattern.id,
+                    displayName: pattern.displayName,
+                    caliberText: pattern.compatibility.supportedCaliberNames.joined(separator: ", "),
+                    magazines: magazines
+                )
             }
             .sorted {
                 $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
@@ -203,14 +208,5 @@ private struct MagazinePatternGroup: Identifiable {
         }
 
         return "\(caliberText) • \(countText)"
-    }
-
-    func with(magazines: [Magazine]) -> MagazinePatternGroup {
-        MagazinePatternGroup(
-            id: id,
-            displayName: displayName,
-            caliberText: caliberText,
-            magazines: magazines
-        )
     }
 }
