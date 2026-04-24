@@ -828,12 +828,11 @@ struct AddFirearmView: View {
     }
 
     private func patternDetailText(for pattern: FirearmMagazinePatternReference) -> String {
-        let magazines = resolvedMagazines.filter { $0.resolvedPattern.id == pattern.id }
-        guard !magazines.isEmpty else {
-            return ""
-        }
-
-        return "\(currentFirearmForSummary.linkedMagazineCountText(using: magazines)) • \(currentFirearmForSummary.linkedMagazineCapacityText(using: magazines))"
+        viewModel.magazinePatternDetailText(
+            for: pattern,
+            magazines: resolvedMagazines,
+            summaryFirearm: currentFirearmForSummary
+        )
     }
 
     private func saveFirearm() {

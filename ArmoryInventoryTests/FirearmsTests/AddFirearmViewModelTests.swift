@@ -114,6 +114,57 @@ final class AddFirearmViewModelTests: XCTestCase {
         )
     }
 
+    func testMagazinePatternDetailTextReturnsSummaryForMatchingMagazines() {
+        let viewModel = AddFirearmViewModel()
+        let pattern = FirearmMagazinePatternReference(
+            id: "catalog:ar15-stanag-223-556-300blk",
+            kind: .catalog,
+            displayName: nil
+        )
+        let matchingMagazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            patternID: pattern.id,
+            patternKind: .catalog,
+            count: 2,
+            capacity: 30,
+            purchasePriceCents: 1500
+        )
+        let nonMatchingMagazine = Magazine(
+            brand: "Glock",
+            modelName: "OEM",
+            patternID: "catalog:glock-double-stack-9mm-compact",
+            patternKind: .catalog,
+            count: 1,
+            capacity: 15,
+            purchasePriceCents: 1200
+        )
+        let summaryFirearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 180000,
+            type: .rifle,
+            action: .semiAuto
+        )
+
+        XCTAssertEqual(
+            viewModel.magazinePatternDetailText(
+                for: pattern,
+                magazines: [matchingMagazine, nonMatchingMagazine],
+                summaryFirearm: summaryFirearm
+            ),
+            "2 magazines • 60 Rounds"
+        )
+        XCTAssertEqual(
+            viewModel.magazinePatternDetailText(
+                for: pattern,
+                magazines: [nonMatchingMagazine],
+                summaryFirearm: summaryFirearm
+            ),
+            ""
+        )
+    }
+
     @MainActor
     func testRelationshipSelectionAndAvailabilityHelpersRespectAssignments() throws {
         let container = try makeInMemoryContainer()
