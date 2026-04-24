@@ -29,43 +29,56 @@ struct MagazinesView: View {
                 )
             } else {
                 List {
-                    ForEach(magazines) { magazine in
-                        Button {
-                            selectedMagazine = magazine
-                        } label: {
-                            let linkedFirearms = magazine.linkedFirearms(from: firearms)
+                    ForEach(groupedMagazines) { group in
+                        Section {
+                            ForEach(group.magazines) { magazine in
+                                Button {
+                                    selectedMagazine = magazine
+                                } label: {
+                                    let linkedFirearms = magazine.linkedFirearms(from: firearms)
 
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(magazine.displayName)
-                                    .font(.headline)
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        Text(magazine.displayName)
+                                            .font(.headline)
 
-                                HStack {
-                                    Text(magazine.caliberDisplayText)
-                                    Text("•")
-                                    Text(magazine.countText)
-                                    Text("•")
-                                    Text(magazine.capacityText)
+                                        HStack {
+                                            Text(magazine.caliberDisplayText)
+                                            Text("•")
+                                            Text(magazine.countText)
+                                            Text("•")
+                                            Text(magazine.capacityText)
+                                        }
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+
+                                        if showValueInCard, magazine.purchasePriceCents > 0 {
+                                            LabeledContent("Value", value: magazine.purchasePriceText)
+                                        }
+
+                                        if !linkedFirearms.isEmpty {
+                                            LabeledContent(
+                                                linkedFirearms.count == 1 ? "Linked Firearm" : "Linked Firearms",
+                                                value: linkedFirearms.map(\.displayName).joined(separator: ", ")
+                                            )
+                                        }
+                                    }
+                                    .padding(.vertical, 6)
+                                    .contentShape(Rectangle())
                                 }
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-
-                                if showValueInCard, magazine.purchasePriceCents > 0 {
-                                    LabeledContent("Value", value: magazine.purchasePriceText)
-                                }
-
-                                if !linkedFirearms.isEmpty {
-                                    LabeledContent(
-                                        linkedFirearms.count == 1 ? "Linked Firearm" : "Linked Firearms",
-                                        value: linkedFirearms.map(\.displayName).joined(separator: ", ")
-                                    )
-                                }
+                                .buttonStyle(.plain)
                             }
-                            .padding(.vertical, 6)
-                            .contentShape(Rectangle())
+                            .onDelete { offsets in
+                                deleteMagazines(in: group.magazines, at: offsets)
+                            }
+                        } header: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(group.displayName)
+                                Text(group.summaryText)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
-                        .buttonStyle(.plain)
                     }
-                    .onDelete(perform: deleteMagazines)
 
                     if showTotalValue {
                         Section {
@@ -114,9 +127,9 @@ struct MagazinesView: View {
         }
     }
 
-    private func deleteMagazines(at offsets: IndexSet) {
+    private func deleteMagazines(in group: [Magazine], at offsets: IndexSet) {
         for index in offsets {
-            context.delete(magazines[index])
+            context.delete(group[index])
         }
         resequenceMagazines()
 
@@ -147,5 +160,57 @@ struct MagazinesView: View {
         let totalCents = magazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private var groupedMagazines: [MagazinePatternGroup] {
+        let grouped = Dictionary(grouping: magazines) { magazine in
+            let pattern = magazine.resolvedPattern
+            return MagazinePatternGroup(
+                id: pattern.id,
+                displayName: pattern.displayName,
+                caliberText: pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
+            )
+        }
+
+        return grouped
+            .map { key, magazines in
+                key.with(magazines: magazines)
+            }
+            .sorted {
+                $0.displayName.localizedCaseInsensitiveCompare($1.displayName) == .orderedAscending
+            }
+    }
+}
+
+private struct MagazinePatternGroup: Identifiable {
+    let id: String
+    let displayName: String
+    let caliberText: String
+    let magazines: [Magazine]
+
+    init(id: String, displayName: String, caliberText: String, magazines: [Magazine] = []) {
+        self.id = id
+        self.displayName = displayName
+        self.caliberText = caliberText
+        self.magazines = magazines
+    }
+
+    var summaryText: String {
+        let totalCount = magazines.reduce(0) { $0 + max(0, $1.count) }
+        let countText = totalCount == 1 ? "1 magazine" : "\(totalCount) magazines"
+        guard !caliberText.isEmpty else {
+            return countText
+        }
+
+        return "\(caliberText) • \(countText)"
+    }
+
+    func with(magazines: [Magazine]) -> MagazinePatternGroup {
+        MagazinePatternGroup(
+            id: id,
+            displayName: displayName,
+            caliberText: caliberText,
+            magazines: magazines
+        )
     }
 }
