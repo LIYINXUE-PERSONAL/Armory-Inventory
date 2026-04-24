@@ -443,9 +443,6 @@
     "Linked Firearm" : {
 
     },
-    "Linked Firearms" : {
-
-    },
     "Linked Magazines" : {
 
     },
@@ -785,6 +782,35 @@
     },
     "Use the slider to set a rate from 0% to 100%. Move it all the way to 100% to unlock a custom value above that range." : {
 
+    },
+    "usedByFirearm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Used by %lld firearm: "
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Used by %lld firearms: "
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Used by %lld firearm."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "User Data" : {
 

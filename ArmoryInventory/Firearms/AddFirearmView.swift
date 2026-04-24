@@ -297,7 +297,7 @@ struct AddFirearmView: View {
                     }
                 }
 
-                Section("Linked Magazines") {
+                Section("Compatible Magazines") {
                     if let compatibilityMessage = selectedMagazineCompatibilityMessage {
                         Text(compatibilityMessage)
                             .font(.footnote)
@@ -305,15 +305,15 @@ struct AddFirearmView: View {
                     }
 
                     if lookupData.magazines.isEmpty {
-                        Text("Add magazines first to link them to this firearm.")
+                        Text("Add magazines first to see which ones are compatible with this firearm.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else if selectedMagazinePatterns.isEmpty {
-                        Text("Select one or more magazine patterns to see linked magazines.")
+                        Text("Select one or more magazine patterns to see compatible magazines.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else if resolvedMagazines.isEmpty {
-                        Text("No magazines currently match the selected patterns.")
+                        Text("No magazines are currently compatible with the selected patterns.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {

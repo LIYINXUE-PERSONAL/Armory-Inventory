@@ -35,8 +35,6 @@ struct MagazinesView: View {
                                 Button {
                                     selectedMagazine = magazine
                                 } label: {
-                                    let linkedFirearms = magazine.linkedFirearms(from: firearms)
-
                                     VStack(alignment: .leading, spacing: 6) {
                                         Text(magazine.displayName)
                                             .font(.headline)
@@ -54,13 +52,6 @@ struct MagazinesView: View {
                                         if showValueInCard, magazine.purchasePriceCents > 0 {
                                             LabeledContent("Value", value: magazine.purchasePriceText)
                                         }
-
-                                        if !linkedFirearms.isEmpty {
-                                            LabeledContent(
-                                                linkedFirearms.count == 1 ? "Linked Firearm" : "Linked Firearms",
-                                                value: linkedFirearms.map(\.displayName).joined(separator: ", ")
-                                            )
-                                        }
                                     }
                                     .padding(.vertical, 6)
                                     .contentShape(Rectangle())
@@ -76,6 +67,11 @@ struct MagazinesView: View {
                                 Text(group.summaryText)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
+                                if let linkedFirearmsText = group.linkedFirearmsText {
+                                    Text(linkedFirearmsText)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }
@@ -162,6 +158,20 @@ struct MagazinesView: View {
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
     }
 
+    private func linkedFirearmNames(for magazines: [Magazine]) -> [String] {
+        var uniqueNames: Set<String> = []
+
+        for magazine in magazines {
+            for firearm in magazine.linkedFirearms(from: firearms) {
+                uniqueNames.insert(firearm.displayName)
+            }
+        }
+
+        return uniqueNames.sorted {
+            $0.localizedCaseInsensitiveCompare($1) == .orderedAscending
+        }
+    }
+
     private var groupedMagazines: [MagazinePatternGroup] {
         let grouped = Dictionary(grouping: magazines) { magazine in
             magazine.resolvedPattern.id
@@ -178,6 +188,7 @@ struct MagazinesView: View {
                     id: pattern.id,
                     displayName: pattern.displayName,
                     caliberText: pattern.compatibility.supportedCaliberNames.joined(separator: ", "),
+                    linkedFirearmNames: linkedFirearmNames(for: magazines),
                     magazines: magazines
                 )
             }
@@ -209,12 +220,14 @@ private struct MagazinePatternGroup: Identifiable {
     let id: String
     let displayName: String
     let caliberText: String
+    let linkedFirearmNames: [String]
     let magazines: [Magazine]
 
-    init(id: String, displayName: String, caliberText: String, magazines: [Magazine] = []) {
+    init(id: String, displayName: String, caliberText: String, linkedFirearmNames: [String] = [], magazines: [Magazine] = []) {
         self.id = id
         self.displayName = displayName
         self.caliberText = caliberText
+        self.linkedFirearmNames = linkedFirearmNames
         self.magazines = magazines
     }
 
@@ -235,5 +248,17 @@ private struct MagazinePatternGroup: Identifiable {
             .filter { !$0.isEmpty }
 
         return caliberNames.first
+    }
+
+    var linkedFirearmsText: String? {
+        let baseText = String.localizedStringWithFormat(
+            String(localized: "usedByFirearm"),
+            Int64(linkedFirearmNames.count)
+        )
+        guard !linkedFirearmNames.isEmpty else {
+            return baseText
+        }
+
+        return "\(baseText)\(linkedFirearmNames.joined(separator: ", "))"
     }
 }
