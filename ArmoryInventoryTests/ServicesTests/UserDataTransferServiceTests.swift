@@ -31,6 +31,18 @@ final class UserDataTransferServiceTests: XCTestCase {
             action: .semiAuto,
             color: .black,
             notes: "Primary",
+            supportedMagazinePatterns: [
+                FirearmMagazinePatternReference(
+                    id: "catalog:glock-double-stack-9mm-full-size-compact",
+                    kind: .catalog,
+                    displayName: nil
+                ),
+                FirearmMagazinePatternReference(
+                    id: "legacy:glock-legacy",
+                    kind: .legacy,
+                    displayName: "Legacy Glock Pattern"
+                )
+            ],
             caliber: caliber,
             sortOrder: 3,
             createdAt: Date(timeIntervalSince1970: 2_000)
@@ -145,6 +157,21 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertEqual(importedRecords.count, 1)
         XCTAssertEqual(importedFirearms.first?.id, firearmID)
         XCTAssertEqual(importedFirearms.first?.caliber?.name, "9mm")
+        XCTAssertEqual(
+            importedFirearms.first?.supportedMagazinePatterns,
+            [
+                FirearmMagazinePatternReference(
+                    id: "catalog:glock-double-stack-9mm-full-size-compact",
+                    kind: .catalog,
+                    displayName: nil
+                ),
+                FirearmMagazinePatternReference(
+                    id: "legacy:glock-legacy",
+                    kind: .legacy,
+                    displayName: "Legacy Glock Pattern"
+                )
+            ]
+        )
         XCTAssertEqual(importedOptics.first?.firearm?.id, firearmID)
         XCTAssertEqual(importedMagazines.first?.caliber?.name, "9mm")
         XCTAssertEqual(importedMagazines.first?.storedPatternKind, .legacy)

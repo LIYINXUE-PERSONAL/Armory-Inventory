@@ -32,11 +32,11 @@ struct AddFirearmView: View {
     @State private var notes = ""
     @State private var selectedCaliber: Caliber?
     @State private var selectedOpticIDs: Set<PersistentIdentifier> = []
-    @State private var selectedMagazineIDs: Set<PersistentIdentifier> = []
+    @State private var selectedMagazinePatterns: [FirearmMagazinePatternReference] = []
     @State private var selectedAttachmentIDs: Set<PersistentIdentifier> = []
     @State private var selectedPartIDs: Set<PersistentIdentifier> = []
     @State private var showingOpticsPicker = false
-    @State private var showingMagazinesPicker = false
+    @State private var showingMagazinePatternsPicker = false
     @State private var showingAttachmentsPicker = false
     @State private var showingPartsPicker = false
     @State private var showingAddCaliber = false
@@ -73,7 +73,7 @@ struct AddFirearmView: View {
         _customColor = State(initialValue: firearm?.firearmColor == .other ? firearm?.colorDetail ?? "" : "")
         _selectedCaliber = State(initialValue: firearm?.caliber)
         _selectedOpticIDs = State(initialValue: viewModel.selectedOpticIDs(for: firearm))
-        _selectedMagazineIDs = State(initialValue: viewModel.selectedMagazineIDs(for: firearm))
+        _selectedMagazinePatterns = State(initialValue: viewModel.selectedMagazinePatterns(for: firearm))
         _selectedAttachmentIDs = State(initialValue: viewModel.selectedAttachmentIDs(for: firearm))
         _selectedPartIDs = State(initialValue: viewModel.selectedPartIDs(for: firearm))
         _barrelLengthText = State(initialValue: viewModel.initialBarrelLengthText(for: firearm))
@@ -269,15 +269,35 @@ struct AddFirearmView: View {
                     }
                 }
 
-                Section("Linked Magazines") {
+                Section("Magazine Patterns") {
                     if isEditing {
                         Button {
-                            showingMagazinesPicker = true
+                            showingMagazinePatternsPicker = true
                         } label: {
-                            Label(selectedMagazineIDs.isEmpty ? "Add Magazines" : "Manage Magazines", systemImage: "plus.circle")
+                            Label(
+                                selectedMagazinePatterns.isEmpty ? "Select Magazine Patterns" : "Manage Magazine Patterns",
+                                systemImage: "square.stack.3d.down.right.fill"
+                            )
                         }
                     }
 
+                    if selectedMagazinePatterns.isEmpty {
+                        Text("No magazine patterns selected.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(selectedMagazinePatterns, id: \.id) { pattern in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(pattern.resolvedDisplayName)
+                                Text(patternDetailText(for: pattern))
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
+                Section("Compatible Magazines") {
                     if let compatibilityMessage = selectedMagazineCompatibilityMessage {
                         Text(compatibilityMessage)
                             .font(.footnote)
@@ -285,22 +305,22 @@ struct AddFirearmView: View {
                     }
 
                     if lookupData.magazines.isEmpty {
-                        Text("Add magazines first to link them to this firearm.")
+                        Text("Add magazines first to see which ones are compatible with this firearm.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else if availableMagazines.isEmpty {
-                        Text("No compatible magazines are currently available.")
+                    } else if selectedMagazinePatterns.isEmpty {
+                        Text("Select one or more magazine patterns to see compatible magazines.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else if resolvedMagazines.isEmpty {
-                        Text("No magazines linked.")
+                        Text("No magazines are currently compatible with the selected patterns.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(resolvedMagazines) { magazine in
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(magazine.displayName)
-                                Text("\(magazine.caliber?.name ?? "No Caliber") • \(magazine.capacityText)")
+                                Text("\(magazine.caliberDisplayText) • \(magazine.countCapacityText)")
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
@@ -478,31 +498,31 @@ struct AddFirearmView: View {
                 }
                 .presentationDetents([.medium, .large])
             }
-            .sheet(isPresented: $showingMagazinesPicker) {
+            .sheet(isPresented: $showingMagazinePatternsPicker) {
                 NavigationStack {
                     Group {
-                        if availableMagazines.isEmpty {
+                        if availableMagazinePatterns.isEmpty {
                             ContentUnavailableView(
-                                "No Magazines Available",
-                                systemImage: "rectangle.stack.fill.badge.plus",
-                                description: Text("All compatible magazines are linked to other firearms or none have been added yet.")
+                                "No Magazine Patterns Available",
+                                systemImage: "square.stack.3d.down.right.fill",
+                                description: Text("Add magazines or select a caliber to surface compatible patterns.")
                             )
                         } else {
                             List {
-                                ForEach(availableMagazines) { magazine in
+                                ForEach(availableMagazinePatterns, id: \.id) { pattern in
                                     Button {
-                                        toggleMagazineSelection(for: magazine)
+                                        toggleMagazinePatternSelection(for: pattern)
                                     } label: {
                                         HStack {
                                             VStack(alignment: .leading, spacing: 2) {
-                                                Text(magazine.displayName)
+                                                Text(pattern.resolvedDisplayName)
                                                     .foregroundStyle(.primary)
-                                                Text("\(magazine.caliber?.name ?? "No Caliber") • \(magazine.capacityText)")
+                                                Text(pattern.kind == .catalog ? "Catalog pattern" : pattern.kind.id.capitalized)
                                                     .font(.footnote)
                                                     .foregroundStyle(.secondary)
                                             }
                                             Spacer()
-                                            if selectedMagazineIDs.contains(magazine.persistentModelID) {
+                                            if selectedMagazinePatterns.contains(where: { $0.id == pattern.id }) {
                                                 Image(systemName: "checkmark.circle.fill")
                                                     .foregroundStyle(.tint)
                                             } else {
@@ -517,12 +537,12 @@ struct AddFirearmView: View {
                             }
                         }
                     }
-                    .navigationTitle("Link Magazines")
+                    .navigationTitle("Magazine Patterns")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Done") {
-                                showingMagazinesPicker = false
+                                showingMagazinePatternsPicker = false
                             }
                         }
                     }
@@ -674,7 +694,13 @@ struct AddFirearmView: View {
     }
 
     private var resolvedMagazines: [Magazine] {
-        viewModel.resolvedMagazines(from: lookupData.magazines, selectedIDs: selectedMagazineIDs)
+        viewModel.linkedMagazines(
+            from: lookupData.magazines,
+            selectedPatterns: selectedMagazinePatterns,
+            firearmType: selectedType,
+            action: selectedAction,
+            caliber: selectedCaliber
+        )
     }
 
     private var resolvedAttachments: [Attachment] {
@@ -689,25 +715,25 @@ struct AddFirearmView: View {
         viewModel.availableOptics(from: lookupData.optics, selectedIDs: selectedOpticIDs, firearm: firearm)
     }
 
-    private var availableMagazines: [Magazine] {
-        viewModel.availableMagazines(
-            from: lookupData.magazines,
-            selectedIDs: selectedMagazineIDs,
-            firearm: firearm,
-            firearmType: selectedType,
-            action: selectedAction,
-            caliber: selectedCaliber
-        )
-    }
-
     private var selectedMagazineCompatibilityMessage: String? {
         viewModel.selectedMagazineValidationResult(
             magazines: resolvedMagazines,
+            selectedPatterns: selectedMagazinePatterns,
             firearmType: selectedType,
             action: selectedAction,
             caliber: selectedCaliber,
             owningFirearm: firearm
         ).message
+    }
+
+    private var availableMagazinePatterns: [FirearmMagazinePatternReference] {
+        viewModel.availableMagazinePatterns(
+            from: lookupData.magazines,
+            firearmType: selectedType,
+            action: selectedAction,
+            caliber: selectedCaliber,
+            selectedPatterns: selectedMagazinePatterns
+        )
     }
 
     private var availableAttachments: [Attachment] {
@@ -755,6 +781,16 @@ struct AddFirearmView: View {
         return opticsTotal + magazinesTotal + attachmentsTotal + partsTotal
     }
 
+    private var currentFirearmForSummary: Firearm {
+        firearm ?? Firearm(
+            brand: brand,
+            modelName: modelName,
+            purchasePriceCents: resolvedPurchasePriceCents ?? 0,
+            type: selectedType,
+            action: selectedAction
+        )
+    }
+
     private var primaryButtonTitle: String {
         viewModel.primaryButtonTitle(hasFirearm: firearm != nil, isEditing: isEditing)
     }
@@ -773,6 +809,7 @@ struct AddFirearmView: View {
             barrelLengthText: barrelLengthText,
             duplicateExists: duplicateExists,
             magazines: resolvedMagazines,
+            selectedMagazinePatterns: selectedMagazinePatterns,
             caliber: selectedCaliber,
             owningFirearm: firearm
         )
@@ -788,6 +825,15 @@ struct AddFirearmView: View {
 
     private func taxedAmountCents(baseAmountCents: Int, taxRate: Double) -> Int {
         Int((Double(baseAmountCents) * (1 + max(0, taxRate) / 100)).rounded())
+    }
+
+    private func patternDetailText(for pattern: FirearmMagazinePatternReference) -> String {
+        let magazines = resolvedMagazines.filter { $0.resolvedPattern.id == pattern.id }
+        guard !magazines.isEmpty else {
+            return ""
+        }
+
+        return "\(currentFirearmForSummary.linkedMagazineCountText(using: magazines)) • \(currentFirearmForSummary.linkedMagazineCapacityText(using: magazines))"
     }
 
     private func saveFirearm() {
@@ -809,6 +855,7 @@ struct AddFirearmView: View {
                 colorDetail: resolvedColorDetail,
                 barrelLengthInches: resolvedBarrelLength,
                 notes: resolvedNotes,
+                supportedMagazinePatterns: selectedMagazinePatterns,
                 caliber: selectedCaliber,
                 optics: resolvedOptics,
                 magazines: resolvedMagazines,
@@ -833,6 +880,7 @@ struct AddFirearmView: View {
                 colorDetail: resolvedColorDetail,
                 barrelLengthInches: resolvedBarrelLength,
                 notes: resolvedNotes,
+                supportedMagazinePatterns: selectedMagazinePatterns,
                 caliber: selectedCaliber,
                 optics: resolvedOptics,
                 magazines: resolvedMagazines,
@@ -885,10 +933,10 @@ struct AddFirearmView: View {
         )
     }
 
-    private func toggleMagazineSelection(for magazine: Magazine) {
-        selectedMagazineIDs = viewModel.toggledSelection(
-            currentSelection: selectedMagazineIDs,
-            itemID: magazine.persistentModelID,
+    private func toggleMagazinePatternSelection(for pattern: FirearmMagazinePatternReference) {
+        selectedMagazinePatterns = viewModel.toggledMagazinePatternSelection(
+            currentSelection: selectedMagazinePatterns,
+            pattern: pattern,
             isEditing: isEditing
         )
     }
@@ -1045,7 +1093,7 @@ private struct FirearmSnapshotCard: View {
             }
 
             linkedSection("Linked Optics", items: optics.map { "\($0.displayName) • \($0.magnificationText)" })
-            linkedSection("Linked Magazines", items: magazines.map { "\($0.displayName) • \($0.capacityText)" })
+            linkedSection("Linked Magazines", items: magazines.map { "\($0.displayName) • \($0.caliberDisplayText) • \($0.countCapacityText)" })
             linkedSection("Linked Attachments", items: attachments.map { "\($0.displayName) • \($0.typeDisplayName)" })
             linkedSection("Linked Parts", items: parts.map { "\($0.displayName) • \($0.typeDisplayName)" })
 
@@ -1117,6 +1165,11 @@ private struct FirearmSnapshotCard: View {
 
             if let lastCleaned = firearm.lastCleanedDateText {
                 snapshotMetric("Last Cleaned", lastCleaned)
+            }
+
+            if !magazines.isEmpty {
+                snapshotMetric("Magazine Count", firearm.linkedMagazineCountText(using: magazines))
+                snapshotMetric("Total Capacity", firearm.linkedMagazineCapacityText(using: magazines))
             }
 
             if showsValue {

@@ -8,6 +8,44 @@
 import Foundation
 import SwiftData
 
+enum MagazinePatternSelection: Equatable, Identifiable {
+    case catalog(String)
+    case existingCustom(MagazinePattern)
+    case legacy
+    case custom
+
+    var id: String {
+        switch self {
+        case let .catalog(patternID):
+            return "catalog:\(patternID)"
+        case let .existingCustom(pattern):
+            return "existing-custom:\(pattern.id)"
+        case .legacy:
+            return "legacy"
+        case .custom:
+            return "custom"
+        }
+    }
+
+    var requiresManualName: Bool {
+        switch self {
+        case .legacy, .custom:
+            return true
+        case .catalog, .existingCustom:
+            return false
+        }
+    }
+
+    var allowsManualCaliberSelection: Bool {
+        switch self {
+        case .legacy, .custom:
+            return true
+        case .catalog, .existingCustom:
+            return false
+        }
+    }
+}
+
 final class AddMagazineViewModel {
     private let priceInputParser: PriceInputParsing
     private let compatibilityValidator: MagazineCompatibilityValidator
@@ -94,6 +132,197 @@ final class AddMagazineViewModel {
         return isEditing ? "Save" : "Edit"
     }
 
+    func initialPatternSelection(for magazine: Magazine?) -> MagazinePatternSelection {
+        guard let magazine else { return .custom }
+
+        switch magazine.storedPatternKind {
+        case .catalog:
+            if let patternID = magazine.patternID,
+               MagazinePatternCatalog.pattern(id: patternID) != nil {
+                return .catalog(patternID)
+            }
+            if magazine.resolvedPattern.kind == .catalog {
+                return .catalog(magazine.resolvedPattern.id)
+            }
+            return .custom
+        case .legacy:
+            return .legacy
+        case .custom:
+            return .existingCustom(magazine.resolvedPattern)
+        case .unknown, nil:
+            if magazine.resolvedPattern.kind == .catalog {
+                return .catalog(magazine.resolvedPattern.id)
+            }
+            return .custom
+        }
+    }
+
+    func availableCustomPatterns(in context: ModelContext) -> [MagazinePattern] {
+        let descriptor = FetchDescriptor<Magazine>(
+            sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.sortOrder)]
+        )
+        guard let magazines = try? context.fetch(descriptor) else {
+            return []
+        }
+
+        var patternsByID: [String: MagazinePattern] = [:]
+        for magazine in magazines where magazine.storedPatternKind == .custom {
+            let pattern = magazine.resolvedPattern
+            guard pattern.kind == .custom else {
+                continue
+            }
+
+            patternsByID[pattern.id] = patternsByID[pattern.id] ?? pattern
+        }
+
+        return patternsByID.values.sorted {
+            let nameComparison = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
+            if nameComparison != .orderedSame {
+                return nameComparison == .orderedAscending
+            }
+
+            return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
+        }
+    }
+
+    func customPatternUUID(from patternID: String) -> UUID? {
+        guard patternID.hasPrefix("custom:") else {
+            return nil
+        }
+
+        return UUID(uuidString: String(patternID.dropFirst("custom:".count)))
+    }
+
+    func initialManualPatternName(for magazine: Magazine?) -> String {
+        guard let magazine,
+              let patternKind = magazine.storedPatternKind,
+              patternKind == .legacy || patternKind == .custom else {
+            return ""
+        }
+
+        return magazine.patternDisplayName ?? magazine.resolvedPattern.displayName
+    }
+
+    func initialCompatibleCaliberNames(for magazine: Magazine?) -> Set<String> {
+        Set(magazine?.supportedCaliberNames ?? [])
+    }
+
+    func toggledCompatibleCaliberSelection(
+        currentSelection: Set<String>,
+        caliberName: String,
+        isEditing: Bool
+    ) -> Set<String> {
+        guard isEditing else {
+            return currentSelection
+        }
+
+        let trimmedCaliberName = trimmedValue(caliberName)
+        guard !trimmedCaliberName.isEmpty else {
+            return currentSelection
+        }
+
+        var selection = currentSelection
+        if selection.contains(trimmedCaliberName) {
+            selection.remove(trimmedCaliberName)
+        } else {
+            selection.insert(trimmedCaliberName)
+        }
+        return selection
+    }
+
+    func suggestedCatalogPatterns(firearm: Firearm?) -> [MagazinePattern] {
+        if let firearm {
+            return MagazinePatternCatalog.suggestedPatterns(
+                firearmType: firearm.firearmType,
+                action: firearm.firearmAction,
+                caliberName: firearm.caliber?.name
+            )
+        }
+
+        return MagazinePatternCatalog.canonicalPatterns
+    }
+
+    func additionalCatalogPatterns(firearm: Firearm?) -> [MagazinePattern] {
+        let suggestedIDs = Set(suggestedCatalogPatterns(firearm: firearm).map(\.id))
+        return MagazinePatternCatalog.canonicalPatterns.filter { !suggestedIDs.contains($0.id) }
+    }
+
+    func selectedPatternTitle(
+        selection: MagazinePatternSelection,
+        manualPatternName: String,
+        brand: String,
+        modelName: String,
+        compatibleCaliberNames: Set<String>,
+        firearm: Firearm?,
+        existingMagazine: Magazine? = nil
+    ) -> String {
+        resolvedPatternDefinition(
+            selection: selection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
+            firearm: firearm,
+            existingMagazine: existingMagazine
+        ).pattern.displayName
+    }
+
+    func selectedPatternDescription(
+        selection: MagazinePatternSelection,
+        manualPatternName: String,
+        brand: String,
+        modelName: String,
+        compatibleCaliberNames: Set<String>,
+        firearm: Firearm?,
+        existingMagazine: Magazine? = nil
+    ) -> String {
+        let definition = resolvedPatternDefinition(
+            selection: selection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
+            firearm: firearm,
+            existingMagazine: existingMagazine
+        )
+
+        switch selection {
+        case .catalog:
+            let calibers = definition.pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
+            return calibers.isEmpty ? definition.pattern.familyLabel : calibers
+        case .existingCustom:
+            let calibers = definition.pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
+            return calibers.isEmpty ? "Saved custom pattern." : calibers
+        case .legacy:
+            return "Legacy pattern names stay visible and editable for existing data."
+        case .custom:
+            return "Custom pattern names are stored exactly as entered."
+        }
+    }
+
+    func resolvedSupportedCaliberNames(
+        selection: MagazinePatternSelection,
+        manualPatternName: String,
+        brand: String,
+        modelName: String,
+        compatibleCaliberNames: Set<String>,
+        firearm: Firearm?,
+        existingMagazine: Magazine? = nil
+    ) -> [String] {
+        resolvedPatternDefinition(
+            selection: selection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
+            firearm: firearm,
+            existingMagazine: existingMagazine
+        ).pattern.compatibility.supportedCaliberNames
+    }
+
     func nextSortOrder(in context: ModelContext) -> Int {
         var descriptor = FetchDescriptor<Magazine>(
             sortBy: [SortDescriptor(\.sortOrder, order: .reverse)]
@@ -111,7 +340,9 @@ final class AddMagazineViewModel {
         selectedColor: FirearmColor?,
         colorDetail: String?,
         purchasePriceText: String,
-        selectedCaliber: Caliber?,
+        patternSelection: MagazinePatternSelection,
+        manualPatternName: String,
+        compatibleCaliberNames: Set<String>,
         firearm: Firearm?,
         existingMagazine: Magazine? = nil
     ) -> Bool {
@@ -123,20 +354,27 @@ final class AddMagazineViewModel {
         if selectedColor == .other, colorDetail == nil {
             return false
         }
+        if patternSelection.requiresManualName && trimmedValue(manualPatternName).isEmpty {
+            return false
+        }
 
         return compatibilityValidationResult(
+            patternSelection: patternSelection,
+            manualPatternName: manualPatternName,
             brand: brand,
             modelName: modelName,
-            selectedCaliber: selectedCaliber,
+            compatibleCaliberNames: compatibleCaliberNames,
             firearm: firearm,
             existingMagazine: existingMagazine
         ).isCompatible
     }
 
     func compatibilityValidationResult(
+        patternSelection: MagazinePatternSelection,
+        manualPatternName: String,
         brand: String,
         modelName: String,
-        selectedCaliber: Caliber?,
+        compatibleCaliberNames: Set<String>,
         firearm: Firearm?,
         existingMagazine: Magazine? = nil
     ) -> MagazineCompatibilityValidationResult {
@@ -144,24 +382,20 @@ final class AddMagazineViewModel {
             return .compatible
         }
 
-        let workingMagazine = Magazine(
-            brand: trimmedValue(brand),
-            modelName: trimmedValue(modelName),
-            patternID: existingMagazine?.patternID,
-            patternKind: existingMagazine?.storedPatternKind,
-            patternDisplayName: existingMagazine?.patternDisplayName,
-            capacity: existingMagazine?.capacity ?? 1,
-            purchasePriceCents: existingMagazine?.purchasePriceCents ?? 0,
-            caliber: selectedCaliber,
-            firearm: firearm
+        let definition = resolvedPatternDefinition(
+            selection: patternSelection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: nil,
+            firearm: firearm,
+            existingMagazine: existingMagazine
         )
-        if existingMagazine == nil {
-            MagazinePatternMigration.applyResolvedPattern(to: workingMagazine)
-        }
 
         return compatibilityValidator.validate(
-            pattern: workingMagazine.resolvedPattern,
-            selectedMagazineCaliber: selectedCaliber,
+            pattern: definition.pattern,
+            selectedMagazineCaliber: nil,
             firearmType: firearm.firearmType,
             action: firearm.firearmAction,
             caliber: firearm.caliber,
@@ -179,7 +413,10 @@ final class AddMagazineViewModel {
         color: FirearmColor?,
         colorDetail: String?,
         notes: String?,
-        caliber: Caliber?,
+        patternSelection: MagazinePatternSelection,
+        manualPatternName: String,
+        compatibleCaliberNames: Set<String>,
+        existingCustomPatternIDOverride: UUID? = nil,
         firearm: Firearm? = nil,
         canAdd: Bool,
         to context: ModelContext
@@ -188,9 +425,23 @@ final class AddMagazineViewModel {
             return false
         }
 
+        let definition = resolvedPatternDefinition(
+            selection: patternSelection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: existingCustomPatternIDOverride,
+            firearm: firearm,
+            existingMagazine: nil
+        )
         let magazine = Magazine(
             brand: trimmedValue(brand),
             modelName: trimmedValue(modelName),
+            patternID: definition.patternID,
+            patternKind: definition.patternKind,
+            patternDisplayName: definition.patternDisplayName,
+            patternSupportedCaliberNames: definition.pattern.compatibility.supportedCaliberNames,
             count: count,
             capacity: capacity,
             purchaseDate: purchaseDate,
@@ -198,15 +449,14 @@ final class AddMagazineViewModel {
             color: color,
             colorDetail: colorDetail,
             notes: notes,
-            caliber: caliber,
+            caliber: resolvedStoredCaliber(for: definition.pattern, existingMagazine: nil, in: context),
             firearm: firearm,
             sortOrder: nextSortOrder(in: context)
         )
-        MagazinePatternMigration.applyResolvedPattern(to: magazine)
         if let firearm {
             guard compatibilityValidator.validate(
-                pattern: magazine.resolvedPattern,
-                selectedMagazineCaliber: caliber,
+                pattern: definition.pattern,
+                selectedMagazineCaliber: nil,
                 firearmType: firearm.firearmType,
                 action: firearm.firearmAction,
                 caliber: firearm.caliber,
@@ -216,6 +466,7 @@ final class AddMagazineViewModel {
             }
         }
         context.insert(magazine)
+        synchronizeCustomPatternIfNeeded(definition.pattern, in: context)
 
         do {
             try context.save()
@@ -238,7 +489,10 @@ final class AddMagazineViewModel {
         color: FirearmColor?,
         colorDetail: String?,
         notes: String?,
-        caliber: Caliber?,
+        patternSelection: MagazinePatternSelection,
+        manualPatternName: String,
+        compatibleCaliberNames: Set<String>,
+        existingCustomPatternIDOverride: UUID? = nil,
         firearm: Firearm?,
         canSave: Bool,
         in context: ModelContext
@@ -247,30 +501,20 @@ final class AddMagazineViewModel {
             return false
         }
 
-        let candidateMagazine = Magazine(
-            id: magazine.id,
-            brand: trimmedValue(brand),
-            modelName: trimmedValue(modelName),
-            count: count,
-            capacity: capacity,
-            purchaseDate: purchaseDate,
-            purchasePriceCents: purchasePriceCents,
-            color: color,
-            colorDetail: colorDetail,
-            notes: notes,
-            caliber: caliber,
+        let definition = resolvedPatternDefinition(
+            selection: patternSelection,
+            manualPatternName: manualPatternName,
+            brand: brand,
+            modelName: modelName,
+            compatibleCaliberNames: compatibleCaliberNames,
+            existingCustomPatternIDOverride: existingCustomPatternIDOverride,
             firearm: firearm,
-            sortOrder: magazine.sortOrder,
-            createdAt: magazine.createdAt
+            existingMagazine: magazine
         )
-        candidateMagazine.patternID = magazine.patternID
-        candidateMagazine.patternKind = magazine.patternKind
-        candidateMagazine.patternDisplayName = magazine.patternDisplayName
-        MagazinePatternMigration.applyResolvedPattern(to: candidateMagazine)
         if let firearm {
             guard compatibilityValidator.validate(
-                pattern: candidateMagazine.resolvedPattern,
-                selectedMagazineCaliber: caliber,
+                pattern: definition.pattern,
+                selectedMagazineCaliber: nil,
                 firearmType: firearm.firearmType,
                 action: firearm.firearmAction,
                 caliber: firearm.caliber,
@@ -289,11 +533,13 @@ final class AddMagazineViewModel {
         magazine.color = color?.rawValue
         magazine.colorDetail = colorDetail
         magazine.notes = notes
-        magazine.caliber = caliber
+        magazine.caliber = resolvedStoredCaliber(for: definition.pattern, existingMagazine: magazine, in: context)
         magazine.firearm = firearm
-        magazine.patternID = candidateMagazine.patternID
-        magazine.patternKind = candidateMagazine.patternKind
-        magazine.patternDisplayName = candidateMagazine.patternDisplayName
+        magazine.patternID = definition.patternID
+        magazine.patternKind = definition.patternKind.rawValue
+        magazine.patternDisplayName = definition.patternDisplayName
+        magazine.storedPatternSupportedCaliberNames = definition.pattern.compatibility.supportedCaliberNames
+        synchronizeCustomPatternIfNeeded(definition.pattern, in: context)
 
         do {
             try context.save()
@@ -302,6 +548,210 @@ final class AddMagazineViewModel {
         } catch {
             print("Save error: \(error)")
             return false
+        }
+    }
+
+    private struct ResolvedPatternDefinition {
+        let pattern: MagazinePattern
+        let patternID: String
+        let patternKind: MagazinePatternKind
+        let patternDisplayName: String?
+    }
+
+    private func resolvedPatternDefinition(
+        selection: MagazinePatternSelection,
+        manualPatternName: String,
+        brand: String,
+        modelName: String,
+        compatibleCaliberNames: Set<String>,
+        existingCustomPatternIDOverride: UUID?,
+        firearm: Firearm?,
+        existingMagazine: Magazine?
+    ) -> ResolvedPatternDefinition {
+        switch selection {
+        case let .catalog(patternID):
+            if let pattern = MagazinePatternCatalog.pattern(id: patternID) {
+                return ResolvedPatternDefinition(
+                    pattern: pattern,
+                    patternID: pattern.id,
+                    patternKind: .catalog,
+                    patternDisplayName: nil
+                )
+            }
+
+            let fallbackName = resolvedManualPatternName(
+                manualPatternName,
+                brand: brand,
+                modelName: modelName,
+                fallback: "Custom Pattern"
+            )
+            let fallbackPattern = MagazinePattern.custom(
+                id: existingCustomPatternIDOverride ?? existingCustomPatternID(for: existingMagazine),
+                displayName: fallbackName,
+                familyLabel: fallbackName,
+                supportedCaliberNames: supportedCaliberNames(for: compatibleCaliberNames),
+                compatibleFirearmTypes: compatibleFirearmTypes(for: firearm),
+                compatibleFirearmActions: compatibleFirearmActions(for: firearm)
+            )
+            return ResolvedPatternDefinition(
+                pattern: fallbackPattern,
+                patternID: fallbackPattern.id,
+                patternKind: .custom,
+                patternDisplayName: fallbackPattern.displayName
+            )
+        case let .existingCustom(pattern):
+            return ResolvedPatternDefinition(
+                pattern: pattern,
+                patternID: pattern.id,
+                patternKind: .custom,
+                patternDisplayName: pattern.displayName
+            )
+        case .legacy:
+            let name = resolvedManualPatternName(
+                manualPatternName,
+                brand: brand,
+                modelName: modelName,
+                fallback: "Legacy Pattern"
+            )
+            let pattern = MagazinePattern.legacy(
+                displayName: name,
+                familyLabel: name,
+                supportedCaliberNames: supportedCaliberNames(for: compatibleCaliberNames),
+                compatibleFirearmTypes: compatibleFirearmTypes(for: firearm),
+                compatibleFirearmActions: compatibleFirearmActions(for: firearm)
+            )
+            return ResolvedPatternDefinition(
+                pattern: pattern,
+                patternID: pattern.id,
+                patternKind: .legacy,
+                patternDisplayName: pattern.displayName
+            )
+        case .custom:
+            let name = resolvedManualPatternName(
+                manualPatternName,
+                brand: brand,
+                modelName: modelName,
+                fallback: "Custom Pattern"
+            )
+            let pattern = MagazinePattern.custom(
+                id: existingCustomPatternIDOverride ?? existingCustomPatternID(for: existingMagazine),
+                displayName: name,
+                familyLabel: name,
+                supportedCaliberNames: supportedCaliberNames(for: compatibleCaliberNames),
+                compatibleFirearmTypes: compatibleFirearmTypes(for: firearm),
+                compatibleFirearmActions: compatibleFirearmActions(for: firearm)
+            )
+            return ResolvedPatternDefinition(
+                pattern: pattern,
+                patternID: pattern.id,
+                patternKind: .custom,
+                patternDisplayName: pattern.displayName
+            )
+        }
+    }
+
+    private func synchronizeCustomPatternIfNeeded(_ pattern: MagazinePattern, in context: ModelContext) {
+        guard pattern.kind == .custom else {
+            return
+        }
+
+        if let magazines = try? context.fetch(FetchDescriptor<Magazine>()) {
+            for magazine in magazines where magazine.storedPatternKind == .custom && magazine.patternID == pattern.id {
+                magazine.patternDisplayName = pattern.displayName
+                magazine.storedPatternSupportedCaliberNames = pattern.compatibility.supportedCaliberNames
+            }
+        }
+
+        if let firearms = try? context.fetch(FetchDescriptor<Firearm>()) {
+            for firearm in firearms {
+                let updatedPatterns = firearm.supportedMagazinePatterns.map { reference in
+                    guard reference.id == pattern.id else {
+                        return reference
+                    }
+
+                    return FirearmMagazinePatternReference(
+                        id: reference.id,
+                        kind: reference.kind,
+                        displayName: pattern.displayName
+                    )
+                }
+
+                if updatedPatterns != firearm.supportedMagazinePatterns {
+                    firearm.supportedMagazinePatterns = updatedPatterns
+                }
+            }
+        }
+    }
+
+    private func resolvedManualPatternName(
+        _ manualPatternName: String,
+        brand: String,
+        modelName: String,
+        fallback: String
+    ) -> String {
+        let trimmedManualName = trimmedValue(manualPatternName)
+        if !trimmedManualName.isEmpty {
+            return trimmedManualName
+        }
+
+        let fallbackName = [trimmedValue(brand), trimmedValue(modelName)]
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
+
+        return fallbackName.isEmpty ? fallback : fallbackName
+    }
+
+    private func supportedCaliberNames(for caliberNames: Set<String>) -> [String] {
+        caliberNames
+            .map(trimmedValue)
+            .filter { !$0.isEmpty }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
+    private func compatibleFirearmTypes(for firearm: Firearm?) -> [FirearmType] {
+        firearm.map { [$0.firearmType] } ?? []
+    }
+
+    private func compatibleFirearmActions(for firearm: Firearm?) -> [FirearmAction] {
+        firearm.map { [$0.firearmAction] } ?? []
+    }
+
+    private func existingCustomPatternID(for magazine: Magazine?) -> UUID {
+        guard magazine?.storedPatternKind == .custom,
+              let patternID = magazine?.patternID,
+              patternID.hasPrefix("custom:"),
+              let customID = UUID(uuidString: String(patternID.dropFirst("custom:".count))) else {
+            return UUID()
+        }
+
+        return customID
+    }
+
+    private func resolvedStoredCaliber(
+        for pattern: MagazinePattern,
+        existingMagazine: Magazine?,
+        in context: ModelContext
+    ) -> Caliber? {
+        let supportedCaliberNames = pattern.compatibility.supportedCaliberNames
+            .map(trimmedValue)
+            .filter { !$0.isEmpty }
+
+        guard supportedCaliberNames.count == 1,
+              let caliberName = supportedCaliberNames.first else {
+            return nil
+        }
+
+        if let existingCaliber = existingMagazine?.caliber,
+           trimmedValue(existingCaliber.name).caseInsensitiveCompare(caliberName) == .orderedSame {
+            return existingCaliber
+        }
+
+        guard let calibers = try? context.fetch(FetchDescriptor<Caliber>()) else {
+            return nil
+        }
+
+        return calibers.first {
+            trimmedValue($0.name).caseInsensitiveCompare(caliberName) == .orderedSame
         }
     }
 }

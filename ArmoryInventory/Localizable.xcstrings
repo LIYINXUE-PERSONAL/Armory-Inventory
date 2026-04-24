@@ -109,10 +109,10 @@
     "Add Magazine" : {
 
     },
-    "Add Magazines" : {
+    "Add magazines first to see which ones are compatible with this firearm." : {
 
     },
-    "Add magazines first to link them to this firearm." : {
+    "Add magazines or select a caliber to surface compatible patterns." : {
 
     },
     "Add Optic" : {
@@ -142,7 +142,7 @@
     "Add your first firearm to start tracking your collection." : {
 
     },
-    "Add your first magazine to track capacity, caliber, and assigned firearm." : {
+    "Add your first magazine to track capacity, supported calibers, and linked firearms." : {
 
     },
     "Add your first optic to start tracking mounts, magnification, and purchase cost." : {
@@ -161,9 +161,6 @@
 
     },
     "All saved attachments are linked to other firearms or none have been added yet." : {
-
-    },
-    "All saved magazines are linked to other firearms or none have been added yet." : {
 
     },
     "All saved optics are linked to other firearms or none have been added yet." : {
@@ -271,6 +268,12 @@
     "Common Calibers" : {
 
     },
+    "Compatible Calibers" : {
+
+    },
+    "Compatible Magazines" : {
+
+    },
     "Configuration" : {
 
     },
@@ -287,6 +290,12 @@
 
     },
     "Custom Caliber" : {
+
+    },
+    "Custom Name" : {
+
+    },
+    "Custom Patterns" : {
 
     },
     "Custom percent" : {
@@ -311,6 +320,9 @@
 
     },
     "Done" : {
+
+    },
+    "Edit Saved Pattern" : {
 
     },
     "Enter dollars and cents, for example 1299.99." : {
@@ -403,13 +415,13 @@
     "Last cleaned" : {
 
     },
+    "Legacy Name" : {
+
+    },
     "Legal" : {
 
     },
     "Link Attachments" : {
-
-    },
-    "Link Magazines" : {
 
     },
     "Link Optics" : {
@@ -424,9 +436,6 @@
     "Linked Firearm" : {
 
     },
-    "Linked Magazines" : {
-
-    },
     "Linked Optics" : {
 
     },
@@ -435,6 +444,88 @@
     },
     "Magazine Details" : {
 
+    },
+    "Magazine Patterns" : {
+
+    },
+    "magazineCapacityText" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld round"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld rounds"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "magazineCount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld magazine"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld magazines"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "magazineCountAndCapacity" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@count@"
+          },
+          "substitutions" : {
+            "count" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%1$lld %2$lld-round magazine"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%1$lld %2$lld-round magazines"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Magazines" : {
 
@@ -448,7 +539,7 @@
     "Manage Attachments" : {
 
     },
-    "Manage Magazines" : {
+    "Manage Magazine Patterns" : {
 
     },
     "Manage Optics" : {
@@ -517,10 +608,13 @@
     "No Firearms Yet" : {
 
     },
-    "No Magazines Available" : {
+    "No Magazine Patterns Available" : {
 
     },
-    "No magazines linked." : {
+    "No magazine patterns selected." : {
+
+    },
+    "No magazines are currently compatible with the selected patterns." : {
 
     },
     "No Magazines Yet" : {
@@ -545,9 +639,6 @@
 
     },
     "No unlinked attachments available." : {
-
-    },
-    "No unlinked magazines available." : {
 
     },
     "No unlinked optics available." : {
@@ -592,6 +683,9 @@
     "Ordering" : {
 
     },
+    "Other Catalog Patterns" : {
+
+    },
     "Overview" : {
 
     },
@@ -605,6 +699,9 @@
 
     },
     "Parts Sorting" : {
+
+    },
+    "Pattern" : {
 
     },
     "Post-Tax Total" : {
@@ -643,7 +740,16 @@
     "Rounds" : {
 
     },
+    "Saved Custom Patterns" : {
+
+    },
     "Select" : {
+
+    },
+    "Select Magazine Patterns" : {
+
+    },
+    "Select one or more magazine patterns to see compatible magazines." : {
 
     },
     "Send Feedback" : {
@@ -683,6 +789,9 @@
 
     },
     "Starting Quantity" : {
+
+    },
+    "Suggested Catalog Patterns" : {
 
     },
     "Tax Rate" : {
@@ -742,6 +851,35 @@
     },
     "Use the slider to set a rate from 0% to 100%. Move it all the way to 100% to unlock a custom value above that range." : {
 
+    },
+    "usedByFirearm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Used by %lld firearm: "
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Used by %lld firearms: "
+                }
+              },
+              "zero" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Used by %lld firearm."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "User Data" : {
 

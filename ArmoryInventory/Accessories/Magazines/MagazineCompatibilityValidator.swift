@@ -10,18 +10,15 @@ import SwiftData
 
 struct MagazineCompatibilityValidationResult: Equatable {
     enum Failure: Equatable {
-        case linkedToDifferentFirearm(currentFirearmName: String)
         case caliberMismatch(magazineCaliberName: String, firearmCaliberName: String)
-        case incompatiblePattern(patternName: String, firearmDescription: String)
+        case patternNotSelected(patternName: String)
 
         var message: String {
             switch self {
-            case let .linkedToDifferentFirearm(currentFirearmName):
-                return "This magazine is already linked to \(currentFirearmName)."
             case let .caliberMismatch(magazineCaliberName, firearmCaliberName):
                 return "Magazine caliber \(magazineCaliberName) does not match firearm caliber \(firearmCaliberName)."
-            case let .incompatiblePattern(patternName, firearmDescription):
-                return "\(patternName) is not compatible with \(firearmDescription)."
+            case let .patternNotSelected(patternName):
+                return "\(patternName) is not included in this firearm's selected magazine patterns."
             }
         }
     }
@@ -47,18 +44,13 @@ struct MagazineCompatibilityValidator {
         caliber: Caliber?,
         owningFirearm: Firearm?
     ) -> MagazineCompatibilityValidationResult {
-        if let linkedFirearm = magazine.firearm,
-           linkedFirearm.persistentModelID != owningFirearm?.persistentModelID {
-            return .init(failure: .linkedToDifferentFirearm(currentFirearmName: linkedFirearm.displayName))
-        }
-
         return validate(
             pattern: magazine.resolvedPattern,
             selectedMagazineCaliber: magazine.caliber,
             firearmType: firearmType,
             action: action,
             caliber: caliber,
-            firearmDescription: owningFirearm?.displayName ?? firearmDescription(type: firearmType, action: action)
+            firearmDescription: owningFirearm?.displayName ?? ""
         )
     }
 
@@ -70,25 +62,32 @@ struct MagazineCompatibilityValidator {
         caliber: Caliber?,
         firearmDescription: String
     ) -> MagazineCompatibilityValidationResult {
-        if let selectedMagazineCaliberName = trimmedName(selectedMagazineCaliber?.name),
-           let firearmCaliberName = trimmedName(caliber?.name),
-           selectedMagazineCaliberName.caseInsensitiveCompare(firearmCaliberName) != .orderedSame {
-            return .init(
-                failure: .caliberMismatch(
-                    magazineCaliberName: selectedMagazineCaliberName,
-                    firearmCaliberName: firearmCaliberName
-                )
-            )
-        }
+        if let firearmCaliberName = trimmedName(caliber?.name) {
+            let supportedMagazineCalibers = pattern.compatibility.supportedCaliberNames
+                .compactMap(trimmedName)
 
-        let effectiveCaliberName = trimmedName(caliber?.name) ?? trimmedName(selectedMagazineCaliber?.name)
-        guard pattern.isCompatible(with: firearmType, action: action, caliberName: effectiveCaliberName) else {
-            return .init(
-                failure: .incompatiblePattern(
-                    patternName: pattern.displayName,
-                    firearmDescription: firearmDescription
+            if !supportedMagazineCalibers.isEmpty,
+               !supportedMagazineCalibers.contains(where: {
+                   $0.caseInsensitiveCompare(firearmCaliberName) == .orderedSame
+               }) {
+                return .init(
+                    failure: .caliberMismatch(
+                        magazineCaliberName: supportedMagazineCalibers.joined(separator: ", "),
+                        firearmCaliberName: firearmCaliberName
+                    )
                 )
-            )
+            }
+
+            if supportedMagazineCalibers.isEmpty,
+               let selectedMagazineCaliberName = trimmedName(selectedMagazineCaliber?.name),
+               selectedMagazineCaliberName.caseInsensitiveCompare(firearmCaliberName) != .orderedSame {
+                return .init(
+                    failure: .caliberMismatch(
+                        magazineCaliberName: selectedMagazineCaliberName,
+                        firearmCaliberName: firearmCaliberName
+                    )
+                )
+            }
         }
 
         return .compatible
@@ -116,11 +115,6 @@ struct MagazineCompatibilityValidator {
 
         return .compatible
     }
-
-    private func firearmDescription(type: FirearmType, action: FirearmAction) -> String {
-        "\(type.displayName) (\(action.displayName))"
-    }
-
     private func trimmedName(_ value: String?) -> String? {
         guard let value else {
             return nil

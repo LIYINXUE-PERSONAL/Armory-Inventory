@@ -32,8 +32,8 @@ final class MagazinePatternModelsTests: XCTestCase {
 
         XCTAssertEqual(fullSize.compatibility.supportedCaliberNames, [KnownCaliber.mm9.displayName])
         XCTAssertEqual(compact.compatibility.supportedCaliberNames, [KnownCaliber.mm9.displayName])
-        XCTAssertEqual(fullSize.familyLabel, "Glock Double-Stack 9mm")
-        XCTAssertEqual(compact.familyLabel, "Glock Double-Stack 9mm")
+        XCTAssertEqual(fullSize.familyLabel, "Glock 17 Pattern")
+        XCTAssertEqual(compact.familyLabel, "Glock 19 Pattern")
         XCTAssertNotEqual(fullSize.id, compact.id)
         XCTAssertNotEqual(fullSize.compatibility.fitDescriptors, compact.compatibility.fitDescriptors)
         XCTAssertTrue(fullSize.compatibility.platformTags.contains("Glock 17"))
@@ -41,7 +41,7 @@ final class MagazinePatternModelsTests: XCTestCase {
         XCTAssertTrue(compact.compatibility.platformTags.contains("Glock 19"))
     }
 
-    func testSuggestedPatternsFilterByTypeActionAndCaliber() {
+    func testSuggestedPatternsFilterByCaliber() {
         let pistolPatterns = MagazinePatternCatalog.suggestedPatterns(
             firearmType: .pistol,
             action: .semiAuto,
@@ -52,17 +52,22 @@ final class MagazinePatternModelsTests: XCTestCase {
             action: .semiAuto,
             caliberName: KnownCaliber.blackout300.displayName
         )
+        let arPistolPatterns = MagazinePatternCatalog.suggestedPatterns(
+            firearmType: .pistol,
+            action: .semiAuto,
+            caliberName: KnownCaliber.nato556.displayName
+        )
 
         XCTAssertEqual(
             Set(pistolPatterns.map(\.id)),
             [
                 "catalog:glock-double-stack-9mm-full-size-compact",
                 "catalog:glock-double-stack-9mm-compact",
-                "catalog:sig-p320-double-stack-9mm",
                 "catalog:2011-double-stack-9mm"
             ]
         )
         XCTAssertEqual(riflePatterns.map(\.id), ["catalog:ar15-stanag-223-556-300blk"])
+        XCTAssertEqual(arPistolPatterns.map(\.id), ["catalog:ar15-stanag-223-556-300blk"])
     }
 
     func testLegacyFallbackPreservesUserFacingDetails() {
