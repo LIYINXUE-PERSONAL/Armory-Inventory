@@ -464,4 +464,95 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.initialPatternSelection(for: magazine), .legacy)
         XCTAssertEqual(viewModel.initialManualPatternName(for: magazine), "Legacy CZ Tube")
     }
+
+    @MainActor
+    func testAvailableCustomPatternsReturnsPersistedCustomPatterns() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let customPattern = MagazinePattern.custom(
+            id: UUID(uuidString: "12345678-1234-1234-1234-1234567890AB")!,
+            displayName: "P320 Legion 9mm",
+            familyLabel: "P320 Legion 9mm",
+            supportedCaliberNames: ["9mm"]
+        )
+        let duplicateMagazine = Magazine(
+            brand: "SIG",
+            modelName: "Legion Spare",
+            patternID: customPattern.id,
+            patternKind: .custom,
+            patternDisplayName: customPattern.displayName,
+            patternSupportedCaliberNames: customPattern.compatibility.supportedCaliberNames,
+            capacity: 21,
+            purchasePriceCents: 5000
+        )
+        let originalMagazine = Magazine(
+            brand: "SIG",
+            modelName: "Legion",
+            patternID: customPattern.id,
+            patternKind: .custom,
+            patternDisplayName: customPattern.displayName,
+            patternSupportedCaliberNames: customPattern.compatibility.supportedCaliberNames,
+            capacity: 21,
+            purchasePriceCents: 4500
+        )
+        let catalogMagazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            patternID: "catalog:ar15-stanag-223-556-300blk",
+            patternKind: .catalog,
+            capacity: 30,
+            purchasePriceCents: 1500
+        )
+        context.insert(originalMagazine)
+        context.insert(duplicateMagazine)
+        context.insert(catalogMagazine)
+
+        let viewModel = AddMagazineViewModel()
+        let availablePatterns = viewModel.availableCustomPatterns(in: context)
+
+        XCTAssertEqual(availablePatterns.count, 1)
+        XCTAssertEqual(availablePatterns.first?.id, customPattern.id)
+        XCTAssertEqual(availablePatterns.first?.displayName, "P320 Legion 9mm")
+        XCTAssertEqual(availablePatterns.first?.compatibility.supportedCaliberNames, ["9mm"])
+    }
+
+    @MainActor
+    func testAddMagazineWithExistingCustomPatternReusesPatternIdentity() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddMagazineViewModel()
+        let customPattern = MagazinePattern.custom(
+            id: UUID(uuidString: "12345678-1234-1234-1234-1234567890AB")!,
+            displayName: "P320 Legion 9mm",
+            familyLabel: "P320 Legion 9mm",
+            supportedCaliberNames: ["9mm"]
+        )
+
+        let didAdd = viewModel.addMagazine(
+            brand: "SIG",
+            modelName: "OEM 17",
+            count: 2,
+            capacity: 17,
+            purchaseDate: .now,
+            purchasePriceCents: 4000,
+            color: .black,
+            colorDetail: nil,
+            notes: nil,
+            patternSelection: .existingCustom(customPattern),
+            manualPatternName: "",
+            compatibleCaliberNames: [],
+            firearm: nil,
+            canAdd: true,
+            to: context
+        )
+
+        let magazines = try context.fetch(FetchDescriptor<Magazine>())
+
+        XCTAssertTrue(didAdd)
+        XCTAssertEqual(magazines.count, 1)
+        XCTAssertEqual(magazines.first?.storedPatternKind, .custom)
+        XCTAssertEqual(magazines.first?.patternID, customPattern.id)
+        XCTAssertEqual(magazines.first?.patternDisplayName, customPattern.displayName)
+        XCTAssertEqual(magazines.first?.supportedCaliberNames, ["9mm"])
+    }
 }

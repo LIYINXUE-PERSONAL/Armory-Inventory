@@ -11,6 +11,7 @@ import SwiftData
 enum MagazinePatternSelection: Equatable, Identifiable {
     case automatic
     case catalog(String)
+    case existingCustom(MagazinePattern)
     case legacy
     case custom
 
@@ -20,6 +21,8 @@ enum MagazinePatternSelection: Equatable, Identifiable {
             return "automatic"
         case let .catalog(patternID):
             return "catalog:\(patternID)"
+        case let .existingCustom(pattern):
+            return "existing-custom:\(pattern.id)"
         case .legacy:
             return "legacy"
         case .custom:
@@ -31,7 +34,7 @@ enum MagazinePatternSelection: Equatable, Identifiable {
         switch self {
         case .legacy, .custom:
             return true
-        case .automatic, .catalog:
+        case .automatic, .catalog, .existingCustom:
             return false
         }
     }
@@ -40,7 +43,7 @@ enum MagazinePatternSelection: Equatable, Identifiable {
         switch self {
         case .legacy, .custom:
             return true
-        case .automatic, .catalog:
+        case .automatic, .catalog, .existingCustom:
             return false
         }
     }
@@ -147,9 +150,37 @@ final class AddMagazineViewModel {
         case .legacy:
             return .legacy
         case .custom:
-            return .custom
+            return .existingCustom(magazine.resolvedPattern)
         case .unknown, nil:
             return .automatic
+        }
+    }
+
+    func availableCustomPatterns(in context: ModelContext) -> [MagazinePattern] {
+        let descriptor = FetchDescriptor<Magazine>(
+            sortBy: [SortDescriptor(\.createdAt), SortDescriptor(\.sortOrder)]
+        )
+        guard let magazines = try? context.fetch(descriptor) else {
+            return []
+        }
+
+        var patternsByID: [String: MagazinePattern] = [:]
+        for magazine in magazines where magazine.storedPatternKind == .custom {
+            let pattern = magazine.resolvedPattern
+            guard pattern.kind == .custom else {
+                continue
+            }
+
+            patternsByID[pattern.id] = patternsByID[pattern.id] ?? pattern
+        }
+
+        return patternsByID.values.sorted {
+            let nameComparison = $0.displayName.localizedCaseInsensitiveCompare($1.displayName)
+            if nameComparison != .orderedSame {
+                return nameComparison == .orderedAscending
+            }
+
+            return $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending
         }
     }
 
@@ -252,6 +283,9 @@ final class AddMagazineViewModel {
         case .catalog:
             let calibers = definition.pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
             return calibers.isEmpty ? definition.pattern.familyLabel : calibers
+        case .existingCustom:
+            let calibers = definition.pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
+            return calibers.isEmpty ? "Saved custom pattern." : calibers
         case .legacy:
             return "Legacy pattern names stay visible and editable for existing data."
         case .custom:
@@ -537,6 +571,13 @@ final class AddMagazineViewModel {
                 brand: brand,
                 modelName: modelName,
                 firearm: firearm
+            )
+        case let .existingCustom(pattern):
+            return ResolvedPatternDefinition(
+                pattern: pattern,
+                patternID: pattern.id,
+                patternKind: .custom,
+                patternDisplayName: pattern.displayName
             )
         case .legacy:
             let name = resolvedManualPatternName(

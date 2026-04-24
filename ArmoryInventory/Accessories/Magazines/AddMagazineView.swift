@@ -30,6 +30,7 @@ struct AddMagazineView: View {
     @State private var unlinkFirearm = false
     @State private var isEditing = false
     @State private var calibers: [Caliber] = []
+    @State private var savedCustomPatterns: [MagazinePattern] = []
 
     let viewModel: AddMagazineViewModel
     private let caliberQueryService: CaliberQueryServicing
@@ -116,6 +117,21 @@ struct AddMagazineView: View {
                                             patternSelectionLabel(
                                                 title: pattern.displayName,
                                                 isSelected: selectedPatternSelection == .catalog(pattern.id)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            if !savedCustomPatterns.isEmpty {
+                                Section("Saved Custom Patterns") {
+                                    ForEach(savedCustomPatterns) { pattern in
+                                        Button {
+                                            selectedPatternSelection = .existingCustom(pattern)
+                                        } label: {
+                                            patternSelectionLabel(
+                                                title: pattern.displayName,
+                                                isSelected: selectedPatternSelection == .existingCustom(pattern)
                                             )
                                         }
                                     }
@@ -259,7 +275,7 @@ struct AddMagazineView: View {
             .navigationTitle(magazine == nil ? "New Magazine" : "Magazine Details")
             .navigationBarTitleDisplayMode(.inline)
             .task {
-                reloadCalibers()
+                reloadPickerData()
             }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -474,6 +490,11 @@ struct AddMagazineView: View {
         } catch {
             print("Calibers fetch error: \(error)")
         }
+    }
+
+    private func reloadPickerData() {
+        reloadCalibers()
+        savedCustomPatterns = viewModel.availableCustomPatterns(in: context)
     }
 
     @ViewBuilder
