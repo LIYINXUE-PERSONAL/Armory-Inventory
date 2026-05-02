@@ -24,23 +24,23 @@ enum AttachmentType: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .stock:
-            return "Stock"
+            return String(localized: "Stock")
         case .grip:
-            return "Grip"
+            return String(localized: "Grip")
         case .laser:
-            return "Laser"
+            return String(localized: "Laser")
         case .light:
-            return "Light"
+            return String(localized: "Light")
         case .handStop:
-            return "Hand Stop"
+            return String(localized: "Hand Stop")
         case .bipod:
-            return "Bipod"
+            return String(localized: "Bipod")
         case .slingMount:
-            return "Sling Mount"
+            return String(localized: "Sling Mount")
         case .muzzleDevice:
-            return "Muzzle Device"
+            return String(localized: "Muzzle Device")
         case .other:
-            return "Other"
+            return String(localized: "Other")
         }
     }
 }

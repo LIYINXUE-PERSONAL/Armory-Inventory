@@ -399,7 +399,9 @@ struct AddMagazineView: View {
             existingMagazine: magazine
         )
         guard !names.isEmpty else {
-            return selectedPatternSelection.allowsManualCaliberSelection ? "None" : "No Caliber"
+            return selectedPatternSelection.allowsManualCaliberSelection
+                ? String(localized: "None")
+                : String(localized: "No Caliber")
         }
 
         return names.joined(separator: ", ")

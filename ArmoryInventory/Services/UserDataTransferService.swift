@@ -26,9 +26,12 @@ enum UserDataTransferError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidBackupFile:
-            return "The selected file is not a valid Armory Inventory backup."
+            return String(localized: "The selected file is not a valid Armory Inventory backup.")
         case let .unsupportedVersion(version):
-            return "This backup format version (\(version)) is not supported."
+            return String.localizedStringWithFormat(
+                String(localized: "This backup format version (%lld) is not supported."),
+                version.localizedCountString
+            )
         }
     }
 }

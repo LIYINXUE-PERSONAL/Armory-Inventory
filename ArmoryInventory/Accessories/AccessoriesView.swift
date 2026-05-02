@@ -129,35 +129,59 @@ private struct AccessoryCategory: Identifiable {
     static let topLevelCategories: [AccessoryCategory] = [
         AccessoryCategory(
             id: "optics",
-            name: "Optics",
+            name: String(localized: "Optics"),
             systemImage: "scope",
-            shortDescription: "Scopes, red dots, and magnifiers",
-            detailDescription: "Optics include sighting systems used to improve target acquisition and precision across different firearm setups.",
-            examples: ["LPVO", "Red Dot", "Holographic Sight", "Magnifier"]
+            shortDescription: String(localized: "Scopes, red dots, and magnifiers"),
+            detailDescription: String(localized: "Optics include sighting systems used to improve target acquisition and precision across different firearm setups."),
+            examples: [
+                String(localized: "LPVO"),
+                String(localized: "Red Dot"),
+                String(localized: "Holographic Sight"),
+                String(localized: "Magnifier"),
+            ]
         ),
         AccessoryCategory(
             id: "magazines",
-            name: "Magazines",
+            name: String(localized: "Magazines"),
             systemImage: "rectangle.stack.fill.badge.plus",
-            shortDescription: "Spare mags and loadout essentials",
-            detailDescription: "Magazine tracking helps you manage capacity, platform compatibility, and quantity on hand.",
-            examples: ["Pistol Magazine", "AR-15 Magazine", "AK Magazine", "Drum Magazine"]
+            shortDescription: String(localized: "Spare mags and loadout essentials"),
+            detailDescription: String(localized: "Magazine tracking helps you manage capacity, platform compatibility, and quantity on hand."),
+            examples: [
+                String(localized: "Pistol Magazine"),
+                String(localized: "AR-15 Magazine"),
+                String(localized: "AK Magazine"),
+                String(localized: "Drum Magazine"),
+            ]
         ),
         AccessoryCategory(
             id: "attachments",
-            name: "Attachments",
+            name: String(localized: "Attachments"),
             systemImage: "hand.raised.fill",
-            shortDescription: "Mounted accessories grouped by attachment type",
-            detailDescription: "Attachments include mounted accessories such as stocks, grips, lasers, lights, hand stops, and similar hardware. They can be categorized later using an Attachment Type field instead of separate screens.",
-            examples: ["Stock", "Grip", "Laser", "Light", "Hand Stop", "Bipod"]
+            shortDescription: String(localized: "Mounted accessories grouped by attachment type"),
+            detailDescription: String(localized: "Attachments include mounted accessories such as stocks, grips, lasers, lights, hand stops, and similar hardware. They can be categorized later using an Attachment Type field instead of separate screens."),
+            examples: [
+                String(localized: "Stock"),
+                String(localized: "Grip"),
+                String(localized: "Laser"),
+                String(localized: "Light"),
+                String(localized: "Hand Stop"),
+                String(localized: "Bipod"),
+            ]
         ),
         AccessoryCategory(
             id: "parts",
-            name: "Parts",
+            name: String(localized: "Parts"),
             systemImage: "gearshape.2.fill",
-            shortDescription: "Core components and replacement assemblies",
-            detailDescription: "Parts cover major firearm components you install, swap, or keep on hand, such as barrels, triggers, receivers, recoil systems, and other internal assemblies.",
-            examples: ["Barrel", "Trigger", "Bolt Carrier Group", "Charging Handle", "Slide", "Recoil System"]
+            shortDescription: String(localized: "Core components and replacement assemblies"),
+            detailDescription: String(localized: "Parts cover major firearm components you install, swap, or keep on hand, such as barrels, triggers, receivers, recoil systems, and other internal assemblies."),
+            examples: [
+                String(localized: "Barrel"),
+                String(localized: "Trigger"),
+                String(localized: "Bolt Carrier Group"),
+                String(localized: "Charging Handle"),
+                String(localized: "Slide"),
+                String(localized: "Recoil System"),
+            ]
         ),
     ]
 }

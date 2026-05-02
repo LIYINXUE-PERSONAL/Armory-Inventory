@@ -361,10 +361,10 @@ final class AddFirearmViewModel {
 
     func primaryButtonTitle(hasFirearm: Bool, isEditing: Bool) -> String {
         if !hasFirearm {
-            return "Add"
+            return String(localized: "Add")
         }
 
-        return isEditing ? "Save" : "Edit"
+        return isEditing ? String(localized: "Save") : String(localized: "Edit")
     }
 
     func nextSortOrder(in context: ModelContext) -> Int {

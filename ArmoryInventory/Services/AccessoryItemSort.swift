@@ -19,15 +19,15 @@ enum AccessoryItemSortOrder: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .manual:
-            return "Manual"
+            return String(localized: "Manual")
         case .purchaseDate:
-            return "Purchase Date"
+            return String(localized: "Purchase Date")
         case .value:
-            return "Value"
+            return String(localized: "Value")
         case .brand:
-            return "Brand"
+            return String(localized: "Brand")
         case .model:
-            return "Model"
+            return String(localized: "Model")
         }
     }
 }
@@ -41,9 +41,9 @@ enum AccessoryItemSortDirection: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .ascending:
-            return "Ascending"
+            return String(localized: "Ascending")
         case .descending:
-            return "Descending"
+            return String(localized: "Descending")
         }
     }
 }

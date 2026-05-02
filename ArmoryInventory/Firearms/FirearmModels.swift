@@ -49,13 +49,13 @@ enum FirearmType: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .rifle:
-            return "Rifle"
+            return String(localized: "Rifle")
         case .pistol:
-            return "Pistol"
+            return String(localized: "Pistol")
         case .shotgun:
-            return "Shotgun"
+            return String(localized: "Shotgun")
         case .other:
-            return "Other"
+            return String(localized: "Other")
         }
     }
 }
@@ -76,23 +76,23 @@ enum FirearmAction: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .semiAuto:
-            return "Semi-Auto"
+            return String(localized: "Semi-Auto")
         case .selectFire:
-            return "Select-Fire"
+            return String(localized: "Select-Fire")
         case .bolt:
-            return "Bolt Action"
+            return String(localized: "Bolt Action")
         case .pump:
-            return "Pump Action"
+            return String(localized: "Pump Action")
         case .lever:
-            return "Lever Action"
+            return String(localized: "Lever Action")
         case .breakAction:
-            return "Break Action"
+            return String(localized: "Break Action")
         case .singleShot:
-            return "Single Shot"
+            return String(localized: "Single Shot")
         case .revolver:
-            return "Revolver"
+            return String(localized: "Revolver")
         case .other:
-            return "Other"
+            return String(localized: "Other")
         }
     }
 }
@@ -115,27 +115,27 @@ enum FirearmColor: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .black:
-            return "Black"
+            return String(localized: "Black")
         case .flatDarkEarth:
-            return "Flat Dark Earth"
+            return String(localized: "Flat Dark Earth")
         case .odGreen:
-            return "OD Green"
+            return String(localized: "OD Green")
         case .gray:
-            return "Gray"
+            return String(localized: "Gray")
         case .silver:
-            return "Silver"
+            return String(localized: "Silver")
         case .stainless:
-            return "Stainless"
+            return String(localized: "Stainless")
         case .fdeCamo:
-            return "Camo"
+            return String(localized: "Camo")
         case .bronze:
-            return "Bronze"
+            return String(localized: "Bronze")
         case .tan:
-            return "Tan"
+            return String(localized: "Tan")
         case .white:
-            return "White"
+            return String(localized: "White")
         case .other:
-            return "Other"
+            return String(localized: "Other")
         }
     }
 }
@@ -255,7 +255,10 @@ final class Firearm {
 
     var subtitle: String {
         if let nickname, !nickname.isEmpty {
-            return "\"\(nickname)\""
+            return String.localizedStringWithFormat(
+                String(localized: "“%@”"),
+                nickname
+            )
         }
         return firearmType.displayName
     }
@@ -275,7 +278,7 @@ final class Firearm {
         let formattedValue = barrelLengthInches.formatted(
             .number.precision(.fractionLength(0...2))
         )
-        return "\(formattedValue) in"
+        return "\(formattedValue) \(String(localized: "in."))"
     }
 
     var purchasePriceText: String {
@@ -324,7 +327,11 @@ final class Firearm {
 
     func linkedMagazineCountText(using magazines: [Magazine]) -> String {
         let totalCount = totalLinkedMagazineCount(using: magazines)
-        return totalCount == 1 ? "1 magazine" : "\(totalCount) magazines"
+        return String.localizedStringWithFormat(
+            String(localized: "magazineCount"),
+            Int64(totalCount),
+            totalCount.localizedCountString
+        )
     }
 
     func linkedMagazineCapacityText(using magazines: [Magazine]) -> String {

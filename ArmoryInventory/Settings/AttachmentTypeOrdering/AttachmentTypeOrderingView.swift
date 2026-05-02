@@ -38,7 +38,7 @@ struct AttachmentTypeOrderingView: View {
             AccessoryItemSortingSection(
                 sortOrderRaw: $itemSortOrder,
                 sortDirectionRaw: $itemSortDirectionRaw,
-                itemLabelPlural: "Attachments"
+                itemLabelPlural: String(localized: "Attachments")
             )
         }
         .navigationTitle("Attachments Sorting")

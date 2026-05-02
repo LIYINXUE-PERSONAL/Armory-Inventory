@@ -25,25 +25,25 @@ enum PartType: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .barrel:
-            return "Barrel"
+            return String(localized: "Barrel")
         case .trigger:
-            return "Trigger"
+            return String(localized: "Trigger")
         case .slide:
-            return "Slide"
+            return String(localized: "Slide")
         case .boltCarrierGroup:
-            return "Bolt Carrier Group"
+            return String(localized: "Bolt Carrier Group")
         case .chargingHandle:
-            return "Charging Handle"
+            return String(localized: "Charging Handle")
         case .upperReceiver:
-            return "Upper Receiver"
+            return String(localized: "Upper Receiver")
         case .lowerReceiver:
-            return "Lower Receiver"
+            return String(localized: "Lower Receiver")
         case .recoilSystem:
-            return "Recoil System"
+            return String(localized: "Recoil System")
         case .internals:
-            return "Internals"
+            return String(localized: "Internals")
         case .other:
-            return "Other"
+            return String(localized: "Other")
         }
     }
 

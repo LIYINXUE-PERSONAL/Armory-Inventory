@@ -170,45 +170,45 @@ struct FirearmsView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         filterMenu(
-                            selectionTitle: selectedTypeFilter?.displayName ?? "All Types",
+                            selectionTitle: selectedTypeFilter?.displayName ?? String(localized: "All Types"),
                             isActive: selectedTypeFilter != nil
                         ) {
-                            Button("All Types (\(firearms.count))") {
+                            Button(allTypesCountText) {
                                 selectedTypeFilter = nil
                             }
 
                             ForEach(FirearmType.allCases) { firearmType in
-                                Button("\(firearmType.displayName) (\(countForType(firearmType)))") {
+                                Button(filterCountText(title: firearmType.displayName, count: countForType(firearmType))) {
                                     selectedTypeFilter = firearmType
                                 }
                             }
                         }
 
                         filterMenu(
-                            selectionTitle: selectedActionFilter?.displayName ?? "All Actions",
+                            selectionTitle: selectedActionFilter?.displayName ?? String(localized: "All Actions"),
                             isActive: selectedActionFilter != nil
                         ) {
-                            Button("All Actions (\(firearms.count))") {
+                            Button(allActionsCountText) {
                                 selectedActionFilter = nil
                             }
 
                             ForEach(FirearmAction.allCases) { action in
-                                Button("\(action.displayName) (\(countForAction(action)))") {
+                                Button(filterCountText(title: action.displayName, count: countForAction(action))) {
                                     selectedActionFilter = action
                                 }
                             }
                         }
 
                         filterMenu(
-                            selectionTitle: selectedCaliberFilter?.name ?? "All Calibers",
+                            selectionTitle: selectedCaliberFilter?.name ?? String(localized: "All Calibers"),
                             isActive: selectedCaliberFilter != nil
                         ) {
-                            Button("All Calibers (\(firearms.count))") {
+                            Button(allCalibersCountText) {
                                 selectedCaliberFilter = nil
                             }
 
                             ForEach(availableCalibers) { caliber in
-                                Button("\(caliber.name) (\(countForCaliber(caliber)))") {
+                                Button(filterCountText(title: caliber.name, count: countForCaliber(caliber))) {
                                     selectedCaliberFilter = caliber
                                 }
                             }
@@ -397,6 +397,35 @@ struct FirearmsView: View {
         let totalCents = filteredFirearms.reduce(0) { $0 + $1.totalCardValueCents }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private var allTypesCountText: String {
+        String.localizedStringWithFormat(
+            String(localized: "All Types (%lld)"),
+            firearms.count.localizedCountString
+        )
+    }
+
+    private var allActionsCountText: String {
+        String.localizedStringWithFormat(
+            String(localized: "All Actions (%lld)"),
+            firearms.count.localizedCountString
+        )
+    }
+
+    private var allCalibersCountText: String {
+        String.localizedStringWithFormat(
+            String(localized: "All Calibers (%lld)"),
+            firearms.count.localizedCountString
+        )
+    }
+
+    private func filterCountText(title: String, count: Int) -> String {
+        String.localizedStringWithFormat(
+            String(localized: "%@ (%lld)"),
+            title,
+            count.localizedCountString
+        )
     }
 
     private var selectedSortOrder: FirearmSortOrder {

@@ -201,7 +201,7 @@ struct AddFirearmView: View {
 
                 Section("Maintenance") {
                     if isReadOnly {
-                        LabeledContent("Last cleaned", value: firearm?.lastCleanedDateText ?? "Not set")
+                        LabeledContent("Last cleaned", value: firearm?.lastCleanedDateText ?? String(localized: "Not set"))
                     } else {
                         Toggle("Track last cleaned date", isOn: $hasLastCleanedDate)
 
@@ -1034,9 +1034,9 @@ private enum FirearmSnapshotError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .renderFailed:
-            return "The snapshot image could not be generated."
+            return String(localized: "The snapshot image could not be generated.")
         case .presentationFailed:
-            return "The share sheet could not be presented."
+            return String(localized: "The share sheet could not be presented.")
         }
     }
 }
