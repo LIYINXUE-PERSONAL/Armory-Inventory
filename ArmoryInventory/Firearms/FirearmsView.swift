@@ -401,28 +401,28 @@ struct FirearmsView: View {
 
     private var allTypesCountText: String {
         String.localizedStringWithFormat(
-            String(localized: "All Types (%lld)"),
+            String(localized: "All Types (%@)"),
             firearms.count.localizedCountString
         )
     }
 
     private var allActionsCountText: String {
         String.localizedStringWithFormat(
-            String(localized: "All Actions (%lld)"),
+            String(localized: "All Actions (%@)"),
             firearms.count.localizedCountString
         )
     }
 
     private var allCalibersCountText: String {
         String.localizedStringWithFormat(
-            String(localized: "All Calibers (%lld)"),
+            String(localized: "All Calibers (%@)"),
             firearms.count.localizedCountString
         )
     }
 
     private func filterCountText(title: String, count: Int) -> String {
         String.localizedStringWithFormat(
-            String(localized: "%@ (%lld)"),
+            String(localized: "%@ (%@)"),
             title,
             count.localizedCountString
         )

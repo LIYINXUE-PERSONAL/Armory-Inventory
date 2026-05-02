@@ -45,7 +45,36 @@
         }
       }
     },
+    "%@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ (%2$@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@（%2$@）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@（%2$@）"
+          }
+        }
+      }
+    },
     "%@ (%lld)" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1063,8 +1092,14 @@
         }
       }
     },
-    "All Actions (%lld)" : {
+    "All Actions (%@)" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All Actions (%@)"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1082,11 +1117,34 @@
             "state" : "translated",
             "value" : "全部槍機（%@）"
           }
-        },
+        }
+      }
+    },
+    "All Actions (%lld)" : {
+      "extractionState" : "stale",
+      "localizations" : {
         "en" : {
           "stringUnit" : {
-            "value" : "All Actions (%@)",
-            "state" : "new"
+            "state" : "new",
+            "value" : "All Actions (%@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas las acciones (%@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部枪机（%@）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部槍機（%@）"
           }
         }
       }
@@ -1113,8 +1171,14 @@
         }
       }
     },
-    "All Calibers (%lld)" : {
+    "All Calibers (%@)" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All Calibers (%@)"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1132,11 +1196,34 @@
             "state" : "translated",
             "value" : "全部口徑（%@）"
           }
-        },
+        }
+      }
+    },
+    "All Calibers (%lld)" : {
+      "extractionState" : "stale",
+      "localizations" : {
         "en" : {
           "stringUnit" : {
-            "value" : "All Calibers (%@)",
-            "state" : "new"
+            "state" : "new",
+            "value" : "All Calibers (%@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los calibres (%@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部口径（%@）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部口徑（%@）"
           }
         }
       }
@@ -1229,8 +1316,14 @@
         }
       }
     },
-    "All Types (%lld)" : {
+    "All Types (%@)" : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "All Types (%@)"
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1248,11 +1341,34 @@
             "state" : "translated",
             "value" : "全部類型（%@）"
           }
-        },
+        }
+      }
+    },
+    "All Types (%lld)" : {
+      "extractionState" : "stale",
+      "localizations" : {
         "en" : {
           "stringUnit" : {
-            "value" : "All Types (%@)",
-            "state" : "new"
+            "state" : "new",
+            "value" : "All Types (%@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los tipos (%@)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部类型（%@）"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部類型（%@）"
           }
         }
       }
@@ -7596,8 +7712,14 @@
         }
       }
     },
-    "This backup format version (%lld) is not supported." : {
+    "This backup format version (%@) is not supported." : {
       "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This backup format version (%@) is not supported."
+          }
+        },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7615,11 +7737,34 @@
             "state" : "translated",
             "value" : "不支援此備份格式版本（%@）。"
           }
-        },
+        }
+      }
+    },
+    "This backup format version (%lld) is not supported." : {
+      "extractionState" : "stale",
+      "localizations" : {
         "en" : {
           "stringUnit" : {
-            "value" : "This backup format version (%@) is not supported.",
-            "state" : "new"
+            "state" : "new",
+            "value" : "This backup format version (%@) is not supported."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta versión del formato de copia de seguridad (%@) no es compatible."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不支持此备份格式版本（%@）。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "不支援此備份格式版本（%@）。"
           }
         }
       }

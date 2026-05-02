@@ -29,7 +29,7 @@ enum UserDataTransferError: LocalizedError {
             return String(localized: "The selected file is not a valid Armory Inventory backup.")
         case let .unsupportedVersion(version):
             return String.localizedStringWithFormat(
-                String(localized: "This backup format version (%lld) is not supported."),
+                String(localized: "This backup format version (%@) is not supported."),
                 version.localizedCountString
             )
         }
