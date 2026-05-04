@@ -34,7 +34,8 @@ enum PartTypeSort {
 
     nonisolated static func persistedOrder(including typeNames: [String] = []) -> [String] {
         let names = typeNames.map(normalize(typeName:))
-        let savedOrder = UserDefaults.standard.stringArray(forKey: settingsKey)?.map(normalize(typeName:)) ?? []
+        let savedOrder = (UserDefaults.standard.stringArray(forKey: settingsKey)?.map(normalize(typeName:)) ?? [])
+            .filter(defaultOrder.contains)
         let knownNames = defaultOrder.filter { !savedOrder.contains($0) }
         let customNames = names.filter { !savedOrder.contains($0) && !knownNames.contains($0) }
         return savedOrder + knownNames + customNames.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
@@ -70,7 +71,5 @@ enum PartTypeSort {
 
     nonisolated private static let settingsKey = InventorySettingsKeys.partTypeSortOrder
 
-    nonisolated private static let defaultOrder: [String] = PartType.allCases.map {
-        normalize(typeName: $0.displayName)
-    }
+    nonisolated private static let defaultOrder: [String] = PartType.allCases.map(\.id).map(normalize(typeName:))
 }

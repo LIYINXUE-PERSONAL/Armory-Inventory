@@ -31,9 +31,9 @@ struct PartsView: View {
                 )
             } else {
                 List {
-                    ForEach(groupedPartTypes, id: \.self) { type in
-                        Section(type) {
-                            ForEach(groupedParts[type] ?? []) { part in
+                    ForEach(groupedPartTypes, id: \.self) { typeID in
+                        Section(partTypeDisplayName(for: typeID)) {
+                            ForEach(groupedParts[typeID] ?? []) { part in
                                 Button {
                                     selectedPart = part
                                 } label: {
@@ -55,7 +55,7 @@ struct PartsView: View {
                                 .buttonStyle(.plain)
                             }
                             .onDelete { offsets in
-                                deleteParts(at: offsets, in: type)
+                                deleteParts(at: offsets, in: typeID)
                             }
                         }
                     }
@@ -111,7 +111,7 @@ struct PartsView: View {
     }
 
     private var groupedParts: [String: [Part]] {
-        Dictionary(grouping: parts, by: \.typeDisplayName).mapValues {
+        Dictionary(grouping: parts, by: \.type).mapValues {
             AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
         }
     }
@@ -157,6 +157,10 @@ struct PartsView: View {
         let totalCents = parts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private func partTypeDisplayName(for typeID: String) -> String {
+        PartType(rawValue: typeID)?.displayName ?? typeID
     }
 
     private var selectedItemSortOrder: AccessoryItemSortOrder {

@@ -9,12 +9,12 @@ import Foundation
 
 final class OpticTypeOrderingViewModel {
     func rankingSource() -> [String] {
-        OpticTypeSort.persistedOrder(including: OpticType.allCases.map(\.displayName))
+        OpticTypeSort.persistedOrder(including: OpticType.allCases.map(\.id))
     }
 
     func displayName(for normalizedName: String) -> String {
         if let match = OpticType.allCases.first(where: {
-            $0.displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedName
+            $0.id.lowercased() == normalizedName
         }) {
             return match.displayName
         }

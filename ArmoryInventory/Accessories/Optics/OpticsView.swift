@@ -31,9 +31,9 @@ struct OpticsView: View {
                 )
             } else {
                 List {
-                    ForEach(groupedOpticTypes, id: \.self) { type in
-                        Section(type) {
-                            ForEach(groupedOptics[type] ?? []) { optic in
+                    ForEach(groupedOpticTypes, id: \.self) { typeID in
+                        Section(opticTypeDisplayName(for: typeID)) {
+                            ForEach(groupedOptics[typeID] ?? []) { optic in
                                 Button {
                                     selectedOptic = optic
                                 } label: {
@@ -72,7 +72,7 @@ struct OpticsView: View {
                                 .buttonStyle(.plain)
                             }
                             .onDelete { offsets in
-                                deleteOptics(at: offsets, in: type)
+                                deleteOptics(at: offsets, in: typeID)
                             }
                         }
                     }
@@ -128,7 +128,7 @@ struct OpticsView: View {
     }
 
     private var groupedOptics: [String: [Optic]] {
-        Dictionary(grouping: optics, by: \.typeDisplayName).mapValues {
+        Dictionary(grouping: optics, by: \.type).mapValues {
             AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
         }
     }
@@ -174,6 +174,10 @@ struct OpticsView: View {
         let totalCents = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private func opticTypeDisplayName(for typeID: String) -> String {
+        OpticType(rawValue: typeID)?.displayName ?? typeID
     }
 
     private var selectedItemSortOrder: AccessoryItemSortOrder {

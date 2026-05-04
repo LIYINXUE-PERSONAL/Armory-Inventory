@@ -24,7 +24,7 @@ final class AttachmentTypeOrderingViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.rankingSource(),
-            AttachmentType.allCases.map(\.displayName).map { $0.lowercased() }
+            AttachmentType.allCases.map(\.id).map { $0.lowercased() }
         )
     }
 
@@ -32,7 +32,8 @@ final class AttachmentTypeOrderingViewModelTests: XCTestCase {
         let viewModel = AttachmentTypeOrderingViewModel()
 
         XCTAssertEqual(viewModel.displayName(for: "stock"), "Stock")
-        XCTAssertEqual(viewModel.displayName(for: "muzzle device"), "Muzzle Device")
+        XCTAssertEqual(viewModel.displayName(for: "muzzledevice"), "Muzzle Device")
+        XCTAssertEqual(viewModel.displayName(for: "muzzle device"), "muzzle device")
         XCTAssertEqual(viewModel.displayName(for: "custom wrap"), "custom wrap")
     }
 
@@ -64,7 +65,7 @@ final class AttachmentTypeOrderingViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             rankingNames,
-            AttachmentType.allCases.map(\.displayName).map { $0.lowercased() }
+            AttachmentType.allCases.map(\.id).map { $0.lowercased() }
         )
     }
 }

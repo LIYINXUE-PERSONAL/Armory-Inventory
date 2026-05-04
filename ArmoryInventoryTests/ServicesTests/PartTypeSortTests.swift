@@ -20,26 +20,26 @@ final class PartTypeSortTests: XCTestCase {
     }
 
     func testAscendingOrderPrefersConfiguredRankingOverUnknownNames() {
-        PartTypeSort.saveOrder(["Trigger", "Barrel", "Slide"])
+        PartTypeSort.saveOrder(["trigger", "barrel", "slide"])
 
-        XCTAssertTrue(PartTypeSort.areInAscendingOrder("Trigger", "Barrel"))
-        XCTAssertTrue(PartTypeSort.areInAscendingOrder("Barrel", "Custom Tuning Kit"))
-        XCTAssertFalse(PartTypeSort.areInAscendingOrder("Custom Tuning Kit", "Slide"))
+        XCTAssertTrue(PartTypeSort.areInAscendingOrder("trigger", "barrel"))
+        XCTAssertTrue(PartTypeSort.areInAscendingOrder("barrel", "custom tuning kit"))
+        XCTAssertFalse(PartTypeSort.areInAscendingOrder("custom tuning kit", "slide"))
     }
 
     func testDisplayOrderSortsBySavedRankingThenLocalizedFallback() {
-        PartTypeSort.saveOrder(["Charging Handle", "Lower Receiver"])
+        PartTypeSort.saveOrder(["charginghandle", "lowerreceiver"])
 
         XCTAssertEqual(
-            PartTypeSort.displayOrder(for: ["Trigger", "Custom Z", "Lower Receiver", "Charging Handle", "Custom A"]),
-            ["Charging Handle", "Lower Receiver", "Trigger", "Custom A", "Custom Z"]
+            PartTypeSort.displayOrder(for: ["trigger", "Custom Z", "lowerreceiver", "charginghandle", "Custom A"]),
+            ["charginghandle", "lowerreceiver", "trigger", "Custom A", "Custom Z"]
         )
     }
 
     func testPersistedOrderIncludesSavedKnownAndCustomNames() {
         PartTypeSort.saveOrder([" barrel ", "custom internals"])
 
-        let persisted = PartTypeSort.persistedOrder(including: ["Trigger", "Custom Buffer", "Slide"])
+        let persisted = PartTypeSort.persistedOrder(including: ["trigger", "Custom Buffer", "slide"])
 
         XCTAssertEqual(
             persisted,
@@ -48,11 +48,11 @@ final class PartTypeSortTests: XCTestCase {
                 "custom internals",
                 "trigger",
                 "slide",
-                "bolt carrier group",
-                "charging handle",
-                "upper receiver",
-                "lower receiver",
-                "recoil system",
+                "boltcarriergroup",
+                "charginghandle",
+                "upperreceiver",
+                "lowerreceiver",
+                "recoilsystem",
                 "internals",
                 "other",
                 "custom buffer"
@@ -60,15 +60,26 @@ final class PartTypeSortTests: XCTestCase {
         )
     }
 
+    func testPersistedOrderIgnoresLegacyDisplayNamesAndUsesStableIDs() {
+        UserDefaults.standard.set(["trigger", "barrel", "charging handle"], forKey: InventorySettingsKeys.partTypeSortOrder)
+
+        let persisted = PartTypeSort.persistedOrder(including: ["trigger", "barrel", "slide"])
+
+        XCTAssertEqual(
+            persisted.prefix(3).map(\.self),
+            ["trigger", "barrel", "slide"]
+        )
+    }
+
     func testResetOrderClearsSavedOrderAndBumpsVersion() {
-        PartTypeSort.saveOrder(["Trigger"])
+        PartTypeSort.saveOrder(["trigger"])
         let versionAfterSave = UserDefaults.standard.integer(forKey: PartTypeSort.settingsVersionKey)
 
         PartTypeSort.resetOrder()
 
         XCTAssertEqual(
             PartTypeSort.persistedOrder(),
-            PartType.allCases.map(\.displayName).map { $0.lowercased() }
+            PartType.allCases.map(\.id).map { $0.lowercased() }
         )
         XCTAssertEqual(
             UserDefaults.standard.integer(forKey: PartTypeSort.settingsVersionKey),
