@@ -17,11 +17,11 @@ enum InventoryTaxCategory: CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .firearms:
-            return "Firearms"
+            return String(localized: "Firearms")
         case .ammo:
-            return "Ammo"
+            return String(localized: "Ammo")
         case .accessories:
-            return "Accessories"
+            return String(localized: "Accessories")
         }
     }
 }

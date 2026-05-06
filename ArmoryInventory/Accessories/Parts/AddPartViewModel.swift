@@ -76,10 +76,10 @@ final class AddPartViewModel {
 
     func primaryButtonTitle(hasPart: Bool, isEditing: Bool) -> String {
         if !hasPart {
-            return "Add"
+            return String(localized: "Add")
         }
 
-        return isEditing ? "Save" : "Edit"
+        return isEditing ? String(localized: "Save") : String(localized: "Edit")
     }
 
     func nextSortOrder(in context: ModelContext) -> Int {

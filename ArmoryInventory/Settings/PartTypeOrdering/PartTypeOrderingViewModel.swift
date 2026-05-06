@@ -9,12 +9,12 @@ import Foundation
 
 final class PartTypeOrderingViewModel {
     func rankingSource() -> [String] {
-        PartTypeSort.persistedOrder(including: PartType.allCases.map(\.displayName))
+        PartTypeSort.persistedOrder(including: PartType.allCases.map(\.id))
     }
 
     func displayName(for normalizedName: String) -> String {
         if let match = PartType.allCases.first(where: {
-            $0.displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedName
+            $0.id.lowercased() == normalizedName
         }) {
             return match.displayName
         }

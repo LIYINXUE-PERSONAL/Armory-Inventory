@@ -76,10 +76,10 @@ final class AddAttachmentViewModel {
 
     func primaryButtonTitle(hasAttachment: Bool, isEditing: Bool) -> String {
         if !hasAttachment {
-            return "Add"
+            return String(localized: "Add")
         }
 
-        return isEditing ? "Save" : "Edit"
+        return isEditing ? String(localized: "Save") : String(localized: "Edit")
     }
 
     func nextSortOrder(in context: ModelContext) -> Int {

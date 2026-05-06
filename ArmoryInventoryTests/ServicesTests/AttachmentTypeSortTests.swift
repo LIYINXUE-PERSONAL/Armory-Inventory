@@ -20,26 +20,26 @@ final class AttachmentTypeSortTests: XCTestCase {
     }
 
     func testAscendingOrderPrefersConfiguredRankingOverUnknownNames() {
-        AttachmentTypeSort.saveOrder(["Light", "Grip", "Stock"])
+        AttachmentTypeSort.saveOrder(["light", "grip", "stock"])
 
-        XCTAssertTrue(AttachmentTypeSort.areInAscendingOrder("Light", "Grip"))
-        XCTAssertTrue(AttachmentTypeSort.areInAscendingOrder("Grip", "Custom Sling"))
-        XCTAssertFalse(AttachmentTypeSort.areInAscendingOrder("Custom Sling", "Stock"))
+        XCTAssertTrue(AttachmentTypeSort.areInAscendingOrder("light", "grip"))
+        XCTAssertTrue(AttachmentTypeSort.areInAscendingOrder("grip", "custom sling"))
+        XCTAssertFalse(AttachmentTypeSort.areInAscendingOrder("custom sling", "stock"))
     }
 
     func testDisplayOrderSortsBySavedRankingThenLocalizedFallback() {
-        AttachmentTypeSort.saveOrder(["Laser", "Stock"])
+        AttachmentTypeSort.saveOrder(["laser", "stock"])
 
         XCTAssertEqual(
-            AttachmentTypeSort.displayOrder(for: ["Grip", "Custom Z", "Stock", "Laser", "Custom A"]),
-            ["Laser", "Stock", "Grip", "Custom A", "Custom Z"]
+            AttachmentTypeSort.displayOrder(for: ["grip", "Custom Z", "stock", "laser", "Custom A"]),
+            ["laser", "stock", "grip", "Custom A", "Custom Z"]
         )
     }
 
     func testPersistedOrderIncludesSavedKnownAndCustomNames() {
         AttachmentTypeSort.saveOrder([" laser ", "custom wrap"])
 
-        let persisted = AttachmentTypeSort.persistedOrder(including: ["Stock", "Custom Mount", "Grip"])
+        let persisted = AttachmentTypeSort.persistedOrder(including: ["stock", "Custom Mount", "grip"])
 
         XCTAssertEqual(
             persisted,
@@ -49,25 +49,36 @@ final class AttachmentTypeSortTests: XCTestCase {
                 "stock",
                 "grip",
                 "light",
-                "hand stop",
+                "handstop",
                 "bipod",
-                "sling mount",
-                "muzzle device",
+                "slingmount",
+                "muzzledevice",
                 "other",
                 "custom mount"
             ]
         )
     }
 
+    func testPersistedOrderIgnoresLegacyDisplayNamesAndUsesStableIDs() {
+        UserDefaults.standard.set(["light", "grip", "stock", "hand stop"], forKey: InventorySettingsKeys.attachmentTypeSortOrder)
+
+        let persisted = AttachmentTypeSort.persistedOrder(including: ["stock", "grip", "laser"])
+
+        XCTAssertEqual(
+            persisted.prefix(4).map(\.self),
+            ["light", "grip", "stock", "laser"]
+        )
+    }
+
     func testResetOrderClearsSavedOrderAndBumpsVersion() {
-        AttachmentTypeSort.saveOrder(["Grip"])
+        AttachmentTypeSort.saveOrder(["grip"])
         let versionAfterSave = UserDefaults.standard.integer(forKey: AttachmentTypeSort.settingsVersionKey)
 
         AttachmentTypeSort.resetOrder()
 
         XCTAssertEqual(
             AttachmentTypeSort.persistedOrder(),
-            AttachmentType.allCases.map(\.displayName).map { $0.lowercased() }
+            AttachmentType.allCases.map(\.id).map { $0.lowercased() }
         )
         XCTAssertEqual(
             UserDefaults.standard.integer(forKey: AttachmentTypeSort.settingsVersionKey),

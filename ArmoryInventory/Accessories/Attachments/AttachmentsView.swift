@@ -31,9 +31,9 @@ struct AttachmentsView: View {
                 )
             } else {
                 List {
-                    ForEach(groupedAttachmentTypes, id: \.self) { type in
-                        Section(type) {
-                            ForEach(groupedAttachments[type] ?? []) { attachment in
+                    ForEach(groupedAttachmentTypes, id: \.self) { typeID in
+                        Section(attachmentTypeDisplayName(for: typeID)) {
+                            ForEach(groupedAttachments[typeID] ?? []) { attachment in
                                 Button {
                                     selectedAttachment = attachment
                                 } label: {
@@ -55,7 +55,7 @@ struct AttachmentsView: View {
                                 .buttonStyle(.plain)
                             }
                             .onDelete { offsets in
-                                deleteAttachments(at: offsets, in: type)
+                                deleteAttachments(at: offsets, in: typeID)
                             }
                         }
                     }
@@ -108,7 +108,7 @@ struct AttachmentsView: View {
     }
 
     private var groupedAttachments: [String: [Attachment]] {
-        Dictionary(grouping: attachments, by: \.typeDisplayName).mapValues {
+        Dictionary(grouping: attachments, by: \.type).mapValues {
             AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
         }
     }
@@ -154,6 +154,10 @@ struct AttachmentsView: View {
         let totalCents = attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
         let amount = Decimal(totalCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    private func attachmentTypeDisplayName(for typeID: String) -> String {
+        AttachmentType(rawValue: typeID)?.displayName ?? typeID
     }
 
     private var selectedItemSortOrder: AccessoryItemSortOrder {

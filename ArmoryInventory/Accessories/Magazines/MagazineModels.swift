@@ -110,7 +110,7 @@ final class Magazine {
     var caliberDisplayText: String {
         let names = supportedCaliberNames
         guard !names.isEmpty else {
-            return "No Caliber"
+            return String(localized: "No Caliber")
         }
 
         return names.joined(separator: ", ")
@@ -119,14 +119,16 @@ final class Magazine {
     var capacityText: String {
         String.localizedStringWithFormat(
             String(localized: "magazineCapacityText"),
-            Int64(capacity)
+            Int64(capacity),
+            capacity.localizedCountString
         )
     }
 
     var countText: String {
         String.localizedStringWithFormat(
             String(localized: "magazineCount"),
-            Int64(count)
+            Int64(count),
+            count.localizedCountString
         )
     }
 
@@ -134,7 +136,8 @@ final class Magazine {
         String.localizedStringWithFormat(
             String(localized: "magazineCountAndCapacity"),
             Int64(count),
-            Int64(capacity)
+            count.localizedCountString,
+            capacity.localizedCountString
         )
     }
 

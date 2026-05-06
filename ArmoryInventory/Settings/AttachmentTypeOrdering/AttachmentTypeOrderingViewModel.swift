@@ -9,12 +9,12 @@ import Foundation
 
 final class AttachmentTypeOrderingViewModel {
     func rankingSource() -> [String] {
-        AttachmentTypeSort.persistedOrder(including: AttachmentType.allCases.map(\.displayName))
+        AttachmentTypeSort.persistedOrder(including: AttachmentType.allCases.map(\.id))
     }
 
     func displayName(for normalizedName: String) -> String {
         if let match = AttachmentType.allCases.first(where: {
-            $0.displayName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == normalizedName
+            $0.id.lowercased() == normalizedName
         }) {
             return match.displayName
         }

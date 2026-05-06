@@ -98,7 +98,7 @@ struct AboutView: View {
         case let (.none, .some(build)):
             return build
         case (.none, .none):
-            return "Unavailable"
+            return String(localized: "Unavailable")
         }
     }
 

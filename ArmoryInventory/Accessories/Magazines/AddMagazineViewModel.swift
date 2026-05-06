@@ -126,10 +126,10 @@ final class AddMagazineViewModel {
 
     func primaryButtonTitle(hasMagazine: Bool, isEditing: Bool) -> String {
         if !hasMagazine {
-            return "Add"
+            return String(localized: "Add")
         }
 
-        return isEditing ? "Save" : "Edit"
+        return isEditing ? String(localized: "Save") : String(localized: "Edit")
     }
 
     func initialPatternSelection(for magazine: Magazine?) -> MagazinePatternSelection {
@@ -294,11 +294,11 @@ final class AddMagazineViewModel {
             return calibers.isEmpty ? definition.pattern.familyLabel : calibers
         case .existingCustom:
             let calibers = definition.pattern.compatibility.supportedCaliberNames.joined(separator: ", ")
-            return calibers.isEmpty ? "Saved custom pattern." : calibers
+            return calibers.isEmpty ? String(localized: "Saved custom pattern.") : calibers
         case .legacy:
-            return "Legacy pattern names stay visible and editable for existing data."
+            return String(localized: "Legacy pattern names stay visible and editable for existing data.")
         case .custom:
-            return "Custom pattern names are stored exactly as entered."
+            return String(localized: "Custom pattern names are stored exactly as entered.")
         }
     }
 

@@ -90,7 +90,11 @@ final class AmmoType {
     }
 
     static func roundsText(for quantity: Int) -> String {
-        String(localized: "\(quantity) Rounds")
+        String.localizedStringWithFormat(
+            String(localized: "%lld Rounds"),
+            Int64(quantity),
+            quantity.localizedCountString
+        )
     }
 }
 
