@@ -31,26 +31,26 @@ final class CaliberListViewModel {
         var title: String {
             switch self {
             case .day:
-                return "Day"
+                return String(localized: "Day")
             case .week:
-                return "Week"
+                return String(localized: "Week")
             case .month:
-                return "Month"
+                return String(localized: "Month")
             case .custom:
-                return "Custom"
+                return String(localized: "Custom")
             }
         }
 
         var summaryTitle: String {
             switch self {
             case .day:
-                return "Today"
+                return String(localized: "Today")
             case .week:
-                return "This Week"
+                return String(localized: "This Week")
             case .month:
-                return "This Month"
+                return String(localized: "This Month")
             case .custom:
-                return "Custom Range"
+                return String(localized: "Custom Range")
             }
         }
     }

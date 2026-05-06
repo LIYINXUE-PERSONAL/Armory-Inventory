@@ -38,7 +38,7 @@ struct OpticTypeOrderingView: View {
             AccessoryItemSortingSection(
                 sortOrderRaw: $itemSortOrder,
                 sortDirectionRaw: $itemSortDirectionRaw,
-                itemLabelPlural: "Optics"
+                itemLabelPlural: String(localized: "Optics")
             )
         }
         .navigationTitle("Optics Sorting")

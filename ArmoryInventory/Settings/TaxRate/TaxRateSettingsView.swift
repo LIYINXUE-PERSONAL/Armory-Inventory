@@ -19,16 +19,16 @@ struct TaxRateSettingsView: View {
     var body: some View {
         Form {
             Section {
-                Text("Use the slider to set a rate from 0% to 100%. Move it all the way to 100% to unlock a custom value above that range.")
+                Text(String(localized: "Use the slider to set a rate from 0% to 100%. Move it all the way to 100% to unlock a custom value above that range."))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
 
-            taxRateSection(title: "Firearms", storedRate: $firearmsTaxRate, customText: $firearmsTaxRateText)
-            taxRateSection(title: "Ammo", storedRate: $ammoTaxRate, customText: $ammoTaxRateText)
-            taxRateSection(title: "Accessories", storedRate: $accessoriesTaxRate, customText: $accessoriesTaxRateText)
+            taxRateSection(category: .firearms, storedRate: $firearmsTaxRate, customText: $firearmsTaxRateText)
+            taxRateSection(category: .ammo, storedRate: $ammoTaxRate, customText: $ammoTaxRateText)
+            taxRateSection(category: .accessories, storedRate: $accessoriesTaxRate, customText: $accessoriesTaxRateText)
         }
-        .navigationTitle("Tax Rate")
+        .navigationTitle(String(localized: "Tax Rate"))
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             firearmsTaxRateText = formattedTaxRate(firearmsTaxRate)
@@ -38,8 +38,8 @@ struct TaxRateSettingsView: View {
     }
 
     @ViewBuilder
-    private func taxRateSection(title: String, storedRate: Binding<Double>, customText: Binding<String>) -> some View {
-        Section(title) {
+    private func taxRateSection(category: InventoryTaxCategory, storedRate: Binding<Double>, customText: Binding<String>) -> some View {
+        Section(category.title) {
             Slider(
                 value: Binding(
                     get: { min(max(storedRate.wrappedValue, 0), sliderUpperBound) },
@@ -59,27 +59,32 @@ struct TaxRateSettingsView: View {
                 step: 0.1
             )
             HStack {
-                Text("0%")
+                Text(String(localized: "0%"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Text("100%+")
+                Text(String(localized: "100%+"))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
-            Text("Current: \(storedRate.wrappedValue, format: .number.precision(.fractionLength(0...2)))%")
+            Text(
+                String.localizedStringWithFormat(
+                    String(localized: "Current: %@%%"),
+                    formattedTaxRate(storedRate.wrappedValue)
+                )
+            )
                 .font(.footnote)
                 .foregroundStyle(.secondary)
 
             if storedRate.wrappedValue >= sliderUpperBound {
                 HStack(spacing: 12) {
-                    TextField("Custom percent", text: customText)
+                    TextField(String(localized: "Custom percent"), text: customText)
                         .keyboardType(.decimalPad)
                         .onAppear {
                             customText.wrappedValue = formattedTaxRate(storedRate.wrappedValue)
                         }
 
-                    Button("Update") {
+                    Button(String(localized: "Update")) {
                         updateTaxRate(from: customText, storedRate: storedRate)
                     }
                     .buttonStyle(.borderedProminent)

@@ -33,16 +33,17 @@ enum OpticTypeSort {
     }
 
     nonisolated static func persistedOrder(including typeNames: [String] = []) -> [String] {
-        let names = typeNames.map(normalize(typeName:))
-        let savedOrder = UserDefaults.standard.stringArray(forKey: settingsKey)?.map(normalize(typeName:)) ?? []
+        let names = unique(typeNames.map(normalize(typeName:)))
+        let savedOrder = unique(
+            (UserDefaults.standard.stringArray(forKey: settingsKey) ?? []).map(normalize(typeName:))
+        ).filter(defaultOrder.contains)
         let knownNames = defaultOrder.filter { !savedOrder.contains($0) }
         let customNames = names.filter { !savedOrder.contains($0) && !knownNames.contains($0) }
         return savedOrder + knownNames + customNames.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
     }
 
     nonisolated static func saveOrder(_ typeNames: [String]) {
-        let normalized = typeNames.map(normalize(typeName:))
-        UserDefaults.standard.set(normalized, forKey: settingsKey)
+        UserDefaults.standard.set(unique(typeNames.map(normalize(typeName:))), forKey: settingsKey)
         let nextVersion = UserDefaults.standard.integer(forKey: settingsVersionKey) + 1
         UserDefaults.standard.set(nextVersion, forKey: settingsVersionKey)
     }
@@ -64,13 +65,22 @@ enum OpticTypeSort {
         typeName.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
 
+    nonisolated private static func unique(_ typeNames: [String]) -> [String] {
+        var seen: Set<String> = []
+        var ordered: [String] = []
+
+        for typeName in typeNames where seen.insert(typeName).inserted {
+            ordered.append(typeName)
+        }
+
+        return ordered
+    }
+
     nonisolated private static var currentOrder: [String] {
         persistedOrder()
     }
 
     nonisolated private static let settingsKey = InventorySettingsKeys.opticTypeSortOrder
 
-    nonisolated private static let defaultOrder: [String] = OpticType.allCases.map {
-        normalize(typeName: $0.displayName)
-    }
+    nonisolated private static let defaultOrder: [String] = OpticType.allCases.map(\.id).map(normalize(typeName:))
 }

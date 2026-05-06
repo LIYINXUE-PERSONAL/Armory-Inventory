@@ -18,7 +18,8 @@ struct MagazinePatternGroupSummary: Identifiable, Equatable {
         let totalCount = magazines.reduce(0) { $0 + max(0, $1.count) }
         let countText = String.localizedStringWithFormat(
             String(localized: "magazineCount"),
-            Int64(totalCount)
+            Int64(totalCount),
+            totalCount.localizedCountString
         )
         guard !caliberText.isEmpty else {
             return countText
@@ -39,7 +40,8 @@ struct MagazinePatternGroupSummary: Identifiable, Equatable {
     var linkedFirearmsText: String {
         let baseText = String.localizedStringWithFormat(
             String(localized: "usedByFirearm"),
-            Int64(linkedFirearmNames.count)
+            Int64(linkedFirearmNames.count),
+            linkedFirearmNames.count.localizedCountString
         )
         guard !linkedFirearmNames.isEmpty else {
             return baseText

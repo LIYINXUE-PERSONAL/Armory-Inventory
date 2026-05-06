@@ -252,10 +252,10 @@ final class AddOpticViewModel {
 
     func primaryButtonTitle(hasOptic: Bool, isEditing: Bool) -> String {
         if !hasOptic {
-            return "Add"
+            return String(localized: "Add")
         }
 
-        return isEditing ? "Save" : "Edit"
+        return isEditing ? String(localized: "Save") : String(localized: "Edit")
     }
 
     func addOptic(

@@ -21,19 +21,19 @@ enum FirearmSortOrder: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .manual:
-            return "Manual"
+            return String(localized: "Manual")
         case .purchaseDate:
-            return "Purchase Date"
+            return String(localized: "Purchase Date")
         case .value:
-            return "Value"
+            return String(localized: "Value")
         case .barrelLength:
-            return "Barrel Length"
+            return String(localized: "Barrel Length")
         case .brand:
-            return "Brand"
+            return String(localized: "Brand")
         case .caliber:
-            return "Caliber"
+            return String(localized: "Caliber")
         case .type:
-            return "Type"
+            return String(localized: "Type")
         }
     }
 }
@@ -47,9 +47,9 @@ enum FirearmSortDirection: String, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .ascending:
-            return "Ascending"
+            return String(localized: "Ascending")
         case .descending:
-            return "Descending"
+            return String(localized: "Descending")
         }
     }
 }

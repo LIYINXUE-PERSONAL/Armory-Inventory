@@ -24,21 +24,22 @@ final class OpticTypeOrderingViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.rankingSource(),
-            OpticType.allCases.map(\.displayName).map { $0.lowercased() }
+            OpticType.allCases.map(\.id).map { $0.lowercased() }
         )
     }
 
     func testDisplayNameMatchesKnownTypesAndFallsBackForUnknownNames() {
         let viewModel = OpticTypeOrderingViewModel()
 
-        XCTAssertEqual(viewModel.displayName(for: "red dot"), "Red Dot")
+        XCTAssertEqual(viewModel.displayName(for: "reddot"), "Red Dot")
+        XCTAssertEqual(viewModel.displayName(for: "red dot"), "red dot")
         XCTAssertEqual(viewModel.displayName(for: "lpvo"), "LPVO")
         XCTAssertEqual(viewModel.displayName(for: "custom thermal"), "custom thermal")
     }
 
     func testSaveRankingAndRefreshedRankingNamesPersistCustomOrder() {
         let viewModel = OpticTypeOrderingViewModel()
-        let savedRanking = ["other", "scope", "red dot"]
+        let savedRanking = ["other", "scope", "reddot"]
 
         viewModel.saveRanking(savedRanking)
 
@@ -47,24 +48,24 @@ final class OpticTypeOrderingViewModelTests: XCTestCase {
 
     func testMoveRankingReordersValuesAndPersistsResult() {
         let viewModel = OpticTypeOrderingViewModel()
-        let rankingNames = ["scope", "red dot", "holographic", "lpvo"]
+        let rankingNames = ["scope", "reddot", "holographic", "lpvo"]
 
         let updated = viewModel.moveRanking(rankingNames, from: IndexSet(integer: 1), to: 4)
 
-        XCTAssertEqual(updated, ["scope", "holographic", "lpvo", "red dot"])
+        XCTAssertEqual(updated, ["scope", "holographic", "lpvo", "reddot"])
         XCTAssertEqual(Array(viewModel.refreshedRankingNames().prefix(4)), updated)
     }
 
     func testResetOrderRestoresDefaultOrdering() {
         let viewModel = OpticTypeOrderingViewModel()
-        var rankingNames = ["other", "scope", "red dot"]
+        var rankingNames = ["other", "scope", "reddot"]
         viewModel.saveRanking(rankingNames)
 
         viewModel.resetOrder(rankingNames: &rankingNames)
 
         XCTAssertEqual(
             rankingNames,
-            OpticType.allCases.map(\.displayName).map { $0.lowercased() }
+            OpticType.allCases.map(\.id).map { $0.lowercased() }
         )
     }
 }

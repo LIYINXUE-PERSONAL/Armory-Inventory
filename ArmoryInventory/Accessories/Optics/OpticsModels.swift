@@ -22,19 +22,19 @@ enum OpticType: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .redDot:
-            return "Red Dot"
+            return String(localized: "Red Dot")
         case .holographic:
-            return "Holographic"
+            return String(localized: "Holographic")
         case .prism:
-            return "Prism"
+            return String(localized: "Prism")
         case .lpvo:
-            return "LPVO"
+            return String(localized: "LPVO")
         case .scope:
-            return "Scope"
+            return String(localized: "Scope")
         case .magnifier:
-            return "Magnifier"
+            return String(localized: "Magnifier")
         case .other:
-            return "Other"
+            return String(localized: "Other")
         }
     }
 
@@ -66,25 +66,25 @@ enum OpticFootprint: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .picatinny:
-            return "Picatinny"
+            return String(localized: "Picatinny")
         case .weaver:
-            return "Weaver"
+            return String(localized: "Weaver")
         case .rmr:
-            return "RMR"
+            return String(localized: "RMR")
         case .rmsc:
-            return "RMSc"
+            return String(localized: "RMSc")
         case .doctor:
-            return "Docter/Noblex"
+            return String(localized: "Docter/Noblex")
         case .deltaPointPro:
-            return "DeltaPoint Pro"
+            return String(localized: "DeltaPoint Pro")
         case .aimpointMicro:
-            return "Aimpoint Micro"
+            return String(localized: "Aimpoint Micro")
         case .acro:
-            return "ACRO"
+            return String(localized: "ACRO")
         case .cMore:
-            return "C-More RTS/STS"
+            return String(localized: "C-More RTS/STS")
         case .other:
-            return "Other"
+            return String(localized: "Other")
         }
     }
 }
@@ -98,9 +98,9 @@ enum OpticFocalPlane: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .first:
-            return "FFP"
+            return String(localized: "FFP")
         case .second:
-            return "SFP"
+            return String(localized: "SFP")
         }
     }
 }

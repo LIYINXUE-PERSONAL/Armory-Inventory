@@ -24,7 +24,7 @@ final class PartTypeOrderingViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.rankingSource(),
-            PartType.allCases.map(\.displayName).map { $0.lowercased() }
+            PartType.allCases.map(\.id).map { $0.lowercased() }
         )
     }
 
@@ -32,7 +32,8 @@ final class PartTypeOrderingViewModelTests: XCTestCase {
         let viewModel = PartTypeOrderingViewModel()
 
         XCTAssertEqual(viewModel.displayName(for: "trigger"), "Trigger")
-        XCTAssertEqual(viewModel.displayName(for: "bolt carrier group"), "Bolt Carrier Group")
+        XCTAssertEqual(viewModel.displayName(for: "boltcarriergroup"), "Bolt Carrier Group")
+        XCTAssertEqual(viewModel.displayName(for: "bolt carrier group"), "bolt carrier group")
         XCTAssertEqual(viewModel.displayName(for: "custom internals"), "custom internals")
     }
 
@@ -64,7 +65,7 @@ final class PartTypeOrderingViewModelTests: XCTestCase {
 
         XCTAssertEqual(
             rankingNames,
-            PartType.allCases.map(\.displayName).map { $0.lowercased() }
+            PartType.allCases.map(\.id).map { $0.lowercased() }
         )
     }
 }

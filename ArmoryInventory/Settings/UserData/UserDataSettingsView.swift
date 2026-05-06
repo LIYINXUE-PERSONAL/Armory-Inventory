@@ -72,8 +72,8 @@ struct UserDataSettingsView: View {
             switch result {
             case .success:
                 statusMessage = StatusMessage(
-                    title: "Export Complete",
-                    message: "Your backup file was created successfully."
+                    title: String(localized: "Export Complete"),
+                    message: String(localized: "Your backup file was created successfully.")
                 )
             case let .failure(error):
                 alertMessage = error.localizedDescription
@@ -158,8 +158,8 @@ struct UserDataSettingsView: View {
             let data = try Data(contentsOf: url)
             try userDataTransferService.importData(data, into: context)
             statusMessage = StatusMessage(
-                title: "Import Complete",
-                message: "The selected backup replaced your current inventory and settings."
+                title: String(localized: "Import Complete"),
+                message: String(localized: "The selected backup replaced your current inventory and settings.")
             )
         } catch {
             alertMessage = error.localizedDescription
@@ -170,8 +170,8 @@ struct UserDataSettingsView: View {
         do {
             try userDataTransferService.clearAllData(in: context)
             statusMessage = StatusMessage(
-                title: "Data Cleared",
-                message: "Your inventory and managed settings were removed."
+                title: String(localized: "Data Cleared"),
+                message: String(localized: "Your inventory and managed settings were removed.")
             )
         } catch {
             alertMessage = error.localizedDescription

@@ -20,52 +20,63 @@ final class OpticTypeSortTests: XCTestCase {
     }
 
     func testAscendingOrderPrefersConfiguredRankingOverUnknownNames() {
-        OpticTypeSort.saveOrder(["LPVO", "Red Dot", "Scope"])
+        OpticTypeSort.saveOrder(["lpvo", "reddot", "scope"])
 
-        XCTAssertTrue(OpticTypeSort.areInAscendingOrder("LPVO", "Red Dot"))
-        XCTAssertTrue(OpticTypeSort.areInAscendingOrder("Red Dot", "Custom Thermal"))
-        XCTAssertFalse(OpticTypeSort.areInAscendingOrder("Custom Thermal", "Scope"))
+        XCTAssertTrue(OpticTypeSort.areInAscendingOrder("lpvo", "reddot"))
+        XCTAssertTrue(OpticTypeSort.areInAscendingOrder("reddot", "customthermal"))
+        XCTAssertFalse(OpticTypeSort.areInAscendingOrder("customthermal", "scope"))
     }
 
     func testDisplayOrderSortsBySavedRankingThenLocalizedFallback() {
-        OpticTypeSort.saveOrder(["Holographic", "Scope"])
+        OpticTypeSort.saveOrder(["holographic", "scope"])
 
         XCTAssertEqual(
-            OpticTypeSort.displayOrder(for: ["Red Dot", "Custom Z", "Scope", "Holographic", "Custom A"]),
-            ["Holographic", "Scope", "Red Dot", "Custom A", "Custom Z"]
+            OpticTypeSort.displayOrder(for: ["reddot", "customz", "scope", "holographic", "customa"]),
+            ["holographic", "scope", "reddot", "customa", "customz"]
         )
     }
 
     func testPersistedOrderIncludesSavedKnownAndCustomNames() {
-        OpticTypeSort.saveOrder([" scope ", "custom thermal"])
+        OpticTypeSort.saveOrder([" scope ", "customthermal"])
 
-        let persisted = OpticTypeSort.persistedOrder(including: ["LPVO", "Custom Magnified", "Red Dot"])
+        let persisted = OpticTypeSort.persistedOrder(including: ["lpvo", "custommagnified", "reddot"])
 
         XCTAssertEqual(
             persisted,
             [
                 "scope",
-                "custom thermal",
-                "red dot",
+                "customthermal",
+                "reddot",
                 "holographic",
                 "prism",
                 "lpvo",
                 "magnifier",
                 "other",
-                "custom magnified"
+                "custommagnified"
             ]
         )
     }
 
+    func testPersistedOrderIgnoresLegacyDisplayNamesAndUsesStableIDs() {
+        UserDefaults.standard.set(["red dot", "全息", "lpvo"], forKey: InventorySettingsKeys.opticTypeSortOrder)
+
+        let persisted = OpticTypeSort.persistedOrder(including: ["reddot", "holographic", "lpvo"])
+
+        XCTAssertEqual(
+            persisted.prefix(3).map(\.self),
+            ["lpvo", "reddot", "holographic"]
+        )
+    }
+
     func testResetOrderClearsSavedOrderAndBumpsVersion() {
-        OpticTypeSort.saveOrder(["Scope"])
+        OpticTypeSort.saveOrder(["scope"])
         let versionAfterSave = UserDefaults.standard.integer(forKey: OpticTypeSort.settingsVersionKey)
 
         OpticTypeSort.resetOrder()
 
         XCTAssertEqual(
             OpticTypeSort.persistedOrder(),
-            OpticType.allCases.map(\.displayName).map { $0.lowercased() }
+            OpticType.allCases.map(\.id).map { $0.lowercased() }
         )
         XCTAssertEqual(
             UserDefaults.standard.integer(forKey: OpticTypeSort.settingsVersionKey),
