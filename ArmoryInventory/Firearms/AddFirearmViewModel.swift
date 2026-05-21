@@ -723,9 +723,18 @@ final class AddFirearmViewModel {
     }
 
     func deleteFirearm(_ firearm: Firearm, in context: ModelContext) -> KitValidationResult {
-        context.delete(firearm)
-
         do {
+            let linkedKits = try context.fetch(FetchDescriptor<Kit>()).filter {
+                $0.firearm?.persistentModelID == firearm.persistentModelID
+            }
+
+            for kit in linkedKits {
+                kit.firearm = nil
+                kit.status = KitStatus.built.rawValue
+                kit.updatedAt = .now
+            }
+
+            context.delete(firearm)
             try context.save()
             UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
             return .valid

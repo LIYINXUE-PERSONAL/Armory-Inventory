@@ -560,7 +560,8 @@ final class AddFirearmViewModelTests: XCTestCase {
         )
         let attachment = Attachment(brand: "BCM", modelName: "KAG", type: .handStop, purchasePriceCents: 2_000)
         let part = Part(brand: "BCM", modelName: "BCG", type: .boltCarrierGroup, purchasePriceCents: 20_000)
-        let kit = Kit(name: "Upper Kit", kind: .upperReceiver)
+        let staleUpdatedAt = Date(timeIntervalSince1970: 1)
+        let kit = Kit(name: "Upper Kit", kind: .upperReceiver, status: .linked, firearm: firearm, updatedAt: staleUpdatedAt)
         let opticComponent = KitComponent(category: .optic, optic: optic)
         let attachmentComponent = KitComponent(category: .attachment, attachment: attachment)
         let partComponent = KitComponent(category: .part, part: part)
@@ -614,6 +615,10 @@ final class AddFirearmViewModelTests: XCTestCase {
 
         XCTAssertTrue(deleteResult.isValid)
         XCTAssertTrue(try context.fetch(FetchDescriptor<Firearm>()).isEmpty)
+        let remainingKit = try XCTUnwrap(context.fetch(FetchDescriptor<Kit>()).first)
+        XCTAssertNil(remainingKit.firearm)
+        XCTAssertEqual(remainingKit.kitStatus, .built)
+        XCTAssertGreaterThan(remainingKit.updatedAt, staleUpdatedAt)
     }
 
     @MainActor
