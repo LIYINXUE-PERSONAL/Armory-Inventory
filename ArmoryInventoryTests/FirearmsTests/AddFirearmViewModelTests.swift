@@ -508,6 +508,10 @@ final class AddFirearmViewModelTests: XCTestCase {
             [selectedKit.persistentModelID, builtKit.persistentModelID]
         )
         XCTAssertEqual(
+            Set(viewModel.availableKits(from: [selectedKit, builtKit, linkedElsewhere], selectedIDs: [], firearm: firearm).map(\.persistentModelID)),
+            [selectedKit.persistentModelID, builtKit.persistentModelID]
+        )
+        XCTAssertEqual(
             viewModel.availableMagazinePatterns(
                 from: [arMagazine],
                 firearmType: .rifle,

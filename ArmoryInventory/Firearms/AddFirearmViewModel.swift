@@ -389,11 +389,8 @@ final class AddFirearmViewModel {
             if selectedIDs.contains(kit.persistentModelID) {
                 return true
             }
-            guard kit.kitStatus == .built else {
-                return false
-            }
             guard let linkedFirearm = kit.firearm else {
-                return true
+                return kit.kitStatus == .built
             }
             guard let firearm else {
                 return false

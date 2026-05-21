@@ -290,12 +290,8 @@ struct AddFirearmView: View {
                         Text("Add optics first to link them to this firearm.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else if availableOptics.isEmpty {
-                        Text("No unlinked optics available.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     } else if effectiveOptics.isEmpty {
-                        Text("No optics linked.")
+                        Text(availableOptics.isEmpty ? "No unlinked optics available." : "No optics linked.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
@@ -389,12 +385,8 @@ struct AddFirearmView: View {
                         Text("Add attachments first to link them to this firearm.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else if availableAttachments.isEmpty {
-                        Text("No unlinked attachments available.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     } else if effectiveAttachments.isEmpty {
-                        Text("No attachments linked.")
+                        Text(availableAttachments.isEmpty ? "No unlinked attachments available." : "No attachments linked.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
@@ -429,12 +421,8 @@ struct AddFirearmView: View {
                         Text("Add parts first to link them to this firearm.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else if availableParts.isEmpty {
-                        Text("No unlinked parts available.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     } else if effectiveParts.isEmpty {
-                        Text("No parts linked.")
+                        Text(availableParts.isEmpty ? "No unlinked parts available." : "No parts linked.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     } else {
