@@ -320,7 +320,8 @@ final class AddFirearmViewModelTests: XCTestCase {
                 viewModel.availableOptics(
                     from: [freeOptic, currentOptic, otherOptic],
                     selectedIDs: [otherOptic.persistentModelID],
-                    firearm: currentFirearm
+                    firearm: currentFirearm,
+                    kits: []
                 )
                 .map(\.persistentModelID)
             ),
@@ -344,7 +345,8 @@ final class AddFirearmViewModelTests: XCTestCase {
                 viewModel.availableAttachments(
                     from: [freeAttachment, currentAttachment, otherAttachment],
                     selectedIDs: [],
-                    firearm: currentFirearm
+                    firearm: currentFirearm,
+                    kits: []
                 )
                 .map(\.persistentModelID)
             ),
@@ -355,7 +357,8 @@ final class AddFirearmViewModelTests: XCTestCase {
                 viewModel.availableParts(
                     from: [freePart, currentPart, otherPart],
                     selectedIDs: [],
-                    firearm: currentFirearm
+                    firearm: currentFirearm,
+                    kits: []
                 )
                 .map(\.persistentModelID)
             ),
@@ -434,6 +437,264 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.primaryButtonTitle(hasFirearm: false, isEditing: false), "Add")
         XCTAssertEqual(viewModel.primaryButtonTitle(hasFirearm: true, isEditing: false), "Edit")
         XCTAssertEqual(viewModel.primaryButtonTitle(hasFirearm: true, isEditing: true), "Save")
+        XCTAssertTrue(viewModel.showsPostTaxTotalSection(hasFirearm: true, showValueInDetails: true))
+        XCTAssertFalse(viewModel.showsPostTaxTotalSection(hasFirearm: true, showValueInDetails: false))
+        XCTAssertEqual(viewModel.taxedAmountCents(baseAmountCents: 10_000, taxRate: 8.25), 10_825)
+        XCTAssertEqual(
+            viewModel.totalValueWithTaxText(
+                firearmPriceCents: 100_000,
+                accessoriesSubtotalCents: 50_000,
+                firearmsTaxRate: 10,
+                accessoriesTaxRate: 5
+            ),
+            "$1,625.00"
+        )
+    }
+
+    @MainActor
+    func testInitialValuesMagazinePatternsAndKitHelpers() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+        let caliber = Caliber(name: "5.56 NATO")
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 180_050,
+            type: .rifle,
+            action: .semiAuto,
+            barrelLengthInches: 14.5,
+            caliber: caliber
+        )
+        let selectedPattern = FirearmMagazinePatternReference(
+            id: "catalog:glock-double-stack-9mm-full-size-compact",
+            kind: .catalog,
+            displayName: nil
+        )
+        let selectedKit = Kit(name: "Linked Kit", kind: .upperReceiver, status: .linked, firearm: firearm)
+        let builtKit = Kit(name: "Built Kit", kind: .lowerReceiver, status: .built)
+        let linkedElsewhere = Kit(
+            name: "Other Kit",
+            kind: .optics,
+            status: .linked,
+            firearm: Firearm(brand: "CZ", modelName: "Shadow 2", purchasePriceCents: 120_000, type: .pistol, action: .semiAuto)
+        )
+        context.insert(caliber)
+        context.insert(firearm)
+        context.insert(selectedKit)
+        context.insert(builtKit)
+        context.insert(linkedElsewhere)
+        try context.save()
+
+        let arMagazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            patternID: "catalog:ar15-stanag-223-556-300blk",
+            patternKind: .catalog,
+            capacity: 30,
+            purchasePriceCents: 1_500,
+            caliber: caliber
+        )
+
+        XCTAssertEqual(viewModel.initialPurchasePriceText(for: firearm), "1,800.50")
+        XCTAssertEqual(viewModel.initialBarrelLengthText(for: firearm), "14.5")
+        XCTAssertEqual(viewModel.selectedKitIDs(for: firearm, kits: [selectedKit, builtKit]), [selectedKit.persistentModelID])
+        XCTAssertEqual(
+            viewModel.linkedKits(from: [selectedKit, builtKit], selectedIDs: [selectedKit.persistentModelID]).map(\.persistentModelID),
+            [selectedKit.persistentModelID]
+        )
+        XCTAssertEqual(
+            Set(viewModel.availableKits(from: [selectedKit, builtKit, linkedElsewhere], selectedIDs: [selectedKit.persistentModelID], firearm: firearm).map(\.persistentModelID)),
+            [selectedKit.persistentModelID, builtKit.persistentModelID]
+        )
+        XCTAssertEqual(
+            viewModel.availableMagazinePatterns(
+                from: [arMagazine],
+                firearmType: .rifle,
+                action: .semiAuto,
+                caliber: caliber,
+                selectedPatterns: [selectedPattern]
+            ).first,
+            selectedPattern
+        )
+        XCTAssertEqual(
+            viewModel.toggledMagazinePatternSelection(
+                currentSelection: [],
+                pattern: selectedPattern,
+                isEditing: false
+            ),
+            []
+        )
+        XCTAssertEqual(
+            viewModel.toggledMagazinePatternSelection(
+                currentSelection: [],
+                pattern: selectedPattern,
+                isEditing: true
+            ),
+            [selectedPattern]
+        )
+        XCTAssertEqual(
+            viewModel.toggledMagazinePatternSelection(
+                currentSelection: [selectedPattern],
+                pattern: selectedPattern,
+                isEditing: true
+            ),
+            []
+        )
+    }
+
+    @MainActor
+    func testKitManagedItemsSummaryFallbackAndDeleteFirearm() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+        let firearm = Firearm(brand: "Aero", modelName: "M4E1", purchasePriceCents: 80_000, type: .rifle, action: .semiAuto)
+        let optic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000
+        )
+        let attachment = Attachment(brand: "BCM", modelName: "KAG", type: .handStop, purchasePriceCents: 2_000)
+        let part = Part(brand: "BCM", modelName: "BCG", type: .boltCarrierGroup, purchasePriceCents: 20_000)
+        let kit = Kit(name: "Upper Kit", kind: .upperReceiver)
+        let opticComponent = KitComponent(category: .optic, optic: optic)
+        let attachmentComponent = KitComponent(category: .attachment, attachment: attachment)
+        let partComponent = KitComponent(category: .part, part: part)
+        kit.components = [opticComponent, attachmentComponent, partComponent]
+        context.insert(firearm)
+        context.insert(optic)
+        context.insert(attachment)
+        context.insert(part)
+        context.insert(kit)
+        context.insert(opticComponent)
+        context.insert(attachmentComponent)
+        context.insert(partComponent)
+        try context.save()
+
+        let summary = viewModel.currentFirearmForSummary(
+            firearm: nil,
+            brand: "SIG",
+            modelName: "P320",
+            purchasePriceCents: 70_000,
+            type: .pistol,
+            action: .semiAuto
+        )
+
+        XCTAssertEqual(summary.displayName, "SIG P320")
+        XCTAssertEqual(
+            viewModel.currentFirearmForSummary(firearm: firearm, brand: "", modelName: "", purchasePriceCents: 0, type: .other, action: .other).persistentModelID,
+            firearm.persistentModelID
+        )
+        XCTAssertEqual(viewModel.managedOptics(from: [kit]).map(\.persistentModelID), [optic.persistentModelID])
+        XCTAssertEqual(viewModel.managedAttachments(from: [kit]).map(\.persistentModelID), [attachment.persistentModelID])
+        XCTAssertEqual(viewModel.managedParts(from: [kit]).map(\.persistentModelID), [part.persistentModelID])
+        XCTAssertEqual(
+            viewModel.managingKitName(
+                for: Optic(
+                    brand: "Loose",
+                    modelName: "Dot",
+                    type: .redDot,
+                    minMagnification: 1,
+                    maxMagnification: 1,
+                    footprint: .aimpointMicro,
+                    purchasePriceCents: 1
+                ),
+                kits: []
+            ),
+            "Kit"
+        )
+        XCTAssertEqual(viewModel.managingKitName(for: Attachment(brand: "Loose", modelName: "Grip", type: .grip, purchasePriceCents: 1), kits: []), "Kit")
+        XCTAssertEqual(viewModel.managingKitName(for: Part(brand: "Loose", modelName: "Part", type: .other, purchasePriceCents: 1), kits: []), "Kit")
+
+        let deleteResult = viewModel.deleteFirearm(firearm, in: context)
+
+        XCTAssertTrue(deleteResult.isValid)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Firearm>()).isEmpty)
+    }
+
+    @MainActor
+    func testKitEffectiveItemsNamesAndLinkPersistenceHelpers() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 180_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let optic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000
+        )
+        let attachment = Attachment(brand: "BCM", modelName: "KAG", type: .handStop, purchasePriceCents: 2_000)
+        let part = Part(brand: "BCM", modelName: "BCG", type: .boltCarrierGroup, purchasePriceCents: 20_000)
+        let kit = Kit(name: "Upper Kit", kind: .upperReceiver)
+        let opticComponent = KitComponent(category: .optic, optic: optic)
+        let attachmentComponent = KitComponent(category: .attachment, attachment: attachment)
+        let partComponent = KitComponent(category: .part, part: part)
+        opticComponent.kit = kit
+        attachmentComponent.kit = kit
+        partComponent.kit = kit
+        kit.components = [opticComponent, attachmentComponent, partComponent]
+
+        context.insert(firearm)
+        context.insert(optic)
+        context.insert(attachment)
+        context.insert(part)
+        context.insert(kit)
+        context.insert(opticComponent)
+        context.insert(attachmentComponent)
+        context.insert(partComponent)
+        try context.save()
+
+        XCTAssertEqual(viewModel.effectiveOptics(resolvedOptics: [optic], managedOptics: [optic]).map(\.displayName), ["Aimpoint T-2"])
+        XCTAssertEqual(viewModel.effectiveAttachments(resolvedAttachments: [], managedAttachments: [attachment]).map(\.displayName), ["BCM KAG"])
+        XCTAssertEqual(viewModel.effectiveParts(resolvedParts: [], managedParts: [part]).map(\.displayName), ["BCM BCG"])
+        XCTAssertEqual(
+            viewModel.accessoriesSubtotalCents(
+                optics: [optic],
+                magazines: [],
+                attachments: [attachment],
+                parts: [part]
+            ),
+            92_000
+        )
+        XCTAssertEqual(viewModel.managingKitName(for: optic, kits: [kit]), "Upper Kit")
+        XCTAssertEqual(viewModel.managingKitName(for: attachment, kits: [kit]), "Upper Kit")
+        XCTAssertEqual(viewModel.managingKitName(for: part, kits: [kit]), "Upper Kit")
+
+        let linkResult = viewModel.saveKitLinks(
+            firearm: firearm,
+            selectedKitIDs: [kit.persistentModelID],
+            kits: [kit],
+            in: context
+        )
+
+        XCTAssertTrue(linkResult.isValid)
+        XCTAssertEqual(kit.firearm?.persistentModelID, firearm.persistentModelID)
+        XCTAssertEqual(kit.kitStatus, .linked)
+
+        let unlinkResult = viewModel.saveKitLinks(
+            firearm: firearm,
+            selectedKitIDs: [],
+            kits: [kit],
+            in: context
+        )
+
+        XCTAssertTrue(unlinkResult.isValid)
+        XCTAssertNil(kit.firearm)
+        XCTAssertEqual(kit.kitStatus, .built)
     }
 
     @MainActor

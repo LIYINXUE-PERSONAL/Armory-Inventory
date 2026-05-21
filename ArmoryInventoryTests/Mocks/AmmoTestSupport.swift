@@ -65,7 +65,10 @@ func makeInMemoryContainer() throws -> ModelContainer {
         Optic.self,
         Magazine.self,
         Attachment.self,
-        Part.self
+        Part.self,
+        Kit.self,
+        KitComponent.self,
+        KitHistoryRecord.self
     ])
     let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
     return try ModelContainer(for: schema, configurations: [configuration])

@@ -14,6 +14,7 @@ protocol InventoryListServicing {
     func fetchOptics(in context: ModelContext) throws -> [Optic]
     func fetchParts(in context: ModelContext) throws -> [Part]
     func fetchFirearms(in context: ModelContext) throws -> [Firearm]
+    func fetchKits(in context: ModelContext) throws -> [Kit]
 }
 
 struct InventoryListService: InventoryListServicing {
@@ -53,6 +54,14 @@ struct InventoryListService: InventoryListServicing {
         try context.fetch(
             FetchDescriptor(
                 sortBy: [SortDescriptor(\Firearm.sortOrder), SortDescriptor(\Firearm.createdAt)]
+            )
+        )
+    }
+
+    func fetchKits(in context: ModelContext) throws -> [Kit] {
+        try context.fetch(
+            FetchDescriptor(
+                sortBy: [SortDescriptor(\Kit.sortOrder), SortDescriptor(\Kit.createdAt)]
             )
         )
     }

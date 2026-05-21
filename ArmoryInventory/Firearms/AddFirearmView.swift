@@ -35,13 +35,16 @@ struct AddFirearmView: View {
     @State private var selectedMagazinePatterns: [FirearmMagazinePatternReference] = []
     @State private var selectedAttachmentIDs: Set<PersistentIdentifier> = []
     @State private var selectedPartIDs: Set<PersistentIdentifier> = []
+    @State private var selectedKitIDs: Set<PersistentIdentifier> = []
     @State private var showingOpticsPicker = false
     @State private var showingMagazinePatternsPicker = false
     @State private var showingAttachmentsPicker = false
     @State private var showingPartsPicker = false
+    @State private var showingKitsPicker = false
     @State private var showingAddCaliber = false
     @State private var isEditing = false
     @State private var lookupData = AddFirearmLookupData()
+    @State private var hasLoadedInitialKits = false
     @State private var snapshotErrorMessage: String?
 
     let viewModel: AddFirearmViewModel
@@ -236,6 +239,44 @@ struct AddFirearmView: View {
                 }
                 .disabled(isReadOnly)
 
+                if firearm != nil {
+                    Section("Linked Kits") {
+                        if isEditing {
+                            Button {
+                                showingKitsPicker = true
+                            } label: {
+                                Label(
+                                    selectedKitIDs.isEmpty ? String(localized: "Add Kits") : String(localized: "Manage Kits"),
+                                    systemImage: "shippingbox.fill"
+                                )
+                            }
+                        }
+
+                        if lookupData.kits.isEmpty {
+                            Text("Build kits first to link them to this firearm.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else if availableKits.isEmpty {
+                            Text("No built kits available.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else if resolvedKits.isEmpty {
+                            Text("No kits linked.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(resolvedKits) { kit in
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(kit.displayName)
+                                    Text("\(kit.kitKind.displayName) • \(kit.componentCountText)")
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section("Linked Optics") {
                     if isEditing {
                         Button {
@@ -253,7 +294,7 @@ struct AddFirearmView: View {
                         Text("No unlinked optics available.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else if resolvedOptics.isEmpty {
+                    } else if effectiveOptics.isEmpty {
                         Text("No optics linked.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -265,6 +306,13 @@ struct AddFirearmView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
+                        }
+                        ForEach(managedOptics) { optic in
+                            ManagedItemRow(
+                                title: optic.displayName,
+                                subtitle: "\(optic.opticType.displayName) • \(optic.magnificationText)",
+                                kitName: managingKitName(for: optic)
+                            )
                         }
                     }
                 }
@@ -345,7 +393,7 @@ struct AddFirearmView: View {
                         Text("No unlinked attachments available.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else if resolvedAttachments.isEmpty {
+                    } else if effectiveAttachments.isEmpty {
                         Text("No attachments linked.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -357,6 +405,13 @@ struct AddFirearmView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
+                        }
+                        ForEach(managedAttachments) { attachment in
+                            ManagedItemRow(
+                                title: attachment.displayName,
+                                subtitle: attachment.typeDisplayName,
+                                kitName: managingKitName(for: attachment)
+                            )
                         }
                     }
                 }
@@ -378,7 +433,7 @@ struct AddFirearmView: View {
                         Text("No unlinked parts available.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
-                    } else if resolvedParts.isEmpty {
+                    } else if effectiveParts.isEmpty {
                         Text("No parts linked.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
@@ -390,6 +445,13 @@ struct AddFirearmView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
+                        }
+                        ForEach(managedParts) { part in
+                            ManagedItemRow(
+                                title: part.displayName,
+                                subtitle: part.typeDisplayName,
+                                kitName: managingKitName(for: part)
+                            )
                         }
                     }
                 }
@@ -492,6 +554,57 @@ struct AddFirearmView: View {
                         ToolbarItem(placement: .cancellationAction) {
                             Button("Done") {
                                 showingOpticsPicker = false
+                            }
+                        }
+                    }
+                }
+                .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showingKitsPicker) {
+                NavigationStack {
+                    Group {
+                        if availableKits.isEmpty {
+                            ContentUnavailableView(
+                                "No Kits Available",
+                                systemImage: "shippingbox.fill",
+                                description: Text("Only built kits not linked to another firearm can be selected.")
+                            )
+                        } else {
+                            List {
+                                ForEach(availableKits) { kit in
+                                    Button {
+                                        toggleKitSelection(for: kit)
+                                    } label: {
+                                        HStack {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(kit.displayName)
+                                                    .foregroundStyle(.primary)
+                                                Text("\(kit.kitKind.displayName) • \(kit.componentCountText)")
+                                                    .font(.footnote)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                            Spacer()
+                                            if selectedKitIDs.contains(kit.persistentModelID) {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(.tint)
+                                            } else {
+                                                Image(systemName: "circle")
+                                                    .foregroundStyle(.tertiary)
+                                            }
+                                        }
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                    .navigationTitle("Link Kits")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                showingKitsPicker = false
                             }
                         }
                     }
@@ -711,8 +824,36 @@ struct AddFirearmView: View {
         viewModel.resolvedParts(from: lookupData.parts, selectedIDs: selectedPartIDs)
     }
 
+    private var resolvedKits: [Kit] {
+        viewModel.linkedKits(from: lookupData.kits, selectedIDs: selectedKitIDs)
+    }
+
+    private var managedOptics: [Optic] {
+        viewModel.managedOptics(from: resolvedKits)
+    }
+
+    private var managedAttachments: [Attachment] {
+        viewModel.managedAttachments(from: resolvedKits)
+    }
+
+    private var managedParts: [Part] {
+        viewModel.managedParts(from: resolvedKits)
+    }
+
+    private var effectiveOptics: [Optic] {
+        viewModel.effectiveOptics(resolvedOptics: resolvedOptics, managedOptics: managedOptics)
+    }
+
+    private var effectiveAttachments: [Attachment] {
+        viewModel.effectiveAttachments(resolvedAttachments: resolvedAttachments, managedAttachments: managedAttachments)
+    }
+
+    private var effectiveParts: [Part] {
+        viewModel.effectiveParts(resolvedParts: resolvedParts, managedParts: managedParts)
+    }
+
     private var availableOptics: [Optic] {
-        viewModel.availableOptics(from: lookupData.optics, selectedIDs: selectedOpticIDs, firearm: firearm)
+        viewModel.availableOptics(from: lookupData.optics, selectedIDs: selectedOpticIDs, firearm: firearm, kits: lookupData.kits)
     }
 
     private var selectedMagazineCompatibilityMessage: String? {
@@ -737,11 +878,15 @@ struct AddFirearmView: View {
     }
 
     private var availableAttachments: [Attachment] {
-        viewModel.availableAttachments(from: lookupData.attachments, selectedIDs: selectedAttachmentIDs, firearm: firearm)
+        viewModel.availableAttachments(from: lookupData.attachments, selectedIDs: selectedAttachmentIDs, firearm: firearm, kits: lookupData.kits)
     }
 
     private var availableParts: [Part] {
-        viewModel.availableParts(from: lookupData.parts, selectedIDs: selectedPartIDs, firearm: firearm)
+        viewModel.availableParts(from: lookupData.parts, selectedIDs: selectedPartIDs, firearm: firearm, kits: lookupData.kits)
+    }
+
+    private var availableKits: [Kit] {
+        viewModel.availableKits(from: lookupData.kits, selectedIDs: selectedKitIDs, firearm: firearm)
     }
 
     private var duplicateExists: Bool {
@@ -757,32 +902,30 @@ struct AddFirearmView: View {
     }
 
     private var showsPostTaxTotalSection: Bool {
-        firearm != nil && showValueInDetails
+        viewModel.showsPostTaxTotalSection(hasFirearm: firearm != nil, showValueInDetails: showValueInDetails)
     }
 
     private var totalValueWithTaxText: String {
-        let firearmTotalCents = taxedAmountCents(
-            baseAmountCents: max(0, resolvedPurchasePriceCents ?? 0),
-            taxRate: taxRateProvider.firearmsTaxRate
+        viewModel.totalValueWithTaxText(
+            firearmPriceCents: resolvedPurchasePriceCents ?? 0,
+            accessoriesSubtotalCents: accessoriesSubtotalCents,
+            firearmsTaxRate: taxRateProvider.firearmsTaxRate,
+            accessoriesTaxRate: taxRateProvider.accessoriesTaxRate
         )
-        let accessoriesTotalCents = taxedAmountCents(
-            baseAmountCents: accessoriesSubtotalCents,
-            taxRate: taxRateProvider.accessoriesTaxRate
-        )
-        let amount = Decimal(firearmTotalCents + accessoriesTotalCents) / 100
-        return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
     }
 
     private var accessoriesSubtotalCents: Int {
-        let opticsTotal = resolvedOptics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        let magazinesTotal = resolvedMagazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        let attachmentsTotal = resolvedAttachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        let partsTotal = resolvedParts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        return opticsTotal + magazinesTotal + attachmentsTotal + partsTotal
+        viewModel.accessoriesSubtotalCents(
+            optics: effectiveOptics,
+            magazines: resolvedMagazines,
+            attachments: effectiveAttachments,
+            parts: effectiveParts
+        )
     }
 
     private var currentFirearmForSummary: Firearm {
-        firearm ?? Firearm(
+        viewModel.currentFirearmForSummary(
+            firearm: firearm,
             brand: brand,
             modelName: modelName,
             purchasePriceCents: resolvedPurchasePriceCents ?? 0,
@@ -818,13 +961,13 @@ struct AddFirearmView: View {
     private func reloadLookupData() {
         do {
             lookupData = try lookupService.fetchLookupData(in: context)
+            if !hasLoadedInitialKits {
+                selectedKitIDs = viewModel.selectedKitIDs(for: firearm, kits: lookupData.kits)
+                hasLoadedInitialKits = true
+            }
         } catch {
             print("Lookup fetch error: \(error)")
         }
-    }
-
-    private func taxedAmountCents(baseAmountCents: Int, taxRate: Double) -> Int {
-        Int((Double(baseAmountCents) * (1 + max(0, taxRate) / 100)).rounded())
     }
 
     private func patternDetailText(for pattern: FirearmMagazinePatternReference) -> String {
@@ -893,6 +1036,7 @@ struct AddFirearmView: View {
         guard didSave else {
             return
         }
+        saveKitLinks()
         if firearm == nil {
             dismiss()
         } else {
@@ -905,14 +1049,11 @@ struct AddFirearmView: View {
             return
         }
 
-        context.delete(firearm)
-
-        do {
-            try context.save()
-            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+        let result = viewModel.deleteFirearm(firearm, in: context)
+        if result.isValid {
             dismiss()
-        } catch {
-            print("Delete error: \(error)")
+        } else {
+            print("Delete error: \(result.message ?? "")")
         }
     }
 
@@ -956,6 +1097,44 @@ struct AddFirearmView: View {
         )
     }
 
+    private func toggleKitSelection(for kit: Kit) {
+        selectedKitIDs = viewModel.toggledSelection(
+            currentSelection: selectedKitIDs,
+            itemID: kit.persistentModelID,
+            isEditing: isEditing
+        )
+    }
+
+    private func saveKitLinks() {
+        guard let firearm else {
+            return
+        }
+
+        let result = viewModel.saveKitLinks(
+            firearm: firearm,
+            selectedKitIDs: selectedKitIDs,
+            kits: lookupData.kits,
+            in: context
+        )
+        if result.isValid {
+            reloadLookupData()
+        } else {
+            print("Kit link save error: \(result.message ?? "")")
+        }
+    }
+
+    private func managingKitName(for optic: Optic) -> String {
+        viewModel.managingKitName(for: optic, kits: resolvedKits)
+    }
+
+    private func managingKitName(for attachment: Attachment) -> String {
+        viewModel.managingKitName(for: attachment, kits: resolvedKits)
+    }
+
+    private func managingKitName(for part: Part) -> String {
+        viewModel.managingKitName(for: part, kits: resolvedKits)
+    }
+
     private var snapshotErrorBinding: Binding<Bool> {
         Binding(
             get: { snapshotErrorMessage != nil },
@@ -986,10 +1165,10 @@ struct AddFirearmView: View {
             hidesSerialNumber: true,
             showsValue: showValueInDetails,
             totalValueText: totalValueWithTaxText,
-            optics: resolvedOptics,
+            optics: effectiveOptics,
             magazines: resolvedMagazines,
-            attachments: resolvedAttachments,
-            parts: resolvedParts
+            attachments: effectiveAttachments,
+            parts: effectiveParts
         )
         .frame(width: 1080)
         .background(Color.white)
@@ -1038,6 +1217,31 @@ private enum FirearmSnapshotError: LocalizedError {
         case .presentationFailed:
             return String(localized: "The share sheet could not be presented.")
         }
+    }
+}
+
+private struct ManagedItemRow: View {
+    let title: String
+    let subtitle: String
+    let kitName: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .foregroundStyle(.secondary)
+            Text(managedSubtitle)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .disabled(true)
+    }
+
+    private var managedSubtitle: String {
+        String.localizedStringWithFormat(
+            String(localized: "%@ • Managed by %@"),
+            subtitle,
+            kitName
+        )
     }
 }
 

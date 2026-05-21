@@ -18,7 +18,10 @@ struct AttachmentsView: View {
     @State private var showingAddAttachment = false
     @State private var selectedAttachment: Attachment?
     @State private var attachments: [Attachment] = []
+    @State private var kits: [Kit] = []
+    @State private var alertMessage: String?
 
+    private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
 
     var body: some View {
@@ -105,66 +108,61 @@ struct AttachmentsView: View {
             AddAttachmentView(attachment: attachment, viewModel: AddAttachmentViewModel())
                 .presentationDetents([.large])
         }
+        .alert("Attachment Cannot Be Deleted", isPresented: alertBinding) {
+            Button("OK", role: .cancel) {
+                alertMessage = nil
+            }
+        } message: {
+            Text(alertMessage ?? "")
+        }
     }
 
     private var groupedAttachments: [String: [Attachment]] {
-        Dictionary(grouping: attachments, by: \.type).mapValues {
-            AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
-        }
+        viewModel.groupedAttachments(attachments, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
     }
 
     private var groupedAttachmentTypes: [String] {
-        AttachmentTypeSort.displayOrder(for: Array(groupedAttachments.keys))
+        viewModel.groupedAttachmentTypes(from: groupedAttachments)
     }
 
     private func deleteAttachments(at offsets: IndexSet, in type: String) {
-        guard let sectionAttachments = groupedAttachments[type] else {
-            return
-        }
-
-        for index in offsets {
-            context.delete(sectionAttachments[index])
-        }
-        resequenceAttachments()
-
-        do {
-            try context.save()
-            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+        let result = viewModel.deleteAttachments(
+            at: offsets,
+            in: type,
+            groupedAttachments: groupedAttachments,
+            allAttachments: attachments,
+            kits: kits,
+            context: context
+        )
+        if result.isValid {
             reloadAttachments()
-        } catch {
-            print("Delete error: \(error)")
+        } else {
+            alertMessage = result.message
+            reloadAttachments()
         }
     }
 
     private func reloadAttachments() {
         do {
             attachments = try inventoryListService.fetchAttachments(in: context)
+            kits = try inventoryListService.fetchKits(in: context)
         } catch {
             print("Attachments fetch error: \(error)")
         }
     }
 
-    private func resequenceAttachments() {
-        for (index, attachment) in attachments.enumerated() {
-            attachment.sortOrder = index
-        }
-    }
-
     private var totalValueText: String {
-        let totalCents = attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        let amount = Decimal(totalCents) / 100
-        return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+        viewModel.totalValueText(for: attachments)
     }
 
     private func attachmentTypeDisplayName(for typeID: String) -> String {
-        AttachmentType(rawValue: typeID)?.displayName ?? typeID
+        viewModel.attachmentTypeDisplayName(for: typeID)
     }
 
-    private var selectedItemSortOrder: AccessoryItemSortOrder {
-        AccessoryItemSortOrder(rawValue: itemSortOrder) ?? .manual
-    }
-
-    private var selectedItemSortDirection: AccessoryItemSortDirection {
-        AccessoryItemSortDirection(rawValue: itemSortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: selectedItemSortOrder)
+    private var alertBinding: Binding<Bool> {
+        Binding(
+            get: { alertMessage != nil },
+            set: { if !$0 { alertMessage = nil } }
+        )
     }
 }

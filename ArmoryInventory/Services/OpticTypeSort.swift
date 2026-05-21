@@ -34,9 +34,8 @@ enum OpticTypeSort {
 
     nonisolated static func persistedOrder(including typeNames: [String] = []) -> [String] {
         let names = unique(typeNames.map(normalize(typeName:)))
-        let savedOrder = unique(
-            (UserDefaults.standard.stringArray(forKey: settingsKey) ?? []).map(normalize(typeName:))
-        ).filter(defaultOrder.contains)
+        let savedNames = unique(UserDefaults.standard.stringArray(forKey: settingsKey)?.map(normalize(typeName:)) ?? [])
+        let savedOrder = savedNames.filter { defaultOrder.contains($0) || shouldPreserveSavedCustomName($0) }
         let knownNames = defaultOrder.filter { !savedOrder.contains($0) }
         let customNames = names.filter { !savedOrder.contains($0) && !knownNames.contains($0) }
         return savedOrder + knownNames + customNames.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
@@ -44,12 +43,14 @@ enum OpticTypeSort {
 
     nonisolated static func saveOrder(_ typeNames: [String]) {
         UserDefaults.standard.set(unique(typeNames.map(normalize(typeName:))), forKey: settingsKey)
+        UserDefaults.standard.set(true, forKey: managedSettingsKey)
         let nextVersion = UserDefaults.standard.integer(forKey: settingsVersionKey) + 1
         UserDefaults.standard.set(nextVersion, forKey: settingsVersionKey)
     }
 
     nonisolated static func resetOrder() {
         UserDefaults.standard.removeObject(forKey: settingsKey)
+        UserDefaults.standard.removeObject(forKey: managedSettingsKey)
         let nextVersion = UserDefaults.standard.integer(forKey: settingsVersionKey) + 1
         UserDefaults.standard.set(nextVersion, forKey: settingsVersionKey)
     }
@@ -69,11 +70,15 @@ enum OpticTypeSort {
         var seen: Set<String> = []
         var ordered: [String] = []
 
-        for typeName in typeNames where seen.insert(typeName).inserted {
+        for typeName in typeNames where !typeName.isEmpty && seen.insert(typeName).inserted {
             ordered.append(typeName)
         }
 
         return ordered
+    }
+
+    nonisolated private static func shouldPreserveSavedCustomName(_ typeName: String) -> Bool {
+        UserDefaults.standard.bool(forKey: managedSettingsKey)
     }
 
     nonisolated private static var currentOrder: [String] {
@@ -81,6 +86,7 @@ enum OpticTypeSort {
     }
 
     nonisolated private static let settingsKey = InventorySettingsKeys.opticTypeSortOrder
+    nonisolated private static let managedSettingsKey = "\(InventorySettingsKeys.opticTypeSortOrder).managed"
 
     nonisolated private static let defaultOrder: [String] = OpticType.allCases.map(\.id).map(normalize(typeName:))
 }
