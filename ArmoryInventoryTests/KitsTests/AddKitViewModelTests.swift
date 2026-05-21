@@ -248,5 +248,55 @@ final class AddKitViewModelTests: XCTestCase {
 
         XCTAssertTrue(disassembleResult.isValid)
         XCTAssertTrue(remainingKits.isEmpty)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Part>()).map(\.displayName).sorted(), ["Aero M4E1", "BCM Linked", "BCM Selected"])
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Optic>()).map(\.displayName), ["Aimpoint T-2"])
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Attachment>()).map(\.displayName), ["BCM KAG"])
+    }
+
+    @MainActor
+    func testDiscardDeletesKitAndLinkedComponents() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddKitViewModel()
+        let retainedPart = Part(brand: "Aero", modelName: "Lower", type: .lowerReceiver, purchasePriceCents: 12_000)
+        let discardedPart = Part(brand: "BCM", modelName: "BCG", type: .boltCarrierGroup, purchasePriceCents: 18_000)
+        let discardedOptic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000
+        )
+        let discardedAttachment = Attachment(brand: "BCM", modelName: "KAG", type: .handStop, purchasePriceCents: 2_000)
+        context.insert(retainedPart)
+        context.insert(discardedPart)
+        context.insert(discardedOptic)
+        context.insert(discardedAttachment)
+        try context.save()
+
+        let saveResult = viewModel.saveKit(
+            nil,
+            name: "Discard Target",
+            kind: .upperReceiver,
+            notes: nil,
+            components: [
+                KitComponent(category: .part, part: discardedPart),
+                KitComponent(category: .optic, optic: discardedOptic),
+                KitComponent(category: .attachment, attachment: discardedAttachment)
+            ],
+            targetStatus: .built,
+            kits: [],
+            in: context
+        )
+        let kit = try XCTUnwrap(context.fetch(FetchDescriptor<Kit>()).first)
+
+        XCTAssertTrue(saveResult.isValid)
+        XCTAssertTrue(viewModel.discardKit(kit, in: context).isValid)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Kit>()).isEmpty)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Part>()).map(\.displayName), ["Aero Lower"])
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Optic>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Attachment>()).isEmpty)
     }
 }

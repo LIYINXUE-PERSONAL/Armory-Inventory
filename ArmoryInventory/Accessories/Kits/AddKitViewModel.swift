@@ -429,4 +429,31 @@ final class AddKitViewModel {
             return .invalid(error.localizedDescription)
         }
     }
+
+    func discardKit(_ kit: Kit, in context: ModelContext) -> KitValidationResult {
+        let parts = uniqueModels(kit.components.compactMap(\.part))
+        let optics = uniqueModels(kit.components.compactMap(\.optic))
+        let attachments = uniqueModels(kit.components.compactMap(\.attachment))
+
+        kit.firearm = nil
+        context.delete(kit)
+        parts.forEach(context.delete)
+        optics.forEach(context.delete)
+        attachments.forEach(context.delete)
+
+        do {
+            try context.save()
+            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+            return .valid
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
+    }
+
+    private func uniqueModels<T: PersistentModel>(_ models: [T]) -> [T] {
+        var seenIDs = Set<PersistentIdentifier>()
+        return models.filter { model in
+            seenIDs.insert(model.persistentModelID).inserted
+        }
+    }
 }

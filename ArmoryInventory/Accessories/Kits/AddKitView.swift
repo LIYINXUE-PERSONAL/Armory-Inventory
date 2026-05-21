@@ -123,6 +123,9 @@ struct AddKitView: View {
                         Button("Disassemble Kit", role: .destructive) {
                             disassembleKit()
                         }
+                        Button("Discard Kit", role: .destructive) {
+                            discardKit()
+                        }
                     }
                 }
             }
@@ -242,6 +245,13 @@ struct AddKitView: View {
             return
         }
         handle(viewModel.disassembleKit(kit, in: context))
+    }
+
+    private func discardKit() {
+        guard let kit else {
+            return
+        }
+        handle(viewModel.discardKit(kit, in: context))
     }
 
     private func handle(_ result: KitValidationResult) {

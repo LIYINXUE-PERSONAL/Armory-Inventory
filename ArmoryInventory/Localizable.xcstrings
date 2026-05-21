@@ -3468,6 +3468,28 @@
         }
       }
     },
+    "Discard Kit" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar kit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "丢弃套件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "丟棄套件"
+          }
+        }
+      }
+    },
     "Disassemble or edit the built/linked kit using %@ before deleting it." : {
       "localizations" : {
         "es" : {
