@@ -40,6 +40,10 @@ final class AppServices {
             InventoryListService()
         }
 
+        register(KitEligibilityServicing.self) {
+            KitEligibilityService()
+        }
+
         register(CaliberQueryServicing.self) {
             CaliberQueryService()
         }

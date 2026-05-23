@@ -18,7 +18,10 @@ struct OpticsView: View {
     @State private var showingAddOptic = false
     @State private var selectedOptic: Optic?
     @State private var optics: [Optic] = []
+    @State private var kits: [Kit] = []
+    @State private var alertMessage: String?
 
+    private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
 
     var body: some View {
@@ -125,66 +128,61 @@ struct OpticsView: View {
             AddOpticView(optic: optic, viewModel: AddOpticViewModel())
                 .presentationDetents([.large])
         }
+        .alert("Optic Cannot Be Deleted", isPresented: alertBinding) {
+            Button("OK", role: .cancel) {
+                alertMessage = nil
+            }
+        } message: {
+            Text(alertMessage ?? "")
+        }
     }
 
     private var groupedOptics: [String: [Optic]] {
-        Dictionary(grouping: optics, by: \.type).mapValues {
-            AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
-        }
+        viewModel.groupedOptics(optics, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
     }
 
     private var groupedOpticTypes: [String] {
-        OpticTypeSort.displayOrder(for: Array(groupedOptics.keys))
+        viewModel.groupedOpticTypes(from: groupedOptics)
     }
 
     private func deleteOptics(at offsets: IndexSet, in type: String) {
-        guard let sectionOptics = groupedOptics[type] else {
-            return
-        }
-
-        for index in offsets {
-            context.delete(sectionOptics[index])
-        }
-        resequenceOptics()
-
-        do {
-            try context.save()
-            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+        let result = viewModel.deleteOptics(
+            at: offsets,
+            in: type,
+            groupedOptics: groupedOptics,
+            allOptics: optics,
+            kits: kits,
+            context: context
+        )
+        if result.isValid {
             reloadOptics()
-        } catch {
-            print("Delete error: \(error)")
+        } else {
+            alertMessage = result.message
+            reloadOptics()
         }
     }
 
     private func reloadOptics() {
         do {
             optics = try inventoryListService.fetchOptics(in: context)
+            kits = try inventoryListService.fetchKits(in: context)
         } catch {
             print("Optics fetch error: \(error)")
         }
     }
 
-    private func resequenceOptics() {
-        for (index, optic) in optics.enumerated() {
-            optic.sortOrder = index
-        }
-    }
-
     private var totalValueText: String {
-        let totalCents = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        let amount = Decimal(totalCents) / 100
-        return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+        viewModel.totalValueText(for: optics)
     }
 
     private func opticTypeDisplayName(for typeID: String) -> String {
-        OpticType(rawValue: typeID)?.displayName ?? typeID
+        viewModel.opticTypeDisplayName(for: typeID)
     }
 
-    private var selectedItemSortOrder: AccessoryItemSortOrder {
-        AccessoryItemSortOrder(rawValue: itemSortOrder) ?? .manual
-    }
-
-    private var selectedItemSortDirection: AccessoryItemSortDirection {
-        AccessoryItemSortDirection(rawValue: itemSortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: selectedItemSortOrder)
+    private var alertBinding: Binding<Bool> {
+        Binding(
+            get: { alertMessage != nil },
+            set: { if !$0 { alertMessage = nil } }
+        )
     }
 }

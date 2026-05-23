@@ -23,9 +23,12 @@ struct FirearmsView: View {
     @State private var selectedActionFilter: FirearmAction?
     @State private var selectedCaliberFilter: Caliber?
     @State private var firearms: [Firearm] = []
+    @State private var kits: [Kit] = []
+    @State private var magazines: [Magazine] = []
     @State private var showsExpandedCards = false
     @State private var draggedFirearm: Firearm?
 
+    private let viewModel = FirearmsViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
 
     var body: some View {
@@ -47,6 +50,7 @@ struct FirearmsView: View {
                                     firearm: firearm,
                                     showsExpandedCards: showsExpandedCards,
                                     showValueInCard: showValueInCard,
+                                    effectiveValueCents: viewModel.effectiveValueCents(for: firearm, kits: kits, magazines: magazines),
                                     onTap: {
                                         selectedFirearm = firearm
                                     },
@@ -132,21 +136,6 @@ struct FirearmsView: View {
         }
     }
 
-    private func deleteFirearms(at offsets: IndexSet) {
-        for index in offsets {
-            context.delete(filteredFirearms[index])
-        }
-        resequenceFirearms()
-
-        do {
-            try context.save()
-            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
-            reloadFirearms()
-        } catch {
-            print("Delete error: \(error)")
-        }
-    }
-
     @ViewBuilder
     private var filtersCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -178,7 +167,7 @@ struct FirearmsView: View {
                             }
 
                             ForEach(FirearmType.allCases) { firearmType in
-                                Button(filterCountText(title: firearmType.displayName, count: countForType(firearmType))) {
+                                Button(viewModel.filterCountText(title: firearmType.displayName, count: viewModel.countForType(firearmType, in: firearms))) {
                                     selectedTypeFilter = firearmType
                                 }
                             }
@@ -193,7 +182,7 @@ struct FirearmsView: View {
                             }
 
                             ForEach(FirearmAction.allCases) { action in
-                                Button(filterCountText(title: action.displayName, count: countForAction(action))) {
+                                Button(viewModel.filterCountText(title: action.displayName, count: viewModel.countForAction(action, in: firearms))) {
                                     selectedActionFilter = action
                                 }
                             }
@@ -207,8 +196,8 @@ struct FirearmsView: View {
                                 selectedCaliberFilter = nil
                             }
 
-                            ForEach(availableCalibers) { caliber in
-                                Button(filterCountText(title: caliber.name, count: countForCaliber(caliber))) {
+                            ForEach(viewModel.availableCalibers(from: firearms)) { caliber in
+                                Button(viewModel.filterCountText(title: caliber.name, count: viewModel.countForCaliber(caliber, in: firearms))) {
                                     selectedCaliberFilter = caliber
                                 }
                             }
@@ -239,135 +228,45 @@ struct FirearmsView: View {
     }
 
     private var filteredFirearms: [Firearm] {
-        let filtered = firearms.filter { firearm in
-            let matchesType = selectedTypeFilter == nil || firearm.firearmType == selectedTypeFilter
-            let matchesAction = selectedActionFilter == nil || firearm.firearmAction == selectedActionFilter
-            let matchesCaliber = selectedCaliberFilter == nil || firearm.caliber?.persistentModelID == selectedCaliberFilter?.persistentModelID
-            return matchesType && matchesAction && matchesCaliber
-        }
-
-        switch selectedSortOrder {
-        case .manual:
-            return filtered
-        case .purchaseDate:
-            return filtered.sorted {
-                if $0.purchaseDate != $1.purchaseDate {
-                    return compare($0.purchaseDate, $1.purchaseDate)
-                }
-                return compareNames($0.displayName, $1.displayName)
-            }
-        case .value:
-            return filtered.sorted {
-                if $0.purchasePriceCents != $1.purchasePriceCents {
-                    return compare($0.purchasePriceCents, $1.purchasePriceCents)
-                }
-                return compareNames($0.displayName, $1.displayName)
-            }
-        case .barrelLength:
-            return filtered.sorted {
-                let lhs = $0.barrelLengthInches ?? -1
-                let rhs = $1.barrelLengthInches ?? -1
-                if lhs != rhs {
-                    return compare(lhs, rhs)
-                }
-                return compareNames($0.displayName, $1.displayName)
-            }
-        case .brand:
-            return filtered.sorted {
-                let brandComparison = $0.brand.localizedStandardCompare($1.brand)
-                if brandComparison != .orderedSame {
-                    return compare(brandComparison)
-                }
-                return compareNames($0.modelName, $1.modelName)
-            }
-        case .caliber:
-            return filtered.sorted {
-                let lhs = $0.caliber?.name ?? ""
-                let rhs = $1.caliber?.name ?? ""
-                let caliberComparison = lhs.localizedStandardCompare(rhs)
-                if caliberComparison != .orderedSame {
-                    return compare(caliberComparison)
-                }
-                return compareNames($0.displayName, $1.displayName)
-            }
-        case .type:
-            return filtered.sorted {
-                let typeComparison = $0.firearmType.displayName.localizedStandardCompare($1.firearmType.displayName)
-                if typeComparison != .orderedSame {
-                    return compare(typeComparison)
-                }
-                return compareNames($0.displayName, $1.displayName)
-            }
-        }
+        viewModel.filteredFirearms(
+            firearms,
+            kits: kits,
+            magazines: magazines,
+            selectedTypeFilter: selectedTypeFilter,
+            selectedActionFilter: selectedActionFilter,
+            selectedCaliberFilter: selectedCaliberFilter,
+            sortOrder: selectedSortOrder,
+            sortDirection: selectedSortDirection
+        )
     }
 
     private func moveFirearms(from source: IndexSet, to destination: Int) {
-        guard selectedSortOrder == .manual else {
-            return
-        }
-
-        var reorderedFilteredFirearms = filteredFirearms
-        reorderedFilteredFirearms.move(fromOffsets: source, toOffset: destination)
-
-        var reorderedFilteredIterator = reorderedFilteredFirearms.makeIterator()
-        let reorderedFirearms = firearms.map { firearm in
-            let matchesType = selectedTypeFilter == nil || firearm.firearmType == selectedTypeFilter
-            let matchesAction = selectedActionFilter == nil || firearm.firearmAction == selectedActionFilter
-
-            guard matchesType && matchesAction else {
-                return firearm
-            }
-
-            return reorderedFilteredIterator.next() ?? firearm
-        }
-
-        for (index, firearm) in reorderedFirearms.enumerated() {
-            firearm.sortOrder = index
-        }
-
-        do {
-            try context.save()
-            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+        let result = viewModel.moveFirearms(
+            allFirearms: firearms,
+            filteredFirearms: filteredFirearms,
+            selectedTypeFilter: selectedTypeFilter,
+            selectedActionFilter: selectedActionFilter,
+            selectedCaliberFilter: selectedCaliberFilter,
+            sortOrder: selectedSortOrder,
+            source: source,
+            destination: destination,
+            in: context
+        )
+        if result.isValid {
             reloadFirearms()
-        } catch {
-            print("Reorder error: \(error)")
+        } else {
+            print("Reorder error: \(result.message ?? "")")
         }
     }
 
     private func reloadFirearms() {
         do {
             firearms = try inventoryListService.fetchFirearms(in: context)
+            kits = try inventoryListService.fetchKits(in: context)
+            magazines = try inventoryListService.fetchMagazines(in: context)
         } catch {
             print("Firearms fetch error: \(error)")
         }
-    }
-
-    private func resequenceFirearms() {
-        for (index, firearm) in firearms.enumerated() {
-            firearm.sortOrder = index
-        }
-    }
-
-    private func countForType(_ firearmType: FirearmType) -> Int {
-        firearms.count { $0.firearmType == firearmType }
-    }
-
-    private func countForAction(_ action: FirearmAction) -> Int {
-        firearms.count { $0.firearmAction == action }
-    }
-
-    private func countForCaliber(_ caliber: Caliber) -> Int {
-        firearms.count { $0.caliber?.persistentModelID == caliber.persistentModelID }
-    }
-
-    private var availableCalibers: [Caliber] {
-        var calibersByID: [PersistentIdentifier: Caliber] = [:]
-        for firearm in firearms {
-            if let caliber = firearm.caliber {
-                calibersByID[caliber.persistentModelID] = caliber
-            }
-        }
-        return calibersByID.values.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
     @ViewBuilder
@@ -394,79 +293,27 @@ struct FirearmsView: View {
     }
 
     private var totalValueText: String {
-        let totalCents = filteredFirearms.reduce(0) { $0 + $1.totalCardValueCents }
-        let amount = Decimal(totalCents) / 100
-        return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+        viewModel.totalValueText(for: filteredFirearms, kits: kits, magazines: magazines)
     }
 
     private var allTypesCountText: String {
-        String.localizedStringWithFormat(
-            String(localized: "All Types (%@)"),
-            firearms.count.localizedCountString
-        )
+        viewModel.allTypesCountText(for: firearms)
     }
 
     private var allActionsCountText: String {
-        String.localizedStringWithFormat(
-            String(localized: "All Actions (%@)"),
-            firearms.count.localizedCountString
-        )
+        viewModel.allActionsCountText(for: firearms)
     }
 
     private var allCalibersCountText: String {
-        String.localizedStringWithFormat(
-            String(localized: "All Calibers (%@)"),
-            firearms.count.localizedCountString
-        )
-    }
-
-    private func filterCountText(title: String, count: Int) -> String {
-        String.localizedStringWithFormat(
-            String(localized: "%@ (%@)"),
-            title,
-            count.localizedCountString
-        )
+        viewModel.allCalibersCountText(for: firearms)
     }
 
     private var selectedSortOrder: FirearmSortOrder {
-        FirearmSortOrder(rawValue: firearmSortOrder) ?? .manual
+        viewModel.selectedSortOrder(from: firearmSortOrder)
     }
 
     private var selectedSortDirection: FirearmSortDirection {
-        FirearmSortDirection(rawValue: firearmSortDirectionRaw) ?? preferredDirection(for: selectedSortOrder)
-    }
-
-    private func preferredDirection(for sortOrder: FirearmSortOrder) -> FirearmSortDirection {
-        switch sortOrder {
-        case .manual:
-            return .ascending
-        case .purchaseDate, .value, .barrelLength:
-            return .descending
-        case .brand, .caliber, .type:
-            return .ascending
-        }
-    }
-
-    private func compare<T: Comparable>(_ lhs: T, _ rhs: T) -> Bool {
-        switch selectedSortDirection {
-        case .ascending:
-            return lhs < rhs
-        case .descending:
-            return lhs > rhs
-        }
-    }
-
-    private func compare(_ comparison: ComparisonResult) -> Bool {
-        switch selectedSortDirection {
-        case .ascending:
-            return comparison == .orderedAscending
-        case .descending:
-            return comparison == .orderedDescending
-        }
-    }
-
-    private func compareNames(_ lhs: String, _ rhs: String) -> Bool {
-        compare(lhs.localizedStandardCompare(rhs))
+        viewModel.selectedSortDirection(from: firearmSortDirectionRaw, sortOrder: selectedSortOrder)
     }
 }
 
@@ -485,6 +332,7 @@ private struct FirearmCardView: View {
     let firearm: Firearm
     let showsExpandedCards: Bool
     let showValueInCard: Bool
+    let effectiveValueCents: Int
     let onTap: () -> Void
     let onSelectCaliber: () -> Void
 
@@ -521,8 +369,8 @@ private struct FirearmCardView: View {
                                 LabeledContent("Barrel", value: barrelLengthText)
                             }
 
-                            if showValueInCard, firearm.totalCardValueCents > 0 {
-                                LabeledContent("Value", value: firearm.totalCardValueText)
+                            if showValueInCard, effectiveValueCents > 0 {
+                                LabeledContent("Value", value: KitValueService.currencyText(for: effectiveValueCents))
                             }
 
                             if let notes = firearm.notes, !notes.isEmpty {

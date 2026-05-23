@@ -68,7 +68,7 @@ final class UserDataTransferService: UserDataTransferServicing {
             throw UserDataTransferError.invalidBackupFile
         }
 
-        guard snapshot.version == UserDataSnapshot.currentVersion else {
+        guard UserDataSnapshot.supportedVersions.contains(snapshot.version) else {
             throw UserDataTransferError.unsupportedVersion(snapshot.version)
         }
 
@@ -91,6 +91,7 @@ final class UserDataTransferService: UserDataTransferServicing {
         let magazines = try context.fetch(FetchDescriptor<Magazine>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
         let attachments = try context.fetch(FetchDescriptor<Attachment>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
         let parts = try context.fetch(FetchDescriptor<Part>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
+        let kits = try context.fetch(FetchDescriptor<Kit>(sortBy: [SortDescriptor(\.sortOrder), SortDescriptor(\.createdAt)]))
 
         var ammoIdentifiers: [ObjectIdentifier: UUID] = [:]
         let ammoSnapshots = ammoTypes.map { ammo -> AmmoTypeSnapshot in
@@ -227,6 +228,37 @@ final class UserDataTransferService: UserDataTransferServicing {
                     createdAt: $0.createdAt,
                     firearmID: $0.firearm?.id
                 )
+            },
+            kits: kits.map { kit in
+                KitSnapshot(
+                    id: kit.id ?? UUID(),
+                    name: kit.name,
+                    kind: kit.kind,
+                    status: kit.status,
+                    notes: kit.notes,
+                    sortOrder: kit.sortOrder,
+                    createdAt: kit.createdAt,
+                    updatedAt: kit.updatedAt,
+                    firearmID: kit.firearm?.id,
+                    components: kit.sortedComponents.map {
+                        KitComponentSnapshot(
+                            id: $0.id ?? UUID(),
+                            category: $0.category,
+                            slot: $0.slot,
+                            sortOrder: $0.sortOrder,
+                            partID: $0.part?.id,
+                            opticID: $0.optic?.id,
+                            attachmentID: $0.attachment?.id
+                        )
+                    },
+                    historyRecords: kit.sortedHistoryRecords.map {
+                        KitHistoryRecordSnapshot(
+                            occurredAt: $0.occurredAt,
+                            event: $0.event,
+                            note: $0.note
+                        )
+                    }
+                )
             }
         )
     }
@@ -281,6 +313,7 @@ final class UserDataTransferService: UserDataTransferServicing {
             result[snapshot.backupID] = ammoType
         }
 
+        var optics: [UUID: Optic] = [:]
         for snapshot in snapshot.optics {
             let optic = Optic(
                 id: snapshot.id,
@@ -306,6 +339,7 @@ final class UserDataTransferService: UserDataTransferServicing {
                 createdAt: snapshot.createdAt
             )
             context.insert(optic)
+            optics[snapshot.id] = optic
         }
 
         for snapshot in snapshot.magazines {
@@ -334,6 +368,7 @@ final class UserDataTransferService: UserDataTransferServicing {
 
         _ = MagazinePatternMigration.backfillMissingPatterns(in: context)
 
+        var attachments: [UUID: Attachment] = [:]
         for snapshot in snapshot.attachments {
             let attachment = Attachment(
                 id: snapshot.id,
@@ -351,8 +386,10 @@ final class UserDataTransferService: UserDataTransferServicing {
                 createdAt: snapshot.createdAt
             )
             context.insert(attachment)
+            attachments[snapshot.id] = attachment
         }
 
+        var parts: [UUID: Part] = [:]
         for snapshot in snapshot.parts {
             let part = Part(
                 id: snapshot.id,
@@ -370,6 +407,52 @@ final class UserDataTransferService: UserDataTransferServicing {
                 createdAt: snapshot.createdAt
             )
             context.insert(part)
+            parts[snapshot.id] = part
+        }
+
+        for snapshot in snapshot.kits {
+            let kit = Kit(
+                id: snapshot.id,
+                name: snapshot.name,
+                kind: KitKind(rawValue: snapshot.kind) ?? .custom,
+                status: KitStatus(rawValue: snapshot.status) ?? .built,
+                notes: snapshot.notes,
+                firearm: snapshot.firearmID.flatMap { firearms[$0] },
+                sortOrder: snapshot.sortOrder,
+                createdAt: snapshot.createdAt,
+                updatedAt: snapshot.updatedAt
+            )
+            context.insert(kit)
+
+            var importedComponents: [KitComponent] = []
+            for componentSnapshot in snapshot.components {
+                let component = KitComponent(
+                    id: componentSnapshot.id,
+                    category: KitComponentCategory(rawValue: componentSnapshot.category) ?? .part,
+                    slot: componentSnapshot.slot.flatMap(KitComponentSlot.init(rawValue:)),
+                    part: componentSnapshot.partID.flatMap { parts[$0] },
+                    optic: componentSnapshot.opticID.flatMap { optics[$0] },
+                    attachment: componentSnapshot.attachmentID.flatMap { attachments[$0] },
+                    sortOrder: componentSnapshot.sortOrder
+                )
+                component.kit = kit
+                importedComponents.append(component)
+                context.insert(component)
+            }
+            kit.components = importedComponents
+
+            var importedHistoryRecords: [KitHistoryRecord] = []
+            for historySnapshot in snapshot.historyRecords {
+                let record = KitHistoryRecord(
+                    occurredAt: historySnapshot.occurredAt,
+                    event: KitHistoryEvent(rawValue: historySnapshot.event) ?? .updated,
+                    note: historySnapshot.note
+                )
+                record.kit = kit
+                importedHistoryRecords.append(record)
+                context.insert(record)
+            }
+            kit.historyRecords = importedHistoryRecords
         }
 
         for snapshot in snapshot.ammoAdjustmentRecords {
@@ -390,6 +473,9 @@ final class UserDataTransferService: UserDataTransferServicing {
     @MainActor
     private func deleteExistingData(in context: ModelContext) throws {
         try deleteAll(FetchDescriptor<AmmoAdjustmentRecord>(), in: context)
+        try deleteAll(FetchDescriptor<KitHistoryRecord>(), in: context)
+        try deleteAll(FetchDescriptor<KitComponent>(), in: context)
+        try deleteAll(FetchDescriptor<Kit>(), in: context)
         try deleteAll(FetchDescriptor<Attachment>(), in: context)
         try deleteAll(FetchDescriptor<Part>(), in: context)
         try deleteAll(FetchDescriptor<Magazine>(), in: context)
@@ -461,7 +547,8 @@ final class UserDataTransferService: UserDataTransferServicing {
 }
 
 private struct UserDataSnapshot: Codable {
-    static let currentVersion = 1
+    static let currentVersion = 2
+    static let supportedVersions: Set<Int> = [1, 2]
 
     private enum CodingKeys: String, CodingKey {
         case version
@@ -475,6 +562,7 @@ private struct UserDataSnapshot: Codable {
         case magazines
         case attachments
         case parts
+        case kits
     }
 
     let version: Int
@@ -488,6 +576,7 @@ private struct UserDataSnapshot: Codable {
     let magazines: [MagazineSnapshot]
     let attachments: [AttachmentSnapshot]
     let parts: [PartSnapshot]
+    let kits: [KitSnapshot]
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -502,6 +591,7 @@ private struct UserDataSnapshot: Codable {
         magazines = try container.decode([MagazineSnapshot].self, forKey: .magazines)
         attachments = try container.decode([AttachmentSnapshot].self, forKey: .attachments)
         parts = try container.decodeIfPresent([PartSnapshot].self, forKey: .parts) ?? []
+        kits = try container.decodeIfPresent([KitSnapshot].self, forKey: .kits) ?? []
     }
 
     init(
@@ -515,7 +605,8 @@ private struct UserDataSnapshot: Codable {
         optics: [OpticSnapshot],
         magazines: [MagazineSnapshot],
         attachments: [AttachmentSnapshot],
-        parts: [PartSnapshot]
+        parts: [PartSnapshot],
+        kits: [KitSnapshot]
     ) {
         self.version = version
         self.exportedAt = exportedAt
@@ -528,6 +619,7 @@ private struct UserDataSnapshot: Codable {
         self.magazines = magazines
         self.attachments = attachments
         self.parts = parts
+        self.kits = kits
     }
 }
 
@@ -734,6 +826,36 @@ private struct PartSnapshot: Codable {
     let sortOrder: Int
     let createdAt: Date
     let firearmID: UUID?
+}
+
+private struct KitSnapshot: Codable {
+    let id: UUID
+    let name: String
+    let kind: String
+    let status: String
+    let notes: String?
+    let sortOrder: Int
+    let createdAt: Date
+    let updatedAt: Date
+    let firearmID: UUID?
+    let components: [KitComponentSnapshot]
+    let historyRecords: [KitHistoryRecordSnapshot]
+}
+
+private struct KitComponentSnapshot: Codable {
+    let id: UUID
+    let category: String
+    let slot: String?
+    let sortOrder: Int
+    let partID: UUID?
+    let opticID: UUID?
+    let attachmentID: UUID?
+}
+
+private struct KitHistoryRecordSnapshot: Codable {
+    let occurredAt: Date
+    let event: String
+    let note: String?
 }
 
 private enum SettingValue: Codable {

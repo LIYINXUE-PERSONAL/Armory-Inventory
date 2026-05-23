@@ -256,7 +256,7 @@ final class Firearm {
     var subtitle: String {
         if let nickname, !nickname.isEmpty {
             return String.localizedStringWithFormat(
-                String(localized: "“%@”"),
+                String(localized: "\"%@\""),
                 nickname
             )
         }
@@ -278,7 +278,7 @@ final class Firearm {
         let formattedValue = barrelLengthInches.formatted(
             .number.precision(.fractionLength(0...2))
         )
-        return "\(formattedValue) \(String(localized: "in."))"
+        return "\(formattedValue) \(String(localized: "in"))"
     }
 
     var purchasePriceText: String {

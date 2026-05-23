@@ -56,6 +56,13 @@ final class AddFirearmViewModel {
         Set(firearm?.parts.map(\.persistentModelID) ?? [])
     }
 
+    func selectedKitIDs(for firearm: Firearm?, kits: [Kit]) -> Set<PersistentIdentifier> {
+        guard let firearm else {
+            return []
+        }
+        return Set(kits.filter { $0.firearm?.persistentModelID == firearm.persistentModelID }.map(\.persistentModelID))
+    }
+
     func trimmedValue(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -176,11 +183,17 @@ final class AddFirearmViewModel {
     func availableOptics(
         from optics: [Optic],
         selectedIDs: Set<PersistentIdentifier>,
-        firearm: Firearm?
+        firearm: Firearm?,
+        kits: [Kit]
     ) -> [Optic] {
-        optics.filter { optic in
+        let eligibilityService = KitEligibilityService()
+        return optics.filter { optic in
             if selectedIDs.contains(optic.persistentModelID) {
                 return true
+            }
+
+            guard !eligibilityService.isReserved(optic, by: kits, excluding: nil) else {
+                return false
             }
 
             guard let linkedFirearm = optic.firearm else {
@@ -271,11 +284,17 @@ final class AddFirearmViewModel {
     func availableAttachments(
         from attachments: [Attachment],
         selectedIDs: Set<PersistentIdentifier>,
-        firearm: Firearm?
+        firearm: Firearm?,
+        kits: [Kit]
     ) -> [Attachment] {
-        attachments.filter { attachment in
+        let eligibilityService = KitEligibilityService()
+        return attachments.filter { attachment in
             if selectedIDs.contains(attachment.persistentModelID) {
                 return true
+            }
+
+            guard !eligibilityService.isReserved(attachment, by: kits, excluding: nil) else {
+                return false
             }
 
             guard let linkedFirearm = attachment.firearm else {
@@ -293,11 +312,17 @@ final class AddFirearmViewModel {
     func availableParts(
         from parts: [Part],
         selectedIDs: Set<PersistentIdentifier>,
-        firearm: Firearm?
+        firearm: Firearm?,
+        kits: [Kit]
     ) -> [Part] {
-        parts.filter { part in
+        let eligibilityService = KitEligibilityService()
+        return parts.filter { part in
             if selectedIDs.contains(part.persistentModelID) {
                 return true
+            }
+
+            guard !eligibilityService.isReserved(part, by: kits, excluding: nil) else {
+                return false
             }
 
             guard let linkedFirearm = part.firearm else {
@@ -351,12 +376,115 @@ final class AddFirearmViewModel {
         }
     }
 
+    func linkedKits(from kits: [Kit], selectedIDs: Set<PersistentIdentifier>) -> [Kit] {
+        kits.filter { selectedIDs.contains($0.persistentModelID) }
+    }
+
+    func availableKits(
+        from kits: [Kit],
+        selectedIDs: Set<PersistentIdentifier>,
+        firearm: Firearm?
+    ) -> [Kit] {
+        kits.filter { kit in
+            if selectedIDs.contains(kit.persistentModelID) {
+                return true
+            }
+            guard let linkedFirearm = kit.firearm else {
+                return kit.kitStatus == .built
+            }
+            guard let firearm else {
+                return false
+            }
+            return linkedFirearm.persistentModelID == firearm.persistentModelID
+        }
+    }
+
+    func managedOptics(from kits: [Kit]) -> [Optic] {
+        kits.flatMap(\.components).compactMap(\.optic)
+    }
+
+    func managedAttachments(from kits: [Kit]) -> [Attachment] {
+        kits.flatMap(\.components).compactMap(\.attachment)
+    }
+
+    func managedParts(from kits: [Kit]) -> [Part] {
+        kits.flatMap(\.components).compactMap(\.part)
+    }
+
+    func effectiveOptics(resolvedOptics: [Optic], managedOptics: [Optic]) -> [Optic] {
+        resolvedOptics + managedOptics.filter { managed in
+            !resolvedOptics.contains { $0.persistentModelID == managed.persistentModelID }
+        }
+    }
+
+    func effectiveAttachments(resolvedAttachments: [Attachment], managedAttachments: [Attachment]) -> [Attachment] {
+        resolvedAttachments + managedAttachments.filter { managed in
+            !resolvedAttachments.contains { $0.persistentModelID == managed.persistentModelID }
+        }
+    }
+
+    func effectiveParts(resolvedParts: [Part], managedParts: [Part]) -> [Part] {
+        resolvedParts + managedParts.filter { managed in
+            !resolvedParts.contains { $0.persistentModelID == managed.persistentModelID }
+        }
+    }
+
+    func accessoriesSubtotalCents(
+        optics: [Optic],
+        magazines: [Magazine],
+        attachments: [Attachment],
+        parts: [Part]
+    ) -> Int {
+        let opticsTotal = optics.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+        let magazinesTotal = magazines.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+        let attachmentsTotal = attachments.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+        let partsTotal = parts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
+        return opticsTotal + magazinesTotal + attachmentsTotal + partsTotal
+    }
+
     func isReadOnly(hasFirearm: Bool, isEditing: Bool) -> Bool {
         hasFirearm && !isEditing
     }
 
     func showsPurchaseSection(showValueInDetails: Bool, isReadOnly: Bool) -> Bool {
         showValueInDetails || !isReadOnly
+    }
+
+    func showsPostTaxTotalSection(hasFirearm: Bool, showValueInDetails: Bool) -> Bool {
+        hasFirearm && showValueInDetails
+    }
+
+    func totalValueWithTaxText(
+        firearmPriceCents: Int,
+        accessoriesSubtotalCents: Int,
+        firearmsTaxRate: Double,
+        accessoriesTaxRate: Double
+    ) -> String {
+        let firearmTotalCents = taxedAmountCents(baseAmountCents: max(0, firearmPriceCents), taxRate: firearmsTaxRate)
+        let accessoriesTotalCents = taxedAmountCents(baseAmountCents: accessoriesSubtotalCents, taxRate: accessoriesTaxRate)
+        let amount = Decimal(firearmTotalCents + accessoriesTotalCents) / 100
+        return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    func taxedAmountCents(baseAmountCents: Int, taxRate: Double) -> Int {
+        Int((Double(baseAmountCents) * (1 + max(0, taxRate) / 100)).rounded())
+    }
+
+    func currentFirearmForSummary(
+        firearm: Firearm?,
+        brand: String,
+        modelName: String,
+        purchasePriceCents: Int,
+        type: FirearmType,
+        action: FirearmAction
+    ) -> Firearm {
+        firearm ?? Firearm(
+            brand: brand,
+            modelName: modelName,
+            purchasePriceCents: purchasePriceCents,
+            type: type,
+            action: action
+        )
     }
 
     func primaryButtonTitle(hasFirearm: Bool, isEditing: Bool) -> String {
@@ -589,6 +717,70 @@ final class AddFirearmViewModel {
             print("Save error: \(error)")
             return false
         }
+    }
+
+    func deleteFirearm(_ firearm: Firearm, in context: ModelContext) -> KitValidationResult {
+        do {
+            let linkedKits = try context.fetch(FetchDescriptor<Kit>()).filter {
+                $0.firearm?.persistentModelID == firearm.persistentModelID
+            }
+
+            for kit in linkedKits {
+                kit.firearm = nil
+                kit.status = KitStatus.built.rawValue
+                kit.updatedAt = .now
+            }
+
+            context.delete(firearm)
+            try context.save()
+            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+            return .valid
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
+    }
+
+    func saveKitLinks(firearm: Firearm, selectedKitIDs: Set<PersistentIdentifier>, kits: [Kit], in context: ModelContext) -> KitValidationResult {
+        for kit in kits {
+            let isSelected = selectedKitIDs.contains(kit.persistentModelID)
+            let isLinkedHere = kit.firearm?.persistentModelID == firearm.persistentModelID
+
+            if isSelected {
+                kit.firearm = firearm
+                kit.status = KitStatus.linked.rawValue
+                kit.updatedAt = .now
+            } else if isLinkedHere {
+                kit.firearm = nil
+                kit.status = KitStatus.built.rawValue
+                kit.updatedAt = .now
+            }
+        }
+
+        do {
+            try context.save()
+            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+            return .valid
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
+    }
+
+    func managingKitName(for optic: Optic, kits: [Kit]) -> String {
+        kits.first { kit in
+            kit.components.contains { $0.optic?.persistentModelID == optic.persistentModelID }
+        }?.displayName ?? String(localized: "Kit")
+    }
+
+    func managingKitName(for attachment: Attachment, kits: [Kit]) -> String {
+        kits.first { kit in
+            kit.components.contains { $0.attachment?.persistentModelID == attachment.persistentModelID }
+        }?.displayName ?? String(localized: "Kit")
+    }
+
+    func managingKitName(for part: Part, kits: [Kit]) -> String {
+        kits.first { kit in
+            kit.components.contains { $0.part?.persistentModelID == part.persistentModelID }
+        }?.displayName ?? String(localized: "Kit")
     }
 
     private func effectiveSelectedMagazinePatterns(

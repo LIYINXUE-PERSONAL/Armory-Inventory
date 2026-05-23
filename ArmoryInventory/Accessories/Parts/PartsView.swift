@@ -18,7 +18,10 @@ struct PartsView: View {
     @State private var showingAddPart = false
     @State private var selectedPart: Part?
     @State private var parts: [Part] = []
+    @State private var kits: [Kit] = []
+    @State private var alertMessage: String?
 
+    private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
 
     var body: some View {
@@ -108,66 +111,61 @@ struct PartsView: View {
             AddPartView(part: part, viewModel: AddPartViewModel())
                 .presentationDetents([.large])
         }
+        .alert("Part Cannot Be Deleted", isPresented: alertBinding) {
+            Button("OK", role: .cancel) {
+                alertMessage = nil
+            }
+        } message: {
+            Text(alertMessage ?? "")
+        }
     }
 
     private var groupedParts: [String: [Part]] {
-        Dictionary(grouping: parts, by: \.type).mapValues {
-            AccessoryItemSort.sorted($0, by: selectedItemSortOrder, direction: selectedItemSortDirection)
-        }
+        viewModel.groupedParts(parts, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
     }
 
     private var groupedPartTypes: [String] {
-        PartTypeSort.displayOrder(for: Array(groupedParts.keys))
+        viewModel.groupedPartTypes(from: groupedParts)
     }
 
     private func deleteParts(at offsets: IndexSet, in type: String) {
-        guard let sectionParts = groupedParts[type] else {
-            return
-        }
-
-        for index in offsets {
-            context.delete(sectionParts[index])
-        }
-        resequenceParts()
-
-        do {
-            try context.save()
-            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+        let result = viewModel.deleteParts(
+            at: offsets,
+            in: type,
+            groupedParts: groupedParts,
+            allParts: parts,
+            kits: kits,
+            context: context
+        )
+        if result.isValid {
             reloadParts()
-        } catch {
-            print("Delete error: \(error)")
+        } else {
+            alertMessage = result.message
+            reloadParts()
         }
     }
 
     private func reloadParts() {
         do {
             parts = try inventoryListService.fetchParts(in: context)
+            kits = try inventoryListService.fetchKits(in: context)
         } catch {
             print("Parts fetch error: \(error)")
         }
     }
 
-    private func resequenceParts() {
-        for (index, part) in parts.enumerated() {
-            part.sortOrder = index
-        }
-    }
-
     private var totalValueText: String {
-        let totalCents = parts.reduce(0) { $0 + max(0, $1.purchasePriceCents) }
-        let amount = Decimal(totalCents) / 100
-        return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+        viewModel.totalValueText(for: parts)
     }
 
     private func partTypeDisplayName(for typeID: String) -> String {
-        PartType(rawValue: typeID)?.displayName ?? typeID
+        viewModel.partTypeDisplayName(for: typeID)
     }
 
-    private var selectedItemSortOrder: AccessoryItemSortOrder {
-        AccessoryItemSortOrder(rawValue: itemSortOrder) ?? .manual
-    }
-
-    private var selectedItemSortDirection: AccessoryItemSortDirection {
-        AccessoryItemSortDirection(rawValue: itemSortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: selectedItemSortOrder)
+    private var alertBinding: Binding<Bool> {
+        Binding(
+            get: { alertMessage != nil },
+            set: { if !$0 { alertMessage = nil } }
+        )
     }
 }

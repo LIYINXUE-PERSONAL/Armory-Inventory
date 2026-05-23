@@ -79,6 +79,163 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.initialManualPatternName(for: nil), "")
     }
 
+    func testPatternSelectionMetadataAndPresentationHelpers() {
+        let viewModel = AddMagazineViewModel()
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 180_000,
+            type: .rifle,
+            action: .semiAuto,
+            caliber: Caliber(name: "5.56 NATO")
+        )
+        let magazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            patternID: "catalog:ar15-stanag-223-556-300blk",
+            patternKind: .catalog,
+            capacity: 30,
+            purchasePriceCents: 1_599,
+            firearm: firearm
+        )
+        let customPattern = MagazinePattern.custom(
+            id: UUID(uuidString: "12345678-1234-1234-1234-1234567890AB")!,
+            displayName: "P320 Legion",
+            familyLabel: "P320 Legion",
+            supportedCaliberNames: ["9mm"]
+        )
+
+        XCTAssertEqual(MagazinePatternSelection.catalog("catalog:ar15-stanag-223-556-300blk").id, "catalog:catalog:ar15-stanag-223-556-300blk")
+        XCTAssertEqual(MagazinePatternSelection.existingCustom(customPattern).id, "existing-custom:\(customPattern.id)")
+        XCTAssertEqual(MagazinePatternSelection.legacy.id, "legacy")
+        XCTAssertEqual(MagazinePatternSelection.custom.id, "custom")
+        XCTAssertFalse(MagazinePatternSelection.catalog(customPattern.id).requiresManualName)
+        XCTAssertTrue(MagazinePatternSelection.legacy.requiresManualName)
+        XCTAssertTrue(MagazinePatternSelection.custom.allowsManualCaliberSelection)
+        XCTAssertFalse(MagazinePatternSelection.existingCustom(customPattern).allowsManualCaliberSelection)
+        XCTAssertEqual(viewModel.initialPurchasePriceText(for: magazine), "15.99")
+        XCTAssertEqual(viewModel.linkedFirearm(for: magazine, unlinkFirearm: false)?.displayName, "Daniel Defense DDM4")
+        XCTAssertNil(viewModel.linkedFirearm(for: magazine, unlinkFirearm: true))
+        XCTAssertEqual(viewModel.purchasePriceWithTaxText(purchasePriceCents: 10_000, taxRate: 8.25), "$108.25")
+        XCTAssertFalse(viewModel.isReadOnly(hasMagazine: false, isEditing: false))
+        XCTAssertTrue(viewModel.showsPurchaseSection(showValueInDetails: true, isReadOnly: true))
+        XCTAssertEqual(viewModel.primaryButtonTitle(hasMagazine: true, isEditing: false), "Edit")
+        XCTAssertEqual(viewModel.primaryButtonTitle(hasMagazine: true, isEditing: true), "Save")
+    }
+
+    func testPatternSelectionResolvesTitlesDescriptionsAndCalibers() {
+        let viewModel = AddMagazineViewModel()
+        let firearm = Firearm(
+            brand: "Glock",
+            modelName: "19",
+            purchasePriceCents: 50_000,
+            type: .pistol,
+            action: .semiAuto,
+            caliber: Caliber(name: "9mm")
+        )
+        let customPattern = MagazinePattern.custom(
+            id: UUID(uuidString: "12345678-1234-1234-1234-1234567890AB")!,
+            displayName: "P320 Legion",
+            familyLabel: "P320 Legion",
+            supportedCaliberNames: ["9mm"]
+        )
+        let existingCustomMagazine = Magazine(
+            brand: "SIG",
+            modelName: "OEM",
+            patternID: customPattern.id,
+            patternKind: .custom,
+            patternDisplayName: customPattern.displayName,
+            patternSupportedCaliberNames: customPattern.compatibility.supportedCaliberNames,
+            capacity: 17,
+            purchasePriceCents: 4_000
+        )
+        let invalidCatalogMagazine = Magazine(
+            brand: "Legacy",
+            modelName: "Tube",
+            patternID: "catalog:missing",
+            patternKind: .catalog,
+            capacity: 10,
+            purchasePriceCents: 2_000
+        )
+
+        XCTAssertEqual(viewModel.initialPatternSelection(for: existingCustomMagazine), .existingCustom(customPattern))
+        XCTAssertEqual(viewModel.initialPatternSelection(for: invalidCatalogMagazine), .custom)
+        XCTAssertEqual(viewModel.initialCompatibleCaliberNames(for: existingCustomMagazine), ["9mm"])
+        XCTAssertEqual(
+            viewModel.toggledCompatibleCaliberSelection(currentSelection: [], caliberName: " 9mm ", isEditing: false),
+            []
+        )
+        XCTAssertEqual(
+            viewModel.toggledCompatibleCaliberSelection(currentSelection: [], caliberName: " ", isEditing: true),
+            []
+        )
+        XCTAssertEqual(
+            viewModel.toggledCompatibleCaliberSelection(currentSelection: [], caliberName: " 9mm ", isEditing: true),
+            ["9mm"]
+        )
+        XCTAssertEqual(
+            viewModel.toggledCompatibleCaliberSelection(currentSelection: ["9mm"], caliberName: "9mm", isEditing: true),
+            []
+        )
+        XCTAssertFalse(viewModel.suggestedCatalogPatterns(firearm: firearm).isEmpty)
+        XCTAssertFalse(viewModel.additionalCatalogPatterns(firearm: firearm).contains { $0.id == "catalog:glock-double-stack-9mm-full-size-compact" })
+        XCTAssertEqual(
+            viewModel.selectedPatternTitle(
+                selection: .catalog("catalog:glock-double-stack-9mm-full-size-compact"),
+                manualPatternName: "",
+                brand: "Glock",
+                modelName: "OEM",
+                compatibleCaliberNames: [],
+                firearm: firearm
+            ),
+            "Glock 17 Pattern"
+        )
+        XCTAssertEqual(
+            viewModel.selectedPatternDescription(
+                selection: .existingCustom(customPattern),
+                manualPatternName: "",
+                brand: "SIG",
+                modelName: "OEM",
+                compatibleCaliberNames: [],
+                firearm: nil
+            ),
+            "9mm"
+        )
+        XCTAssertEqual(
+            viewModel.selectedPatternDescription(
+                selection: .legacy,
+                manualPatternName: "Legacy Tube",
+                brand: "",
+                modelName: "",
+                compatibleCaliberNames: [],
+                firearm: nil
+            ),
+            "Legacy pattern names stay visible and editable for existing data."
+        )
+        XCTAssertEqual(
+            viewModel.selectedPatternDescription(
+                selection: .custom,
+                manualPatternName: "Match Tube",
+                brand: "",
+                modelName: "",
+                compatibleCaliberNames: [],
+                firearm: nil
+            ),
+            "Custom pattern names are stored exactly as entered."
+        )
+        XCTAssertEqual(
+            viewModel.resolvedSupportedCaliberNames(
+                selection: .custom,
+                manualPatternName: "Match Tube",
+                brand: "",
+                modelName: "",
+                compatibleCaliberNames: [" 9mm ", ".38 Super", ""],
+                firearm: nil
+            ),
+            [".38 Super", "9mm"]
+        )
+    }
+
     func testCanAddReturnsFalseForMagazineCaliberMismatchAgainstLinkedFirearm() {
         let viewModel = AddMagazineViewModel()
         let firearmCaliber = Caliber(name: ".45 ACP")
