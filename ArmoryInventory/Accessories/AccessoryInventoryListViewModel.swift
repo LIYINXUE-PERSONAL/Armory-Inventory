@@ -75,6 +75,36 @@ final class AccessoryInventoryListViewModel {
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
     }
 
+    func linkedKit(for part: Part, kits: [Kit]) -> Kit? {
+        kits.first { kit in
+            kit.isActiveReservation && kit.components.contains { $0.part?.persistentModelID == part.persistentModelID }
+        }
+    }
+
+    func linkedKit(for optic: Optic, kits: [Kit]) -> Kit? {
+        kits.first { kit in
+            kit.isActiveReservation && kit.components.contains { $0.optic?.persistentModelID == optic.persistentModelID }
+        }
+    }
+
+    func linkedKit(for attachment: Attachment, kits: [Kit]) -> Kit? {
+        kits.first { kit in
+            kit.isActiveReservation && kit.components.contains { $0.attachment?.persistentModelID == attachment.persistentModelID }
+        }
+    }
+
+    func linkedFirearm(for part: Part, kits: [Kit]) -> Firearm? {
+        part.firearm ?? linkedKit(for: part, kits: kits)?.firearm
+    }
+
+    func linkedFirearm(for optic: Optic, kits: [Kit]) -> Firearm? {
+        optic.firearm ?? linkedKit(for: optic, kits: kits)?.firearm
+    }
+
+    func linkedFirearm(for attachment: Attachment, kits: [Kit]) -> Firearm? {
+        attachment.firearm ?? linkedKit(for: attachment, kits: kits)?.firearm
+    }
+
     func deleteParts(
         at offsets: IndexSet,
         in type: String,

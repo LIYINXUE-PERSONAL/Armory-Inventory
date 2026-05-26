@@ -48,8 +48,12 @@ struct AttachmentsView: View {
                                             LabeledContent("Value", value: attachment.purchasePriceText)
                                         }
 
-                                        if let firearm = attachment.firearm {
+                                        if let firearm = viewModel.linkedFirearm(for: attachment, kits: kits) {
                                             LabeledContent("Linked Firearm", value: firearm.displayName)
+                                        }
+
+                                        if let kit = viewModel.linkedKit(for: attachment, kits: kits) {
+                                            LabeledContent("Linked Kit", value: kit.displayName)
                                         }
                                     }
                                     .padding(.vertical, 6)

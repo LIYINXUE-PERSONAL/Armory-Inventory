@@ -68,6 +68,75 @@ final class AccessoryInventoryListViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.totalValueText(for: [chargingHandle, boltCarrierGroup]), "$270.00")
     }
 
+    func testLinkedFirearmAndKitResolveThroughActiveKitComponents() {
+        let viewModel = AccessoryInventoryListViewModel()
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 120_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let part = Part(brand: "BCM", modelName: "BCG", type: .boltCarrierGroup, purchasePriceCents: 18_000)
+        let optic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000
+        )
+        let attachment = Attachment(brand: "BCM", modelName: "KAG", type: .handStop, purchasePriceCents: 2_000)
+        let kit = Kit(name: "Upper Kit", kind: .upperReceiver, status: .linked, firearm: firearm)
+        let partComponent = KitComponent(category: .part, part: part)
+        let opticComponent = KitComponent(category: .optic, optic: optic)
+        let attachmentComponent = KitComponent(category: .attachment, attachment: attachment)
+        partComponent.kit = kit
+        opticComponent.kit = kit
+        attachmentComponent.kit = kit
+        kit.components = [partComponent, opticComponent, attachmentComponent]
+
+        XCTAssertEqual(viewModel.linkedFirearm(for: part, kits: [kit])?.displayName, "Daniel Defense DDM4")
+        XCTAssertEqual(viewModel.linkedFirearm(for: optic, kits: [kit])?.displayName, "Daniel Defense DDM4")
+        XCTAssertEqual(viewModel.linkedFirearm(for: attachment, kits: [kit])?.displayName, "Daniel Defense DDM4")
+        XCTAssertEqual(viewModel.linkedKit(for: part, kits: [kit])?.displayName, "Upper Kit")
+        XCTAssertEqual(viewModel.linkedKit(for: optic, kits: [kit])?.displayName, "Upper Kit")
+        XCTAssertEqual(viewModel.linkedKit(for: attachment, kits: [kit])?.displayName, "Upper Kit")
+    }
+
+    func testDirectLinkedFirearmTakesPrecedenceOverKitFirearm() {
+        let viewModel = AccessoryInventoryListViewModel()
+        let directFirearm = Firearm(
+            brand: "Glock",
+            modelName: "19",
+            purchasePriceCents: 50_000,
+            type: .pistol,
+            action: .semiAuto
+        )
+        let kitFirearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 120_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let part = Part(
+            brand: "Apex",
+            modelName: "Trigger",
+            type: .trigger,
+            purchasePriceCents: 12_000,
+            firearm: directFirearm
+        )
+        let kit = Kit(name: "Lower Kit", kind: .lowerReceiver, status: .linked, firearm: kitFirearm)
+        let component = KitComponent(category: .part, part: part)
+        component.kit = kit
+        kit.components = [component]
+
+        XCTAssertEqual(viewModel.linkedFirearm(for: part, kits: [kit])?.displayName, "Glock 19")
+        XCTAssertEqual(viewModel.linkedKit(for: part, kits: [kit])?.displayName, "Lower Kit")
+    }
+
     @MainActor
     func testDeletionIsBlockedForBuiltKitComponents() throws {
         let container = try makeInMemoryContainer()

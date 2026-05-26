@@ -65,8 +65,12 @@ struct OpticsView: View {
                                             LabeledContent("Value", value: optic.purchasePriceText)
                                         }
 
-                                        if let firearm = optic.firearm {
+                                        if let firearm = viewModel.linkedFirearm(for: optic, kits: kits) {
                                             LabeledContent("Linked Firearm", value: firearm.displayName)
+                                        }
+
+                                        if let kit = viewModel.linkedKit(for: optic, kits: kits) {
+                                            LabeledContent("Linked Kit", value: kit.displayName)
                                         }
                                     }
                                     .padding(.vertical, 6)

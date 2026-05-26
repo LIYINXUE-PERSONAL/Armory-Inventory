@@ -48,8 +48,12 @@ struct PartsView: View {
                                             LabeledContent("Value", value: part.purchasePriceText)
                                         }
 
-                                        if let firearm = part.firearm {
+                                        if let firearm = viewModel.linkedFirearm(for: part, kits: kits) {
                                             LabeledContent("Linked Firearm", value: firearm.displayName)
+                                        }
+
+                                        if let kit = viewModel.linkedKit(for: part, kits: kits) {
+                                            LabeledContent("Linked Kit", value: kit.displayName)
                                         }
                                     }
                                     .padding(.vertical, 6)
