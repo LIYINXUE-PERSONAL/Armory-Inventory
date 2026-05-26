@@ -5056,6 +5056,28 @@
         }
       }
     },
+    "Linked Kit" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kit vinculado"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已关联套件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已連結套件"
+          }
+        }
+      }
+    },
     "Linked Kits" : {
       "localizations" : {
         "es" : {
