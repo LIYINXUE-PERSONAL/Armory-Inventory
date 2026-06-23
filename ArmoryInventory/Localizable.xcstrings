@@ -3600,6 +3600,28 @@
         }
       }
     },
+    "Edit Ammo" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Editar munición"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "编辑弹药"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "編輯彈藥"
+          }
+        }
+      }
+    },
     "Edit Saved Pattern" : {
       "localizations" : {
         "es" : {
@@ -4111,7 +4133,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Grains"
+            "value" : "Grano"
           }
         },
         "zh-Hans" : {
@@ -4506,7 +4528,6 @@
 
     },
     "In Stock" : {
-      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -7211,6 +7232,28 @@
         }
       }
     },
+    "Opens ammo details for editing" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre los detalles de la munición para editarlos"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开弹药详情以进行编辑"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟彈藥詳細資訊以進行編輯"
+          }
+        }
+      }
+    },
     "Optic" : {
       "localizations" : {
         "es" : {
@@ -7476,7 +7519,6 @@
       }
     },
     "Out of Stock" : {
-      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -8683,6 +8725,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "霰彈槍"
+          }
+        }
+      }
+    },
+    "Size" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamaño"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尺寸"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尺寸"
           }
         }
       }

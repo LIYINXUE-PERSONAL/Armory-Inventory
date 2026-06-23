@@ -26,15 +26,34 @@ struct AddAmmoTypeView: View {
     @State private var loadDetailText: String = ""
     @State private var quantityText: String = ""
     @State private var centsPerRoundText: String = ""
+    let ammoToEdit: AmmoType?
     let viewModel: AddAmmoTypeViewModel
 
-    init(caliber: Caliber, viewModel: AddAmmoTypeViewModel) {
+    init(caliber: Caliber, ammoToEdit: AmmoType? = nil, viewModel: AddAmmoTypeViewModel) {
         self.caliber = caliber
+        self.ammoToEdit = ammoToEdit
         self.viewModel = viewModel
-        let initialGrain = Double(AddAmmoTypeViewModel.initialGrain(for: caliber))
-        let initialBulletType = CommonAmmoCatalog.bulletTypes(for: caliber.name).first ?? Self.customBulletTypeOption
-        _selectedGrain = State(initialValue: initialGrain)
-        _selectedBulletType = State(initialValue: initialBulletType)
+
+        if let ammoToEdit {
+            let knownBulletTypes = CommonAmmoCatalog.bulletTypes(for: caliber.name)
+            let isKnownBrand = CommonAmmoCatalog.commonBrands.contains(ammoToEdit.brand)
+            let isKnownBulletType = knownBulletTypes.contains(ammoToEdit.bulletType)
+
+            _selectedBrand = State(initialValue: isKnownBrand ? ammoToEdit.brand : Self.customBrandOption)
+            _customBrand = State(initialValue: isKnownBrand ? "" : ammoToEdit.brand)
+            _productName = State(initialValue: ammoToEdit.productName ?? "")
+            _selectedBulletType = State(initialValue: isKnownBulletType ? ammoToEdit.bulletType : Self.customBulletTypeOption)
+            _customBulletType = State(initialValue: isKnownBulletType ? "" : ammoToEdit.bulletType)
+            _selectedGrain = State(initialValue: Double(ammoToEdit.grain))
+            _loadDetailText = State(initialValue: Self.initialLoadDetail(for: ammoToEdit, caliber: caliber))
+            _quantityText = State(initialValue: String(ammoToEdit.quantity))
+            _centsPerRoundText = State(initialValue: String(ammoToEdit.centsPerRound))
+        } else {
+            let initialGrain = Double(AddAmmoTypeViewModel.initialGrain(for: caliber))
+            let initialBulletType = CommonAmmoCatalog.bulletTypes(for: caliber.name).first ?? Self.customBulletTypeOption
+            _selectedGrain = State(initialValue: initialGrain)
+            _selectedBulletType = State(initialValue: initialBulletType)
+        }
     }
 
     var body: some View {
@@ -66,7 +85,7 @@ struct AddAmmoTypeView: View {
                             .textInputAutocapitalization(.words)
                     }
                 }
-                Section(loadDetailTitle) {
+                Section {
                     if isShotgun {
                         TextField(loadDetailPlaceholder, text: $loadDetailText)
                     } else if let grainRange {
@@ -105,25 +124,33 @@ struct AddAmmoTypeView: View {
                         TextField("Grain", text: $loadDetailText)
                             .keyboardType(.numberPad)
                     }
+                } header: {
+                    if isShotgun && resolvedBulletType != "Slug" {
+                        Text("Size")
+                    } else {
+                        Text("Grain")
+                    }
                 }
-                Section("Starting Quantity") {
-                    TextField("Rounds", text: $quantityText)
-                        .keyboardType(.numberPad)
+                if ammoToEdit == nil {
+                    Section("Starting Quantity") {
+                        TextField("Rounds", text: $quantityText)
+                            .keyboardType(.numberPad)
+                    }
                 }
                 Section("Price") {
                     TextField("Cents per round", text: $centsPerRoundText)
                         .keyboardType(.numberPad)
                 }
             }
-            .navigationTitle("New Ammo Type")
+            .navigationTitle(ammoToEdit == nil ? "New Ammo Type" : "Edit Ammo")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { addAmmo() }
-                        .disabled(!canAdd)
+                    Button(ammoToEdit == nil ? "Add" : "Save") { saveAmmo() }
+                        .disabled(!canSave)
                 }
             }
         }
@@ -145,12 +172,8 @@ struct AddAmmoTypeView: View {
         viewModel.typicalGrainRange(for: caliber)
     }
 
-    private var loadDetailTitle: String {
-        viewModel.loadDetailTitle(for: caliber, bulletType: resolvedBulletType)
-    }
-
-    private var loadDetailPlaceholder: String {
-        viewModel.loadDetailPlaceholder(for: caliber, bulletType: resolvedBulletType)
+    private var loadDetailPlaceholder: LocalizedStringKey {
+        LocalizedStringKey(viewModel.loadDetailPlaceholder(for: caliber, bulletType: resolvedBulletType))
     }
 
     private var isCustomBrand: Bool {
@@ -201,9 +224,9 @@ struct AddAmmoTypeView: View {
         )
     }
 
-    private var canAdd: Bool {
+    private var canSave: Bool {
         viewModel.canAdd(
-            quantityText: quantityText,
+            quantityText: ammoToEdit == nil ? quantityText : "0",
             centsPerRoundText: centsPerRoundText,
             resolvedBrand: resolvedBrand,
             resolvedBulletType: resolvedBulletType,
@@ -213,20 +236,47 @@ struct AddAmmoTypeView: View {
         )
     }
 
-    private func addAmmo() {
-        guard viewModel.addAmmo(
-            caliber: caliber,
-            resolvedBrand: resolvedBrand,
-            resolvedProductName: resolvedProductName,
-            resolvedBulletType: resolvedBulletType,
-            resolvedGrain: resolvedGrain,
-            resolvedLoadDetail: resolvedLoadDetail,
-            quantityText: quantityText,
-            centsPerRoundText: centsPerRoundText,
-            to: context
-        ) else {
+    private func saveAmmo() {
+        let didSave: Bool
+        if let ammoToEdit {
+            didSave = viewModel.updateAmmo(
+                ammoToEdit,
+                caliber: caliber,
+                resolvedBrand: resolvedBrand,
+                resolvedProductName: resolvedProductName,
+                resolvedBulletType: resolvedBulletType,
+                resolvedGrain: resolvedGrain,
+                resolvedLoadDetail: resolvedLoadDetail,
+                centsPerRoundText: centsPerRoundText,
+                in: context
+            )
+        } else {
+            didSave = viewModel.addAmmo(
+                caliber: caliber,
+                resolvedBrand: resolvedBrand,
+                resolvedProductName: resolvedProductName,
+                resolvedBulletType: resolvedBulletType,
+                resolvedGrain: resolvedGrain,
+                resolvedLoadDetail: resolvedLoadDetail,
+                quantityText: quantityText,
+                centsPerRoundText: centsPerRoundText,
+                to: context
+            )
+        }
+
+        guard didSave else {
             return
         }
         dismiss()
+    }
+
+    private static func initialLoadDetail(for ammo: AmmoType, caliber: Caliber) -> String {
+        if CommonAmmoCatalog.isShotgunCaliber(caliber.name) {
+            return ammo.loadDetail ?? ""
+        }
+        if CommonAmmoCatalog.grainRange(for: caliber.name) == nil, ammo.grain > 0 {
+            return String(ammo.grain)
+        }
+        return ""
     }
 }
