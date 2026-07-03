@@ -39,11 +39,11 @@ struct CaliberDetailView: View {
                 } else {
                     VStack(alignment: .leading, spacing: 20) {
                         if !viewModel.inStockSortedAmmo(for: caliber).isEmpty {
-                            ammoSection(title: "In Stock", ammo: viewModel.inStockSortedAmmo(for: caliber))
+                            ammoSection(title: Text("In Stock"), ammo: viewModel.inStockSortedAmmo(for: caliber))
                         }
 
                         if !viewModel.outOfStockSortedAmmo(for: caliber).isEmpty {
-                            ammoSection(title: "Out of Stock", ammo: viewModel.outOfStockSortedAmmo(for: caliber))
+                            ammoSection(title: Text("Out of Stock"), ammo: viewModel.outOfStockSortedAmmo(for: caliber))
                         }
                     }
                 }
@@ -97,22 +97,25 @@ struct CaliberDetailView: View {
     }
 
     @ViewBuilder
-    private func ammoSection(title: String, ammo: [AmmoType]) -> some View {
+    private func ammoSection(title: Text, ammo: [AmmoType]) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
+            title
                 .font(.headline)
 
             Grid(horizontalSpacing: 12, verticalSpacing: 12) {
                 ForEach(viewModel.ammoRows(for: ammo), id: \.self) { row in
                     GridRow {
                         ForEach(row) { ammo in
-                            AmmoCardView(
-                                ammo: ammo,
-                                backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
-                            )
-                            .onTapGesture {
+                            Button {
                                 selectedAmmoForAdjustment = ammo
+                            } label: {
+                                AmmoCardView(
+                                    ammo: ammo,
+                                    backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
+                                )
                             }
+                            .buttonStyle(.plain)
+                            .accessibilityHint("Opens ammo details for editing")
                         }
 
                         if row.count == 1 {

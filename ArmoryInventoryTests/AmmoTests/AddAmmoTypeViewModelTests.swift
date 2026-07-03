@@ -135,4 +135,44 @@ final class AddAmmoTypeViewModelTests: XCTestCase {
 
         XCTAssertFalse(didAdd)
     }
+
+    @MainActor
+    func testUpdateAmmoPersistsDetailsWithoutChangingQuantityOrRecordingPurchase() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let caliber = Caliber(name: "9mm")
+        let ammo = AmmoType(
+            brand: "Federal",
+            productName: "Old Product",
+            bulletType: "FMJ",
+            grain: 115,
+            quantity: 50,
+            centsPerRound: 30,
+            caliber: caliber
+        )
+        context.insert(caliber)
+        context.insert(ammo)
+
+        let service = AmmoChangeServiceMock()
+        let viewModel = AddAmmoTypeViewModel(ammoChangeService: service)
+        let didUpdate = viewModel.updateAmmo(
+            ammo,
+            caliber: caliber,
+            resolvedBrand: "Federal",
+            resolvedProductName: "HST",
+            resolvedBulletType: "JHP",
+            resolvedGrain: 124,
+            resolvedLoadDetail: nil,
+            centsPerRoundText: "85",
+            in: context
+        )
+
+        XCTAssertTrue(didUpdate)
+        XCTAssertEqual(ammo.productName, "HST")
+        XCTAssertEqual(ammo.bulletType, "JHP")
+        XCTAssertEqual(ammo.grain, 124)
+        XCTAssertEqual(ammo.centsPerRound, 85)
+        XCTAssertEqual(ammo.quantity, 50)
+        XCTAssertNil(service.recordedInitialPurchase)
+    }
 }

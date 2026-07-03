@@ -88,13 +88,16 @@ struct CaliberListView: View {
                                                     ForEach(viewModel.ammoRows(for: caliber, includeOutOfStock: false), id: \.self) { row in
                                                         GridRow {
                                                             ForEach(row) { ammo in
-                                                                AmmoCardView(
-                                                                    ammo: ammo,
-                                                                    backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
-                                                                )
-                                                                .onTapGesture {
+                                                                Button {
                                                                     selectedAmmoForAdjustment = ammo
+                                                                } label: {
+                                                                    AmmoCardView(
+                                                                        ammo: ammo,
+                                                                        backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
+                                                                    )
                                                                 }
+                                                                .buttonStyle(.plain)
+                                                                .accessibilityHint("Opens ammo details for editing")
                                                             }
 
                                                             if row.count == 1 {

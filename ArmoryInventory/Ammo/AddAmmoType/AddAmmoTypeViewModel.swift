@@ -156,4 +156,44 @@ final class AddAmmoTypeViewModel {
             return false
         }
     }
+
+    func updateAmmo(
+        _ ammo: AmmoType,
+        caliber: Caliber,
+        resolvedBrand: String,
+        resolvedProductName: String?,
+        resolvedBulletType: String,
+        resolvedGrain: Int?,
+        resolvedLoadDetail: String?,
+        centsPerRoundText: String,
+        in context: ModelContext
+    ) -> Bool {
+        guard canAdd(
+            quantityText: "0",
+            centsPerRoundText: centsPerRoundText,
+            resolvedBrand: resolvedBrand,
+            resolvedBulletType: resolvedBulletType,
+            resolvedGrain: resolvedGrain,
+            resolvedLoadDetail: resolvedLoadDetail,
+            isShotgun: isShotgunCaliber(caliber)
+        ), let centsPerRound = Int(centsPerRoundText) else {
+            return false
+        }
+
+        ammo.brand = resolvedBrand
+        ammo.productName = resolvedProductName
+        ammo.bulletType = resolvedBulletType
+        ammo.grain = isShotgunCaliber(caliber) ? 0 : resolvedGrain ?? 0
+        ammo.loadDetail = resolvedLoadDetail
+        ammo.centsPerRound = centsPerRound
+
+        do {
+            try context.save()
+            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+            return true
+        } catch {
+            print("Save error: \(error)")
+            return false
+        }
+    }
 }

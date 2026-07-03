@@ -31,6 +31,7 @@ struct AdjustAmmoQuantityView: View {
     let onApply: (Int, Date) -> Void
     let onDelete: () -> Void
 
+    @State private var showingEditAmmo = false
     @State private var adjustmentMode: AdjustmentMode = .add
     @State private var quantityDeltaText: String = ""
     @State private var changeDate = Date()
@@ -85,11 +86,25 @@ struct AdjustAmmoQuantityView: View {
                         dismiss()
                     }
                 }
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button("Edit") {
+                        showingEditAmmo = true
+                    }
+
                     Button("Delete", role: .destructive) {
                         onDelete()
                     }
                     .tint(.red)
+                }
+            }
+            .sheet(isPresented: $showingEditAmmo) {
+                if let caliber = ammo.caliber {
+                    AddAmmoTypeView(
+                        caliber: caliber,
+                        ammoToEdit: ammo,
+                        viewModel: AddAmmoTypeViewModel()
+                    )
+                    .presentationDetents([.large])
                 }
             }
         }
