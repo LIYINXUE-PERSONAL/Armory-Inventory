@@ -10,6 +10,19 @@ import SwiftData
 @testable import ArmoryInventory
 
 final class AddFirearmViewModelTests: XCTestCase {
+    func testInheritedValueNoticeIdentifiesLocalizedSourceAndExplainsDisplayBehavior() {
+        let viewModel = AddFirearmViewModel()
+
+        XCTAssertEqual(
+            viewModel.inheritedValueNotice(source: .barrel),
+            "Currently inherited from the barrel. Changes to the firearm's stored value may not be displayed while this part is attached."
+        )
+        XCTAssertEqual(
+            viewModel.inheritedValueNotice(source: .upperReceiver),
+            "Currently inherited from the upper receiver. Changes to the firearm's stored value may not be displayed while this part is attached."
+        )
+    }
+
     func testResolutionAndValidationHandleTrimmedAndInvalidValues() {
         let viewModel = AddFirearmViewModel()
         let existing = [

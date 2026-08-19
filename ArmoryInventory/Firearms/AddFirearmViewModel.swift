@@ -32,6 +32,13 @@ final class AddFirearmViewModel {
         } ?? ""
     }
 
+    func inheritedValueNotice(source: FirearmConfigurationSource) -> String {
+        String.localizedStringWithFormat(
+            String(localized: "Currently inherited from the %@. Changes to the firearm's stored value may not be displayed while this part is attached."),
+            source.displayName
+        )
+    }
+
     func selectedOpticIDs(for firearm: Firearm?) -> Set<PersistentIdentifier> {
         Set(firearm?.optics.map(\.persistentModelID) ?? [])
     }

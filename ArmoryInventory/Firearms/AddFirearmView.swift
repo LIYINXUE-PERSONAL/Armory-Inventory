@@ -130,36 +130,36 @@ struct AddFirearmView: View {
                                 .foregroundStyle(displayConfiguration.caliber == nil ? .secondary : .primary)
                         } else {
                             Menu {
-                            Button {
-                                selectedCaliber = nil
-                            } label: {
-                                if selectedCaliber == nil {
-                                    Label("None", systemImage: "checkmark")
-                                } else {
-                                    Text("None")
-                                }
-                            }
-
-                            ForEach(lookupData.calibers) { caliber in
                                 Button {
-                                    selectedCaliber = caliber
+                                    selectedCaliber = nil
                                 } label: {
-                                    if selectedCaliber?.persistentModelID == caliber.persistentModelID {
-                                        Label(caliber.name, systemImage: "checkmark")
+                                    if selectedCaliber == nil {
+                                        Label("None", systemImage: "checkmark")
                                     } else {
-                                        Text(caliber.name)
+                                        Text("None")
                                     }
                                 }
-                            }
 
-                            if isEditing {
-                                Divider()
-                                Button {
-                                    showingAddCaliber = true
-                                } label: {
-                                    Label("Add Caliber", systemImage: "plus.circle")
+                                ForEach(lookupData.calibers) { caliber in
+                                    Button {
+                                        selectedCaliber = caliber
+                                    } label: {
+                                        if selectedCaliber?.persistentModelID == caliber.persistentModelID {
+                                            Label(caliber.name, systemImage: "checkmark")
+                                        } else {
+                                            Text(caliber.name)
+                                        }
+                                    }
                                 }
-                            }
+
+                                if isEditing {
+                                    Divider()
+                                    Button {
+                                        showingAddCaliber = true
+                                    } label: {
+                                        Label("Add Caliber", systemImage: "plus.circle")
+                                    }
+                                }
                             } label: {
                                 HStack(spacing: 6) {
                                     Text(selectedCaliber?.name ?? "None")
@@ -193,12 +193,12 @@ struct AddFirearmView: View {
                                 .foregroundStyle(displayConfiguration.barrelLengthInches == nil ? .secondary : .primary)
                         } else {
                             HStack(spacing: 6) {
-                            TextField("", text: $barrelLengthText)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
+                                TextField("", text: $barrelLengthText)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
 
-                            Text("in.")
-                                .foregroundStyle(.secondary)
+                                Text("in.")
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }
@@ -811,7 +811,7 @@ struct AddFirearmView: View {
     }
 
     private func inheritedValueNotice(source: FirearmConfigurationSource) -> some View {
-        Text("Currently inherited from the \(source.displayName). Changes to the firearm's stored value may not be displayed while this part is attached.")
+        Text(viewModel.inheritedValueNotice(source: source))
             .font(.footnote)
             .foregroundStyle(.secondary)
     }
