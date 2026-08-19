@@ -21,6 +21,17 @@ final class AddPartViewModel {
         } ?? "0.00"
     }
 
+    func initialBarrelLengthText(for part: Part?) -> String {
+        part?.barrelLengthInches?.formatted(.number.precision(.fractionLength(0...2))) ?? ""
+    }
+
+    func barrelLength(from text: String) -> Double? {
+        let text = trimmedValue(text)
+        guard !text.isEmpty else { return nil }
+        guard let value = Double(text), value > 0 else { return nil }
+        return value
+    }
+
     func trimmedValue(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -98,11 +109,13 @@ final class AddPartViewModel {
         typeDetail: String?,
         selectedColor: FirearmColor?,
         colorDetail: String?,
-        purchasePriceText: String
+        purchasePriceText: String,
+        barrelLengthText: String = ""
     ) -> Bool {
         guard !trimmedValue(brand).isEmpty else { return false }
         guard !trimmedValue(modelName).isEmpty else { return false }
         guard purchasePriceCents(from: purchasePriceText) != nil else { return false }
+        if !trimmedValue(barrelLengthText).isEmpty && barrelLength(from: barrelLengthText) == nil { return false }
         if selectedType == .other, typeDetail == nil {
             return false
         }
@@ -122,6 +135,8 @@ final class AddPartViewModel {
         purchaseDate: Date,
         purchasePriceCents: Int,
         notes: String?,
+        barrelLengthInches: Double? = nil,
+        caliber: Caliber? = nil,
         firearm: Firearm? = nil,
         canAdd: Bool,
         to context: ModelContext
@@ -140,6 +155,8 @@ final class AddPartViewModel {
             purchaseDate: purchaseDate,
             purchasePriceCents: purchasePriceCents,
             notes: notes,
+            barrelLengthInches: type.supportsFirearmConfiguration ? barrelLengthInches : nil,
+            caliber: type.supportsFirearmConfiguration ? caliber : nil,
             firearm: firearm,
             sortOrder: nextSortOrder(in: context)
         )
@@ -166,6 +183,8 @@ final class AddPartViewModel {
         purchaseDate: Date,
         purchasePriceCents: Int,
         notes: String?,
+        barrelLengthInches: Double? = nil,
+        caliber: Caliber? = nil,
         firearm: Firearm?,
         canSave: Bool,
         in context: ModelContext
@@ -183,6 +202,8 @@ final class AddPartViewModel {
         part.purchaseDate = purchaseDate
         part.purchasePriceCents = purchasePriceCents
         part.notes = notes
+        part.barrelLengthInches = type.supportsFirearmConfiguration ? barrelLengthInches : nil
+        part.caliber = type.supportsFirearmConfiguration ? caliber : nil
         part.firearm = firearm
 
         do {

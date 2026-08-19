@@ -10314,6 +10314,28 @@
         }
       }
     },
+    "Currently inherited from %@. Changes to the firearm's stored value may not be displayed while this part is attached." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualmente se hereda de %@. Es posible que los cambios en el valor guardado del arma de fuego no se muestren mientras esta pieza esté acoplada."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前继承自%@。只要此部件仍处于安装状态，对枪械所存值的更改可能不会显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前繼承自%@。只要此零件仍處於安裝狀態，對槍械所儲存值的變更可能不會顯示。"
+          }
+        }
+      }
+    },
     "Your inventory and managed settings were removed." : {
       "localizations" : {
         "es" : {

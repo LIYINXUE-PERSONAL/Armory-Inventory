@@ -16,6 +16,14 @@ final class PartModelsTests: XCTestCase {
         XCTAssertEqual(PartType.other.displayName, "Other")
     }
 
+    func testPartTypesThatCanProvideFirearmConfiguration() {
+        XCTAssertTrue(PartType.barrel.supportsFirearmConfiguration)
+        XCTAssertTrue(PartType.slide.supportsFirearmConfiguration)
+        XCTAssertTrue(PartType.upperReceiver.supportsFirearmConfiguration)
+        XCTAssertFalse(PartType.trigger.supportsFirearmConfiguration)
+        XCTAssertFalse(PartType.other.supportsFirearmConfiguration)
+    }
+
     func testPartComputedPropertiesPreferCustomDetailsAndFallbacks() {
         let firearm = Firearm(
             brand: "BCM",
