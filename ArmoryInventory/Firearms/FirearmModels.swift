@@ -8,6 +8,31 @@
 import Foundation
 import SwiftData
 
+enum FirearmConfigurationSource: Int, Comparable {
+    case firearm = 0
+    case upperReceiver = 1
+    case slide = 2
+    case barrel = 3
+
+    static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
+
+    var displayName: String {
+        switch self {
+        case .firearm: String(localized: "firearm")
+        case .upperReceiver: String(localized: "upper receiver")
+        case .slide: String(localized: "slide")
+        case .barrel: String(localized: "barrel")
+        }
+    }
+}
+
+struct ResolvedFirearmConfiguration {
+    let caliber: Caliber?
+    let caliberSource: FirearmConfigurationSource
+    let barrelLengthInches: Double?
+    let barrelLengthSource: FirearmConfigurationSource
+}
+
 struct FirearmMagazinePatternReference: Codable, Hashable, Identifiable {
     let id: String
     let kind: MagazinePatternKind
@@ -369,5 +394,47 @@ final class Firearm {
         }
 
         return patterns
+    }
+}
+
+
+extension Firearm {
+    func resolvedConfiguration(parts directParts: [Part]? = nil, kits: [Kit] = []) -> ResolvedFirearmConfiguration {
+        let kitParts = kits
+            .filter { $0.firearm?.persistentModelID == persistentModelID }
+            .flatMap(\.components)
+            .compactMap(\.part)
+        var uniqueParts: [PersistentIdentifier: Part] = [:]
+        for part in (directParts ?? parts) + kitParts {
+            uniqueParts[part.persistentModelID] = part
+        }
+        let candidates = uniqueParts.values.compactMap { part -> (Part, FirearmConfigurationSource)? in
+            let source: FirearmConfigurationSource
+            switch part.partType {
+            case .barrel: source = .barrel
+            case .slide: source = .slide
+            case .upperReceiver: source = .upperReceiver
+            default: return nil
+            }
+            return (part, source)
+        }
+
+        let caliberCandidate = candidates
+            .filter { $0.0.caliber != nil }
+            .max { $0.1 < $1.1 }
+        let lengthCandidate = candidates
+            .filter { $0.0.barrelLengthInches != nil }
+            .max { $0.1 < $1.1 }
+        return ResolvedFirearmConfiguration(
+            caliber: caliberCandidate?.0.caliber ?? caliber,
+            caliberSource: caliberCandidate?.1 ?? .firearm,
+            barrelLengthInches: lengthCandidate?.0.barrelLengthInches ?? barrelLengthInches,
+            barrelLengthSource: lengthCandidate?.1 ?? .firearm
+        )
+    }
+
+    static func barrelLengthText(for inches: Double?) -> String? {
+        guard let inches else { return nil }
+        return "\(inches.formatted(.number.precision(.fractionLength(0...2)))) \(String(localized: "in"))"
     }
 }

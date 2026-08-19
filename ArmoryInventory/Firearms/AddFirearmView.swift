@@ -125,7 +125,11 @@ struct AddFirearmView: View {
                     }
 
                     LabeledContent("Caliber") {
-                        Menu {
+                        if isReadOnly {
+                            Text(displayConfiguration.caliber?.name ?? String(localized: "None"))
+                                .foregroundStyle(displayConfiguration.caliber == nil ? .secondary : .primary)
+                        } else {
+                            Menu {
                             Button {
                                 selectedCaliber = nil
                             } label: {
@@ -156,16 +160,21 @@ struct AddFirearmView: View {
                                     Label("Add Caliber", systemImage: "plus.circle")
                                 }
                             }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Text(selectedCaliber?.name ?? "None")
-                                    .foregroundStyle(selectedCaliber == nil ? .secondary : .primary)
-                                Image(systemName: "chevron.down")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Text(selectedCaliber?.name ?? "None")
+                                        .foregroundStyle(selectedCaliber == nil ? .secondary : .primary)
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                }
                             }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                    }
+
+                    if isReadOnly, displayConfiguration.caliberSource != .firearm {
+                        inheritedValueNotice(source: displayConfiguration.caliberSource)
                     }
 
                     Picker("Action", selection: $selectedAction) {
@@ -179,14 +188,23 @@ struct AddFirearmView: View {
                     }
 
                     LabeledContent("Barrel Length") {
-                        HStack(spacing: 6) {
+                        if isReadOnly {
+                            Text(Firearm.barrelLengthText(for: displayConfiguration.barrelLengthInches) ?? String(localized: "None"))
+                                .foregroundStyle(displayConfiguration.barrelLengthInches == nil ? .secondary : .primary)
+                        } else {
+                            HStack(spacing: 6) {
                             TextField("", text: $barrelLengthText)
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
 
                             Text("in.")
                                 .foregroundStyle(.secondary)
+                            }
                         }
+                    }
+
+                    if isReadOnly, displayConfiguration.barrelLengthSource != .firearm {
+                        inheritedValueNotice(source: displayConfiguration.barrelLengthSource)
                     }
 
                     Picker("Color", selection: $selectedColor) {
@@ -780,6 +798,22 @@ struct AddFirearmView: View {
 
     private var resolvedBarrelLength: Double? {
         viewModel.barrelLength(from: barrelLengthText)
+    }
+
+    private var displayConfiguration: ResolvedFirearmConfiguration {
+        firearm?.resolvedConfiguration(parts: effectiveParts, kits: resolvedKits)
+            ?? ResolvedFirearmConfiguration(
+                caliber: selectedCaliber,
+                caliberSource: .firearm,
+                barrelLengthInches: resolvedBarrelLength,
+                barrelLengthSource: .firearm
+            )
+    }
+
+    private func inheritedValueNotice(source: FirearmConfigurationSource) -> some View {
+        Text("Currently inherited from the \(source.displayName). Changes to the firearm's stored value may not be displayed while this part is attached.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 
     private var resolvedPurchasePriceCents: Int? {

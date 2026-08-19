@@ -58,6 +58,7 @@ final class Part {
     var typeDetail: String?
     var color: FirearmColor.RawValue?
     var colorDetail: String?
+    var barrelLengthInches: Double?
     var purchaseDate: Date
     var purchasePriceCents: Int
     var notes: String?
@@ -65,6 +66,7 @@ final class Part {
     var createdAt: Date
 
     @Relationship var firearm: Firearm?
+    @Relationship var caliber: Caliber?
 
     init(
         id: UUID? = UUID(),
@@ -77,6 +79,8 @@ final class Part {
         purchaseDate: Date = .now,
         purchasePriceCents: Int,
         notes: String? = nil,
+        barrelLengthInches: Double? = nil,
+        caliber: Caliber? = nil,
         firearm: Firearm? = nil,
         sortOrder: Int = 0,
         createdAt: Date = .now
@@ -88,10 +92,12 @@ final class Part {
         self.typeDetail = typeDetail
         self.color = color?.rawValue
         self.colorDetail = colorDetail
+        self.barrelLengthInches = barrelLengthInches
         self.purchaseDate = purchaseDate
         self.purchasePriceCents = purchasePriceCents
         self.notes = notes
         self.firearm = firearm
+        self.caliber = caliber
         self.sortOrder = sortOrder
         self.createdAt = createdAt
     }
@@ -131,5 +137,9 @@ final class Part {
     var purchasePriceText: String {
         let amount = Decimal(purchasePriceCents) / 100
         return amount.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))
+    }
+
+    var supportsFirearmConfiguration: Bool {
+        [.barrel, .slide, .upperReceiver].contains(partType)
     }
 }
