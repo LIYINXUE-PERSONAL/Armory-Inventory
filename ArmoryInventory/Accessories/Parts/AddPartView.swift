@@ -13,6 +13,7 @@ struct AddPartView: View {
     @Environment(\.modelContext) private var context
     @AppStorage(InventorySettingsKeys.accessoriesSalesTaxRate) private var accessoriesTaxRate = 0.0
     @AppStorage(InventorySettingsKeys.showValueInDetails) private var showValueInDetails = true
+    @Query(sort: \Caliber.name) private var calibers: [Caliber]
 
     let part: Part?
     @State private var brand = ""
@@ -24,6 +25,8 @@ struct AddPartView: View {
     @State private var purchaseDate = Date.now
     @State private var purchasePriceText = "0.00"
     @State private var notes = ""
+    @State private var barrelLengthText = ""
+    @State private var selectedCaliber: Caliber?
     @State private var unlinkFirearm = false
     @State private var isEditing = false
 
@@ -41,6 +44,8 @@ struct AddPartView: View {
         _purchaseDate = State(initialValue: part?.purchaseDate ?? .now)
         _purchasePriceText = State(initialValue: viewModel.initialPurchasePriceText(for: part))
         _notes = State(initialValue: part?.notes ?? "")
+        _barrelLengthText = State(initialValue: viewModel.initialBarrelLengthText(for: part))
+        _selectedCaliber = State(initialValue: part?.caliber)
         _unlinkFirearm = State(initialValue: false)
         _isEditing = State(initialValue: part == nil)
     }
@@ -75,6 +80,22 @@ struct AddPartView: View {
                 .disabled(isReadOnly)
 
                 Section("Configuration") {
+                    if selectedType.supportsFirearmConfiguration {
+                        Picker("Caliber", selection: $selectedCaliber) {
+                            Text("None").tag(nil as Caliber?)
+                            ForEach(calibers) { caliber in
+                                Text(caliber.name).tag(Optional(caliber))
+                            }
+                        }
+                        LabeledContent("Barrel Length") {
+                            HStack(spacing: 6) {
+                                TextField("Optional", text: $barrelLengthText)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                Text("in.").foregroundStyle(.secondary)
+                            }
+                        }
+                    }
                     Picker("Color", selection: $selectedColor) {
                         Text("None").tag(nil as FirearmColor?)
                         ForEach(FirearmColor.allCases) { color in
@@ -158,6 +179,10 @@ struct AddPartView: View {
         viewModel.optionalValue(notes)
     }
 
+    private var resolvedBarrelLength: Double? {
+        viewModel.barrelLength(from: barrelLengthText)
+    }
+
     private var linkedFirearm: Firearm? {
         viewModel.linkedFirearm(for: part, unlinkFirearm: unlinkFirearm)
     }
@@ -189,7 +214,8 @@ struct AddPartView: View {
             typeDetail: resolvedTypeDetail,
             selectedColor: selectedColor,
             colorDetail: resolvedColorDetail,
-            purchasePriceText: purchasePriceText
+            purchasePriceText: purchasePriceText,
+            barrelLengthText: barrelLengthText
         )
     }
 
@@ -211,6 +237,8 @@ struct AddPartView: View {
                 purchaseDate: purchaseDate,
                 purchasePriceCents: purchasePriceCents,
                 notes: resolvedNotes,
+                barrelLengthInches: resolvedBarrelLength,
+                caliber: selectedType.supportsFirearmConfiguration ? selectedCaliber : nil,
                 firearm: linkedFirearm,
                 canSave: canAdd,
                 in: context
@@ -226,6 +254,8 @@ struct AddPartView: View {
                 purchaseDate: purchaseDate,
                 purchasePriceCents: purchasePriceCents,
                 notes: resolvedNotes,
+                barrelLengthInches: resolvedBarrelLength,
+                caliber: selectedType.supportsFirearmConfiguration ? selectedCaliber : nil,
                 firearm: nil,
                 canAdd: canAdd,
                 to: context

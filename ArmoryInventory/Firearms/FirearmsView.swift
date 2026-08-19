@@ -48,6 +48,7 @@ struct FirearmsView: View {
                             ForEach(filteredFirearms) { firearm in
                                 FirearmCardView(
                                     firearm: firearm,
+                                    configuration: firearm.resolvedConfiguration(kits: kits),
                                     showsExpandedCards: showsExpandedCards,
                                     showValueInCard: showValueInCard,
                                     effectiveValueCents: viewModel.effectiveValueCents(for: firearm, kits: kits, magazines: magazines),
@@ -55,7 +56,7 @@ struct FirearmsView: View {
                                         selectedFirearm = firearm
                                     },
                                     onSelectCaliber: {
-                                        if let caliber = firearm.caliber {
+                                        if let caliber = firearm.resolvedConfiguration(kits: kits).caliber {
                                             selectedCaliber = caliber
                                         }
                                     }
@@ -330,6 +331,7 @@ private struct TopAnchoredStretchModifier: ViewModifier {
 
 private struct FirearmCardView: View {
     let firearm: Firearm
+    let configuration: ResolvedFirearmConfiguration
     let showsExpandedCards: Bool
     let showValueInCard: Bool
     let effectiveValueCents: Int
@@ -365,7 +367,7 @@ private struct FirearmCardView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             LabeledContent("Action", value: firearm.actionDisplayName)
 
-                            if let barrelLengthText = firearm.barrelLengthText {
+                            if let barrelLengthText = Firearm.barrelLengthText(for: configuration.barrelLengthInches) {
                                 LabeledContent("Barrel", value: barrelLengthText)
                             }
 
@@ -387,10 +389,11 @@ private struct FirearmCardView: View {
             }
             .buttonStyle(.plain)
 
-            AnimatedExpandableSection(isExpanded: showsExpandedCards && firearm.caliber != nil) {
-                if firearm.caliber != nil {
+            AnimatedExpandableSection(isExpanded: showsExpandedCards && configuration.caliber != nil) {
+                if let caliber = configuration.caliber {
                     Button(action: onSelectCaliber) {
-                        LabeledContent("Caliber", value: "\(firearm.caliber?.name ?? "") • \(firearm.roundsText ?? AmmoType.roundsText(for: 0))")
+                        let quantity = caliber.ammoTypes.reduce(0) { $0 + max(0, $1.quantity) }
+                        LabeledContent("Caliber", value: "\(caliber.name) • \(AmmoType.roundsText(for: quantity))")
                     }
                     .buttonStyle(.plain)
                 }
