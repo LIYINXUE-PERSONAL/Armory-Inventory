@@ -31,7 +31,7 @@ result back to a firearm or another part.
 
 In a firearm's read-only details and expanded inventory card, caliber and barrel
 length show the resolved values. When an inherited value appears in details, a
-note identifies its source and warns that editing the firearm value will not
+note identifies the source part by name and warns that editing the firearm value will not
 change the displayed value while that part remains attached.
 
 After the user selects **Edit**, the controls contain the firearm's own stored

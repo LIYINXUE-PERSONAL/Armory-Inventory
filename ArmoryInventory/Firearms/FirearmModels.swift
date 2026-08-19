@@ -16,21 +16,15 @@ enum FirearmConfigurationSource: Int, Comparable {
 
     static func < (lhs: Self, rhs: Self) -> Bool { lhs.rawValue < rhs.rawValue }
 
-    var displayName: String {
-        switch self {
-        case .firearm: String(localized: "firearm")
-        case .upperReceiver: String(localized: "upper receiver")
-        case .slide: String(localized: "slide")
-        case .barrel: String(localized: "barrel")
-        }
-    }
 }
 
 struct ResolvedFirearmConfiguration {
     let caliber: Caliber?
     let caliberSource: FirearmConfigurationSource
+    let caliberSourcePart: Part?
     let barrelLengthInches: Double?
     let barrelLengthSource: FirearmConfigurationSource
+    let barrelLengthSourcePart: Part?
 }
 
 struct FirearmMagazinePatternReference: Codable, Hashable, Identifiable {
@@ -428,8 +422,10 @@ extension Firearm {
         return ResolvedFirearmConfiguration(
             caliber: caliberCandidate?.0.caliber ?? caliber,
             caliberSource: caliberCandidate?.1 ?? .firearm,
+            caliberSourcePart: caliberCandidate?.0,
             barrelLengthInches: lengthCandidate?.0.barrelLengthInches ?? barrelLengthInches,
-            barrelLengthSource: lengthCandidate?.1 ?? .firearm
+            barrelLengthSource: lengthCandidate?.1 ?? .firearm,
+            barrelLengthSourcePart: lengthCandidate?.0
         )
     }
 

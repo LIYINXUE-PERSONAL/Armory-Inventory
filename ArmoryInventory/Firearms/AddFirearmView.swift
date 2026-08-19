@@ -173,8 +173,8 @@ struct AddFirearmView: View {
                         }
                     }
 
-                    if isReadOnly, displayConfiguration.caliberSource != .firearm {
-                        inheritedValueNotice(source: displayConfiguration.caliberSource)
+                    if isReadOnly, let sourcePart = displayConfiguration.caliberSourcePart {
+                        inheritedValueNotice(sourcePart: sourcePart)
                     }
 
                     Picker("Action", selection: $selectedAction) {
@@ -203,8 +203,8 @@ struct AddFirearmView: View {
                         }
                     }
 
-                    if isReadOnly, displayConfiguration.barrelLengthSource != .firearm {
-                        inheritedValueNotice(source: displayConfiguration.barrelLengthSource)
+                    if isReadOnly, let sourcePart = displayConfiguration.barrelLengthSourcePart {
+                        inheritedValueNotice(sourcePart: sourcePart)
                     }
 
                     Picker("Color", selection: $selectedColor) {
@@ -805,13 +805,15 @@ struct AddFirearmView: View {
             ?? ResolvedFirearmConfiguration(
                 caliber: selectedCaliber,
                 caliberSource: .firearm,
+                caliberSourcePart: nil,
                 barrelLengthInches: resolvedBarrelLength,
-                barrelLengthSource: .firearm
+                barrelLengthSource: .firearm,
+                barrelLengthSourcePart: nil
             )
     }
 
-    private func inheritedValueNotice(source: FirearmConfigurationSource) -> some View {
-        Text(viewModel.inheritedValueNotice(source: source))
+    private func inheritedValueNotice(sourcePart: Part) -> some View {
+        Text(viewModel.inheritedValueNotice(sourceName: sourcePart.displayName))
             .font(.footnote)
             .foregroundStyle(.secondary)
     }

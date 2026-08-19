@@ -32,10 +32,10 @@ final class AddFirearmViewModel {
         } ?? ""
     }
 
-    func inheritedValueNotice(source: FirearmConfigurationSource) -> String {
+    func inheritedValueNotice(sourceName: String) -> String {
         String.localizedStringWithFormat(
-            String(localized: "Currently inherited from the %@. Changes to the firearm's stored value may not be displayed while this part is attached."),
-            source.displayName
+            String(localized: "Currently inherited from %@. Changes to the firearm's stored value may not be displayed while this part is attached."),
+            sourceName
         )
     }
 

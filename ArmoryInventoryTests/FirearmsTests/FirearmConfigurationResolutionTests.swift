@@ -32,8 +32,10 @@ final class FirearmConfigurationResolutionTests: XCTestCase {
 
         XCTAssertEqual(result.caliber?.name, ".40 S&W")
         XCTAssertEqual(result.caliberSource, .slide)
+        XCTAssertTrue(result.caliberSourcePart === slide)
         XCTAssertEqual(result.barrelLengthInches, 10.3)
         XCTAssertEqual(result.barrelLengthSource, .barrel)
+        XCTAssertTrue(result.barrelLengthSourcePart === barrel)
         XCTAssertEqual(firearm.caliber?.name, "9mm")
         XCTAssertEqual(firearm.barrelLengthInches, 16)
     }
@@ -57,5 +59,6 @@ final class FirearmConfigurationResolutionTests: XCTestCase {
         XCTAssertEqual(result.caliber?.name, "300 BLK")
         XCTAssertEqual(result.barrelLengthInches, 8)
         XCTAssertEqual(result.caliberSource, .barrel)
+        XCTAssertTrue(result.caliberSourcePart === barrel)
     }
 }

@@ -10314,12 +10314,12 @@
         }
       }
     },
-    "Currently inherited from the %@. Changes to the firearm's stored value may not be displayed while this part is attached." : {
+    "Currently inherited from %@. Changes to the firearm's stored value may not be displayed while this part is attached." : {
       "localizations" : {
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Actualmente se hereda de: %@. Es posible que los cambios en el valor guardado del arma de fuego no se muestren mientras esta pieza esté acoplada."
+            "value" : "Actualmente se hereda de %@. Es posible que los cambios en el valor guardado del arma de fuego no se muestren mientras esta pieza esté acoplada."
           }
         },
         "zh-Hans" : {
@@ -10332,94 +10332,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "目前繼承自%@。只要此零件仍處於安裝狀態，對槍械所儲存值的變更可能不會顯示。"
-          }
-        }
-      }
-    },
-    "barrel" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cañón"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "枪管"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "槍管"
-          }
-        }
-      }
-    },
-    "firearm" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "arma de fuego"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "枪械"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "槍械"
-          }
-        }
-      }
-    },
-    "slide" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "corredera"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套筒"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "套筒"
-          }
-        }
-      }
-    },
-    "upper receiver" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "receptor superior"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上机匣"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "上機匣"
           }
         }
       }
