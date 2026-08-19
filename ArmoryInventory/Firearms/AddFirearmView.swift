@@ -125,47 +125,56 @@ struct AddFirearmView: View {
                     }
 
                     LabeledContent("Caliber") {
-                        Menu {
-                            Button {
-                                selectedCaliber = nil
-                            } label: {
-                                if selectedCaliber == nil {
-                                    Label("None", systemImage: "checkmark")
-                                } else {
-                                    Text("None")
-                                }
-                            }
-
-                            ForEach(lookupData.calibers) { caliber in
+                        if isReadOnly {
+                            Text(displayConfiguration.caliber?.name ?? String(localized: "None"))
+                                .foregroundStyle(displayConfiguration.caliber == nil ? .secondary : .primary)
+                        } else {
+                            Menu {
                                 Button {
-                                    selectedCaliber = caliber
+                                    selectedCaliber = nil
                                 } label: {
-                                    if selectedCaliber?.persistentModelID == caliber.persistentModelID {
-                                        Label(caliber.name, systemImage: "checkmark")
+                                    if selectedCaliber == nil {
+                                        Label("None", systemImage: "checkmark")
                                     } else {
-                                        Text(caliber.name)
+                                        Text("None")
                                     }
                                 }
-                            }
 
-                            if isEditing {
-                                Divider()
-                                Button {
-                                    showingAddCaliber = true
-                                } label: {
-                                    Label("Add Caliber", systemImage: "plus.circle")
+                                ForEach(lookupData.calibers) { caliber in
+                                    Button {
+                                        selectedCaliber = caliber
+                                    } label: {
+                                        if selectedCaliber?.persistentModelID == caliber.persistentModelID {
+                                            Label(caliber.name, systemImage: "checkmark")
+                                        } else {
+                                            Text(caliber.name)
+                                        }
+                                    }
+                                }
+
+                                if isEditing {
+                                    Divider()
+                                    Button {
+                                        showingAddCaliber = true
+                                    } label: {
+                                        Label("Add Caliber", systemImage: "plus.circle")
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Text(selectedCaliber?.name ?? "None")
+                                        .foregroundStyle(selectedCaliber == nil ? .secondary : .primary)
+                                    Image(systemName: "chevron.down")
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
                                 }
                             }
-                        } label: {
-                            HStack(spacing: 6) {
-                                Text(selectedCaliber?.name ?? "None")
-                                    .foregroundStyle(selectedCaliber == nil ? .secondary : .primary)
-                                Image(systemName: "chevron.down")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                    }
+
+                    if isReadOnly, let sourcePart = displayConfiguration.caliberSourcePart {
+                        inheritedValueNotice(sourcePart: sourcePart)
                     }
 
                     Picker("Action", selection: $selectedAction) {
@@ -179,14 +188,23 @@ struct AddFirearmView: View {
                     }
 
                     LabeledContent("Barrel Length") {
-                        HStack(spacing: 6) {
-                            TextField("", text: $barrelLengthText)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
+                        if isReadOnly {
+                            Text(Firearm.barrelLengthText(for: displayConfiguration.barrelLengthInches) ?? String(localized: "None"))
+                                .foregroundStyle(displayConfiguration.barrelLengthInches == nil ? .secondary : .primary)
+                        } else {
+                            HStack(spacing: 6) {
+                                TextField("", text: $barrelLengthText)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
 
-                            Text("in.")
-                                .foregroundStyle(.secondary)
+                                Text("in.")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+                    }
+
+                    if isReadOnly, let sourcePart = displayConfiguration.barrelLengthSourcePart {
+                        inheritedValueNotice(sourcePart: sourcePart)
                     }
 
                     Picker("Color", selection: $selectedColor) {
@@ -780,6 +798,24 @@ struct AddFirearmView: View {
 
     private var resolvedBarrelLength: Double? {
         viewModel.barrelLength(from: barrelLengthText)
+    }
+
+    private var displayConfiguration: ResolvedFirearmConfiguration {
+        firearm?.resolvedConfiguration(parts: effectiveParts, kits: resolvedKits)
+            ?? ResolvedFirearmConfiguration(
+                caliber: selectedCaliber,
+                caliberSource: .firearm,
+                caliberSourcePart: nil,
+                barrelLengthInches: resolvedBarrelLength,
+                barrelLengthSource: .firearm,
+                barrelLengthSourcePart: nil
+            )
+    }
+
+    private func inheritedValueNotice(sourcePart: Part) -> some View {
+        Text(viewModel.inheritedValueNotice(sourceName: sourcePart.displayName))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 
     private var resolvedPurchasePriceCents: Int? {
