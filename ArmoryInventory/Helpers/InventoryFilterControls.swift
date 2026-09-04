@@ -12,7 +12,7 @@ struct InventoryFiltersCard<Content: View>: View {
     @ViewBuilder let content: () -> Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 0) {
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     isExpanded.toggle()
@@ -29,12 +29,9 @@ struct InventoryFiltersCard<Content: View>: View {
             }
             .buttonStyle(.plain)
 
-            if isExpanded {
+            TopAlignedExpandableContent(isExpanded: isExpanded) {
                 content()
-                    .transition(.modifier(
-                        active: TopAnchoredStretchModifier(progress: 0.01),
-                        identity: TopAnchoredStretchModifier(progress: 1)
-                    ))
+                    .padding(.top, 12)
             }
         }
         .padding(16)
@@ -128,13 +125,29 @@ struct AccessoryLinkStatusFiltersCard: View {
     }
 }
 
-private struct TopAnchoredStretchModifier: ViewModifier {
-    let progress: CGFloat
+private struct TopAlignedExpandableContent<Content: View>: View {
+    let isExpanded: Bool
+    @ViewBuilder let content: () -> Content
 
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(x: 1, y: progress, anchor: .top)
-            .opacity(progress)
+    @State private var contentHeight: CGFloat = .zero
+
+    var body: some View {
+        content()
+            .fixedSize(horizontal: false, vertical: true)
+            .background(
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear {
+                            contentHeight = proxy.size.height
+                        }
+                        .onChange(of: proxy.size.height) {
+                            contentHeight = proxy.size.height
+                        }
+                }
+            )
+            .frame(maxHeight: isExpanded ? max(contentHeight, 1) : 0, alignment: .top)
             .clipped()
+            .opacity(isExpanded ? 1 : 0)
+            .accessibilityHidden(!isExpanded)
     }
 }
