@@ -20,6 +20,8 @@ struct AttachmentsView: View {
     @State private var attachments: [Attachment] = []
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
+    @State private var showingFilters = false
+    @State private var selectedStatusFilter: AccessoryLinkStatusFilter = .all
 
     private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
@@ -34,42 +36,62 @@ struct AttachmentsView: View {
                 )
             } else {
                 List {
-                    ForEach(groupedAttachmentTypes, id: \.self) { typeID in
-                        Section(attachmentTypeDisplayName(for: typeID)) {
-                            ForEach(groupedAttachments[typeID] ?? []) { attachment in
-                                Button {
-                                    selectedAttachment = attachment
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(attachment.displayName)
-                                            .font(.headline)
-
-                                        if showValueInCard, attachment.purchasePriceCents > 0 {
-                                            LabeledContent("Value", value: attachment.purchasePriceText)
-                                        }
-
-                                        if let firearm = viewModel.linkedFirearm(for: attachment, kits: kits) {
-                                            LabeledContent("Linked Firearm", value: firearm.displayName)
-                                        }
-
-                                        if let kit = viewModel.linkedKit(for: attachment, kits: kits) {
-                                            LabeledContent("Linked Kit", value: kit.displayName)
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                            }
-                            .onDelete { offsets in
-                                deleteAttachments(at: offsets, in: typeID)
-                            }
-                        }
+                    Section {
+                        AccessoryLinkStatusFiltersCard(
+                            isExpanded: $showingFilters,
+                            selectedStatusFilter: $selectedStatusFilter
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
                     }
 
-                    if showTotalValue {
+                    if filteredAttachments.isEmpty {
                         Section {
-                            LabeledContent("Total Value", value: totalValueText)
+                            ContentUnavailableView(
+                                "No Matching Attachments",
+                                systemImage: "line.3.horizontal.decrease.circle",
+                                description: Text("No attachments match the selected filters.")
+                            )
+                        }
+                        .listRowBackground(Color.clear)
+                    } else {
+                        ForEach(groupedAttachmentTypes, id: \.self) { typeID in
+                            Section(attachmentTypeDisplayName(for: typeID)) {
+                                ForEach(groupedAttachments[typeID] ?? []) { attachment in
+                                    Button {
+                                        selectedAttachment = attachment
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(attachment.displayName)
+                                                .font(.headline)
+
+                                            if showValueInCard, attachment.purchasePriceCents > 0 {
+                                                LabeledContent("Value", value: attachment.purchasePriceText)
+                                            }
+
+                                            if let firearm = viewModel.linkedFirearm(for: attachment, kits: kits) {
+                                                LabeledContent("Linked Firearm", value: firearm.displayName)
+                                            }
+
+                                            if let kit = viewModel.linkedKit(for: attachment, kits: kits) {
+                                                LabeledContent("Linked Kit", value: kit.displayName)
+                                            }
+                                        }
+                                        .padding(.vertical, 6)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .onDelete { offsets in
+                                    deleteAttachments(at: offsets, in: typeID)
+                                }
+                            }
+                        }
+
+                        if showTotalValue {
+                            Section {
+                                LabeledContent("Total Value", value: totalValueText)
+                            }
                         }
                     }
                 }
@@ -121,8 +143,12 @@ struct AttachmentsView: View {
         }
     }
 
+    private var filteredAttachments: [Attachment] {
+        viewModel.filteredAttachments(attachments, selectedStatusFilter: selectedStatusFilter, kits: kits)
+    }
+
     private var groupedAttachments: [String: [Attachment]] {
-        viewModel.groupedAttachments(attachments, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
+        viewModel.groupedAttachments(filteredAttachments, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
     }
 
     private var groupedAttachmentTypes: [String] {
@@ -156,7 +182,7 @@ struct AttachmentsView: View {
     }
 
     private var totalValueText: String {
-        viewModel.totalValueText(for: attachments)
+        viewModel.totalValueText(for: filteredAttachments)
     }
 
     private func attachmentTypeDisplayName(for typeID: String) -> String {

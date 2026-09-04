@@ -16,19 +16,37 @@ struct KitComponentSummary: Identifiable, Hashable {
 }
 
 final class KitsViewModel {
-    func filteredKits(_ kits: [Kit], selectedKind: KitKind?, searchText: String) -> [Kit] {
-        kits.filter { matchesFilters($0, selectedKind: selectedKind, searchText: searchText) }
+    func filteredKits(
+        _ kits: [Kit],
+        selectedKind: KitKind?,
+        selectedStatusFilter: AccessoryLinkStatusFilter,
+        searchText: String
+    ) -> [Kit] {
+        kits.filter {
+            matchesFilters(
+                $0,
+                selectedKind: selectedKind,
+                selectedStatusFilter: selectedStatusFilter,
+                searchText: searchText
+            )
+        }
     }
 
-    func matchesFilters(_ kit: Kit, selectedKind: KitKind?, searchText: String) -> Bool {
+    func matchesFilters(
+        _ kit: Kit,
+        selectedKind: KitKind?,
+        selectedStatusFilter: AccessoryLinkStatusFilter,
+        searchText: String
+    ) -> Bool {
         let matchesKind = selectedKind == nil || kit.kitKind == selectedKind
+        let matchesStatus = matchesStatus(kit.firearm != nil, selectedStatusFilter: selectedStatusFilter)
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let matchesSearch = query.isEmpty ||
             kit.displayName.localizedCaseInsensitiveContains(query) ||
             kit.kitKind.displayName.localizedCaseInsensitiveContains(query) ||
             (kit.firearm?.displayName.localizedCaseInsensitiveContains(query) ?? false) ||
             kit.components.contains { $0.displayName.localizedCaseInsensitiveContains(query) }
-        return matchesKind && matchesSearch
+        return matchesKind && matchesStatus && matchesSearch
     }
 
     func totalValueText(for kits: [Kit]) -> String {
@@ -67,6 +85,7 @@ final class KitsViewModel {
         allKits kits: [Kit],
         filteredKits: [Kit],
         selectedKind: KitKind?,
+        selectedStatusFilter: AccessoryLinkStatusFilter,
         searchText: String,
         source: IndexSet,
         destination: Int
@@ -75,7 +94,12 @@ final class KitsViewModel {
 
         var reorderedFilteredIterator = reorderedFilteredKits.makeIterator()
         return kits.map { kit in
-            guard matchesFilters(kit, selectedKind: selectedKind, searchText: searchText) else {
+            guard matchesFilters(
+                kit,
+                selectedKind: selectedKind,
+                selectedStatusFilter: selectedStatusFilter,
+                searchText: searchText
+            ) else {
                 return kit
             }
 
@@ -93,6 +117,7 @@ final class KitsViewModel {
         allKits kits: [Kit],
         filteredKits: [Kit],
         selectedKind: KitKind?,
+        selectedStatusFilter: AccessoryLinkStatusFilter,
         searchText: String,
         source: IndexSet,
         destination: Int,
@@ -102,6 +127,7 @@ final class KitsViewModel {
             allKits: kits,
             filteredKits: filteredKits,
             selectedKind: selectedKind,
+            selectedStatusFilter: selectedStatusFilter,
             searchText: searchText,
             source: source,
             destination: destination
@@ -122,6 +148,17 @@ final class KitsViewModel {
             .filter { $0.componentCategory == category }
             .map(\.displayName)
             .joined(separator: ", ")
+    }
+
+    private func matchesStatus(_ isLinked: Bool, selectedStatusFilter: AccessoryLinkStatusFilter) -> Bool {
+        switch selectedStatusFilter {
+        case .all:
+            return true
+        case .linked:
+            return isLinked
+        case .unlinked:
+            return !isLinked
+        }
     }
 
     private func movingItems(in kits: [Kit], from source: IndexSet, to destination: Int) -> [Kit] {

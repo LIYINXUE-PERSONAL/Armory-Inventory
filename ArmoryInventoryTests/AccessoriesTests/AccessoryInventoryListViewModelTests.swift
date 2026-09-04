@@ -137,6 +137,78 @@ final class AccessoryInventoryListViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.linkedKit(for: part, kits: [kit])?.displayName, "Lower Kit")
     }
 
+    func testStatusFilteringUsesDirectAndKitDerivedFirearmLinks() {
+        let viewModel = AccessoryInventoryListViewModel()
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 120_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let linkedPart = Part(brand: "BCM", modelName: "BCG", type: .boltCarrierGroup, purchasePriceCents: 18_000, firearm: firearm)
+        let kitLinkedPart = Part(brand: "Radian", modelName: "Raptor", type: .chargingHandle, purchasePriceCents: 9_000)
+        let unlinkedPart = Part(brand: "Aero", modelName: "M4E1", type: .upperReceiver, purchasePriceCents: 12_000)
+        let linkedOptic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000,
+            firearm: firearm
+        )
+        let unlinkedOptic = Optic(
+            brand: "EOTech",
+            modelName: "EXPS3",
+            type: .holographic,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .picatinny,
+            purchasePriceCents: 65_000
+        )
+        let linkedAttachment = Attachment(brand: "SureFire", modelName: "M640", type: .light, purchasePriceCents: 32_000, firearm: firearm)
+        let unlinkedAttachment = Attachment(brand: "BCM", modelName: "KAG", type: .handStop, purchasePriceCents: 2_000)
+        let kit = Kit(name: "Upper Kit", kind: .upperReceiver, status: .linked, firearm: firearm)
+        let component = KitComponent(category: .part, part: kitLinkedPart)
+        component.kit = kit
+        kit.components = [component]
+
+        XCTAssertEqual(
+            viewModel.filteredParts(
+                [linkedPart, kitLinkedPart, unlinkedPart],
+                selectedStatusFilter: .linked,
+                kits: [kit]
+            ).map(\.displayName),
+            ["BCM BCG", "Radian Raptor"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredParts(
+                [linkedPart, kitLinkedPart, unlinkedPart],
+                selectedStatusFilter: .unlinked,
+                kits: [kit]
+            ).map(\.displayName),
+            ["Aero M4E1"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredOptics(
+                [linkedOptic, unlinkedOptic],
+                selectedStatusFilter: .unlinked,
+                kits: []
+            ).map(\.displayName),
+            ["EOTech EXPS3"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredAttachments(
+                [linkedAttachment, unlinkedAttachment],
+                selectedStatusFilter: .linked,
+                kits: []
+            ).map(\.displayName),
+            ["SureFire M640"]
+        )
+    }
+
     @MainActor
     func testDeletionIsBlockedForBuiltKitComponents() throws {
         let container = try makeInMemoryContainer()

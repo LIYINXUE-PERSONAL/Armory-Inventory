@@ -50,9 +50,51 @@ final class KitsViewModelTests: XCTestCase {
         context.insert(opticComponent)
         try context.save()
 
-        XCTAssertEqual(viewModel.filteredKits([upperKit, opticKit], selectedKind: .upperReceiver, searchText: "").map(\.name), ["Range Upper"])
-        XCTAssertEqual(viewModel.filteredKits([upperKit, opticKit], selectedKind: nil, searchText: "aimpoint").map(\.name), ["Dot Package"])
-        XCTAssertEqual(viewModel.filteredKits([upperKit, opticKit], selectedKind: nil, searchText: "ddm4").map(\.name), ["Range Upper"])
+        XCTAssertEqual(
+            viewModel.filteredKits(
+                [upperKit, opticKit],
+                selectedKind: .upperReceiver,
+                selectedStatusFilter: .all,
+                searchText: ""
+            ).map(\.name),
+            ["Range Upper"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredKits(
+                [upperKit, opticKit],
+                selectedKind: nil,
+                selectedStatusFilter: .all,
+                searchText: "aimpoint"
+            ).map(\.name),
+            ["Dot Package"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredKits(
+                [upperKit, opticKit],
+                selectedKind: nil,
+                selectedStatusFilter: .all,
+                searchText: "ddm4"
+            ).map(\.name),
+            ["Range Upper"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredKits(
+                [upperKit, opticKit],
+                selectedKind: nil,
+                selectedStatusFilter: .linked,
+                searchText: ""
+            ).map(\.name),
+            ["Range Upper"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredKits(
+                [upperKit, opticKit],
+                selectedKind: nil,
+                selectedStatusFilter: .unlinked,
+                searchText: ""
+            ).map(\.name),
+            ["Dot Package"]
+        )
         XCTAssertEqual(viewModel.countForKind(.upperReceiver, in: [upperKit, opticKit]), 1)
         XCTAssertEqual(viewModel.allKindsCountText(for: [upperKit, opticKit]), "All Kinds (2)")
         XCTAssertEqual(viewModel.filterCountText(title: "Optics Kit", count: 1), "Optics Kit (1)")
@@ -70,12 +112,18 @@ final class KitsViewModelTests: XCTestCase {
         let middle = Kit(name: "Middle Optic", kind: .optics, sortOrder: 1)
         let last = Kit(name: "Last Upper", kind: .upperReceiver, sortOrder: 2)
         let allKits = [first, middle, last]
-        let filteredKits = viewModel.filteredKits(allKits, selectedKind: .upperReceiver, searchText: "")
+        let filteredKits = viewModel.filteredKits(
+            allKits,
+            selectedKind: .upperReceiver,
+            selectedStatusFilter: .all,
+            searchText: ""
+        )
 
         let reordered = viewModel.reorderedKits(
             allKits: allKits,
             filteredKits: filteredKits,
             selectedKind: .upperReceiver,
+            selectedStatusFilter: .all,
             searchText: "",
             source: IndexSet(integer: 1),
             destination: 0

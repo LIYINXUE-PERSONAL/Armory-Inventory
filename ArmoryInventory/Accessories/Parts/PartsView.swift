@@ -20,6 +20,8 @@ struct PartsView: View {
     @State private var parts: [Part] = []
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
+    @State private var showingFilters = false
+    @State private var selectedStatusFilter: AccessoryLinkStatusFilter = .all
 
     private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
@@ -34,42 +36,62 @@ struct PartsView: View {
                 )
             } else {
                 List {
-                    ForEach(groupedPartTypes, id: \.self) { typeID in
-                        Section(partTypeDisplayName(for: typeID)) {
-                            ForEach(groupedParts[typeID] ?? []) { part in
-                                Button {
-                                    selectedPart = part
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(part.displayName)
-                                            .font(.headline)
-
-                                        if showValueInCard, part.purchasePriceCents > 0 {
-                                            LabeledContent("Value", value: part.purchasePriceText)
-                                        }
-
-                                        if let firearm = viewModel.linkedFirearm(for: part, kits: kits) {
-                                            LabeledContent("Linked Firearm", value: firearm.displayName)
-                                        }
-
-                                        if let kit = viewModel.linkedKit(for: part, kits: kits) {
-                                            LabeledContent("Linked Kit", value: kit.displayName)
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
-                            }
-                            .onDelete { offsets in
-                                deleteParts(at: offsets, in: typeID)
-                            }
-                        }
+                    Section {
+                        AccessoryLinkStatusFiltersCard(
+                            isExpanded: $showingFilters,
+                            selectedStatusFilter: $selectedStatusFilter
+                        )
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
                     }
 
-                    if showTotalValue {
+                    if filteredParts.isEmpty {
                         Section {
-                            LabeledContent("Total Value", value: totalValueText)
+                            ContentUnavailableView(
+                                "No Matching Parts",
+                                systemImage: "line.3.horizontal.decrease.circle",
+                                description: Text("No parts match the selected filters.")
+                            )
+                        }
+                        .listRowBackground(Color.clear)
+                    } else {
+                        ForEach(groupedPartTypes, id: \.self) { typeID in
+                            Section(partTypeDisplayName(for: typeID)) {
+                                ForEach(groupedParts[typeID] ?? []) { part in
+                                    Button {
+                                        selectedPart = part
+                                    } label: {
+                                        VStack(alignment: .leading, spacing: 6) {
+                                            Text(part.displayName)
+                                                .font(.headline)
+
+                                            if showValueInCard, part.purchasePriceCents > 0 {
+                                                LabeledContent("Value", value: part.purchasePriceText)
+                                            }
+
+                                            if let firearm = viewModel.linkedFirearm(for: part, kits: kits) {
+                                                LabeledContent("Linked Firearm", value: firearm.displayName)
+                                            }
+
+                                            if let kit = viewModel.linkedKit(for: part, kits: kits) {
+                                                LabeledContent("Linked Kit", value: kit.displayName)
+                                            }
+                                        }
+                                        .padding(.vertical, 6)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .onDelete { offsets in
+                                    deleteParts(at: offsets, in: typeID)
+                                }
+                            }
+                        }
+
+                        if showTotalValue {
+                            Section {
+                                LabeledContent("Total Value", value: totalValueText)
+                            }
                         }
                     }
                 }
@@ -124,8 +146,12 @@ struct PartsView: View {
         }
     }
 
+    private var filteredParts: [Part] {
+        viewModel.filteredParts(parts, selectedStatusFilter: selectedStatusFilter, kits: kits)
+    }
+
     private var groupedParts: [String: [Part]] {
-        viewModel.groupedParts(parts, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
+        viewModel.groupedParts(filteredParts, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
     }
 
     private var groupedPartTypes: [String] {
@@ -159,7 +185,7 @@ struct PartsView: View {
     }
 
     private var totalValueText: String {
-        viewModel.totalValueText(for: parts)
+        viewModel.totalValueText(for: filteredParts)
     }
 
     private func partTypeDisplayName(for typeID: String) -> String {

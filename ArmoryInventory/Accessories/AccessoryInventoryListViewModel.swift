@@ -15,6 +15,10 @@ final class AccessoryInventoryListViewModel {
         self.eligibilityService = eligibilityService
     }
 
+    func filteredParts(_ parts: [Part], selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Part] {
+        parts.filter { matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter) }
+    }
+
     func groupedParts(_ parts: [Part], sortOrderRaw: String, sortDirectionRaw: String) -> [String: [Part]] {
         Dictionary(grouping: parts, by: \.type).mapValues {
             AccessoryItemSort.sorted(
@@ -33,6 +37,10 @@ final class AccessoryInventoryListViewModel {
         PartType(rawValue: typeID)?.displayName ?? typeID
     }
 
+    func filteredOptics(_ optics: [Optic], selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Optic] {
+        optics.filter { matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter) }
+    }
+
     func groupedOptics(_ optics: [Optic], sortOrderRaw: String, sortDirectionRaw: String) -> [String: [Optic]] {
         Dictionary(grouping: optics, by: \.type).mapValues {
             AccessoryItemSort.sorted(
@@ -49,6 +57,10 @@ final class AccessoryInventoryListViewModel {
 
     func opticTypeDisplayName(for typeID: String) -> String {
         OpticType(rawValue: typeID)?.displayName ?? typeID
+    }
+
+    func filteredAttachments(_ attachments: [Attachment], selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Attachment] {
+        attachments.filter { matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter) }
     }
 
     func groupedAttachments(_ attachments: [Attachment], sortOrderRaw: String, sortDirectionRaw: String) -> [String: [Attachment]] {
@@ -187,6 +199,17 @@ final class AccessoryInventoryListViewModel {
     private func selectedItemSortDirection(sortOrderRaw: String, sortDirectionRaw: String) -> AccessoryItemSortDirection {
         let sortOrder = selectedItemSortOrder(from: sortOrderRaw)
         return AccessoryItemSortDirection(rawValue: sortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: sortOrder)
+    }
+
+    private func matchesStatus(_ isLinked: Bool, selectedStatusFilter: AccessoryLinkStatusFilter) -> Bool {
+        switch selectedStatusFilter {
+        case .all:
+            return true
+        case .linked:
+            return isLinked
+        case .unlinked:
+            return !isLinked
+        }
     }
 
     private func resequence<T: AccessoryInventorySortable>(_ items: [T]) {

@@ -17,6 +17,7 @@ struct KitsView: View {
     @State private var selectedKit: Kit?
     @State private var showingFilters = false
     @State private var selectedKind: KitKind?
+    @State private var selectedStatusFilter: AccessoryLinkStatusFilter = .all
     @State private var searchText = ""
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
@@ -39,31 +40,41 @@ struct KitsView: View {
                     LazyVStack(alignment: .leading, spacing: 16) {
                         filtersCard
 
-                        ForEach(filteredKits) { kit in
-                            Button {
-                                selectedKit = kit
-                            } label: {
-                                KitCardView(
-                                    kit: kit,
-                                    componentSummaries: viewModel.componentSummaries(for: kit),
-                                    showsExpandedCards: showsExpandedCards,
-                                    showValueInCard: showValueInCard
-                                )
-                            }
-                            .buttonStyle(.plain)
-                            .onDrag {
-                                draggedKit = kit
-                                return NSItemProvider(object: kit.displayName as NSString)
-                            }
-                            .onDrop(
-                                of: [UTType.text],
-                                delegate: KitDropDelegate(
-                                    targetKit: kit,
-                                    kits: filteredKits,
-                                    draggedKit: $draggedKit,
-                                    onMove: moveKits
-                                )
+                        if filteredKits.isEmpty {
+                            ContentUnavailableView(
+                                "No Matching Kits",
+                                systemImage: "line.3.horizontal.decrease.circle",
+                                description: Text("No kits match the selected filters.")
                             )
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 32)
+                        } else {
+                            ForEach(filteredKits) { kit in
+                                Button {
+                                    selectedKit = kit
+                                } label: {
+                                    KitCardView(
+                                        kit: kit,
+                                        componentSummaries: viewModel.componentSummaries(for: kit),
+                                        showsExpandedCards: showsExpandedCards,
+                                        showValueInCard: showValueInCard
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .onDrag {
+                                    draggedKit = kit
+                                    return NSItemProvider(object: kit.displayName as NSString)
+                                }
+                                .onDrop(
+                                    of: [UTType.text],
+                                    delegate: KitDropDelegate(
+                                        targetKit: kit,
+                                        kits: filteredKits,
+                                        draggedKit: $draggedKit,
+                                        onMove: moveKits
+                                    )
+                                )
+                            }
                         }
 
                         if showTotalValue {
@@ -130,70 +141,46 @@ struct KitsView: View {
 
     @ViewBuilder
     private var filtersCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showingFilters.toggle()
-                }
-            } label: {
-                HStack {
-                    Text("Filters")
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .rotationEffect(.degrees(showingFilters ? 180 : 0))
-                        .animation(.easeInOut(duration: 0.2), value: showingFilters)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            if showingFilters {
-                filterControls
-                    .transition(.modifier(
-                        active: TopAnchoredStretchModifier(progress: 0.01),
-                        identity: TopAnchoredStretchModifier(progress: 1)
-                    ))
-            }
+        InventoryFiltersCard(isExpanded: $showingFilters) {
+            filterControls
         }
-        .padding(16)
-        .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .animation(.easeInOut(duration: 0.2), value: showingFilters)
     }
 
     private var filterControls: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                filterMenu(
-                    selectionTitle: selectedKind?.displayName ?? String(localized: "All Kinds"),
-                    isActive: selectedKind != nil
-                ) {
-                    Button(allKindsCountText) {
-                        selectedKind = nil
-                    }
-
-                    ForEach(KitKind.allCases) { kind in
-                        Button(viewModel.filterCountText(title: kind.displayName, count: viewModel.countForKind(kind, in: kits))) {
-                            selectedKind = kind
-                        }
-                    }
+        InventoryFilterControls {
+            InventoryFilterMenu(
+                selectionTitle: selectedKind?.displayName ?? String(localized: "All Kinds"),
+                isActive: selectedKind != nil
+            ) {
+                Button(allKindsCountText) {
+                    selectedKind = nil
                 }
 
-                if selectedKind != nil {
-                    Button("Clear Filters") {
-                        selectedKind = nil
+                ForEach(KitKind.allCases) { kind in
+                    Button(viewModel.filterCountText(title: kind.displayName, count: viewModel.countForKind(kind, in: kits))) {
+                        selectedKind = kind
                     }
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Color(.tertiarySystemFill), in: Capsule())
+                }
+            }
+
+            AccessoryLinkStatusFilterMenu(selectedStatusFilter: $selectedStatusFilter)
+
+            if selectedKind != nil || selectedStatusFilter != .all {
+                InventoryClearFiltersButton {
+                    selectedKind = nil
+                    selectedStatusFilter = .all
                 }
             }
         }
     }
 
     private var filteredKits: [Kit] {
-        viewModel.filteredKits(kits, selectedKind: selectedKind, searchText: searchText)
+        viewModel.filteredKits(
+            kits,
+            selectedKind: selectedKind,
+            selectedStatusFilter: selectedStatusFilter,
+            searchText: searchText
+        )
     }
 
     private var totalValueText: String {
@@ -202,29 +189,6 @@ struct KitsView: View {
 
     private var allKindsCountText: String {
         viewModel.allKindsCountText(for: kits)
-    }
-
-    @ViewBuilder
-    private func filterMenu<Content: View>(
-        selectionTitle: String,
-        isActive: Bool,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        Menu {
-            content()
-        } label: {
-            HStack(spacing: 8) {
-                Text(selectionTitle)
-                    .font(.subheadline)
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-            }
-            .foregroundStyle(isActive ? .primary : .secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(isActive ? Color(.tertiarySystemFill) : Color(.secondarySystemFill), in: Capsule())
-        }
-        .buttonStyle(.plain)
     }
 
     private var alertBinding: Binding<Bool> {
@@ -239,6 +203,7 @@ struct KitsView: View {
             allKits: kits,
             filteredKits: filteredKits,
             selectedKind: selectedKind,
+            selectedStatusFilter: selectedStatusFilter,
             searchText: searchText,
             source: source,
             destination: destination,
@@ -257,17 +222,6 @@ struct KitsView: View {
         } catch {
             print("Kits fetch error: \(error)")
         }
-    }
-}
-
-private struct TopAnchoredStretchModifier: ViewModifier {
-    let progress: CGFloat
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(x: 1, y: progress, anchor: .top)
-            .opacity(progress)
-            .clipped()
     }
 }
 
