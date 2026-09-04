@@ -209,6 +209,83 @@ final class AccessoryInventoryListViewModelTests: XCTestCase {
         )
     }
 
+    func testTypeFilteringCanCombineWithStatusFiltering() {
+        let viewModel = AccessoryInventoryListViewModel()
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 120_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let linkedTrigger = Part(brand: "Apex", modelName: "Trigger", type: .trigger, purchasePriceCents: 12_000, firearm: firearm)
+        let unlinkedTrigger = Part(brand: "Geissele", modelName: "SSA", type: .trigger, purchasePriceCents: 24_000)
+        let unlinkedBarrel = Part(brand: "Criterion", modelName: "Core", type: .barrel, purchasePriceCents: 29_000)
+        let redDot = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000
+        )
+        let scope = Optic(
+            brand: "Nightforce",
+            modelName: "ATACR",
+            type: .scope,
+            minMagnification: 1,
+            maxMagnification: 8,
+            footprint: .picatinny,
+            purchasePriceCents: 280_000
+        )
+        let light = Attachment(brand: "SureFire", modelName: "M640", type: .light, purchasePriceCents: 32_000)
+        let grip = Attachment(brand: "BCM", modelName: "Mod 3", type: .grip, purchasePriceCents: 2_000)
+
+        XCTAssertEqual(
+            viewModel.filteredParts(
+                [linkedTrigger, unlinkedTrigger, unlinkedBarrel],
+                selectedType: PartType.trigger.rawValue,
+                selectedStatusFilter: .unlinked,
+                kits: []
+            ).map(\.displayName),
+            ["Geissele SSA"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredOptics(
+                [redDot, scope],
+                selectedType: OpticType.scope.rawValue,
+                selectedStatusFilter: .all,
+                kits: []
+            ).map(\.displayName),
+            ["Nightforce ATACR"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredAttachments(
+                [light, grip],
+                selectedType: AttachmentType.light.rawValue,
+                selectedStatusFilter: .all,
+                kits: []
+            ).map(\.displayName),
+            ["SureFire M640"]
+        )
+    }
+
+    func testFlatAccessorySortingUsesSelectedSortOrder() {
+        let viewModel = AccessoryInventoryListViewModel()
+        let lowerValue = Part(brand: "Aero", modelName: "M4E1", type: .lowerReceiver, purchasePriceCents: 12_000)
+        let higherValue = Part(brand: "Geissele", modelName: "SSA", type: .trigger, purchasePriceCents: 24_000)
+
+        XCTAssertEqual(
+            viewModel.sortedParts(
+                [lowerValue, higherValue],
+                sortOrderRaw: AccessoryItemSortOrder.value.rawValue,
+                sortDirectionRaw: AccessoryItemSortDirection.descending.rawValue
+            ).map(\.displayName),
+            ["Geissele SSA", "Aero M4E1"]
+        )
+    }
+
     @MainActor
     func testDeletionIsBlockedForBuiltKitComponents() throws {
         let container = try makeInMemoryContainer()

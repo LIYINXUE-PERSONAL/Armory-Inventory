@@ -15,8 +15,19 @@ final class AccessoryInventoryListViewModel {
         self.eligibilityService = eligibilityService
     }
 
-    func filteredParts(_ parts: [Part], selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Part] {
-        parts.filter { matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter) }
+    func filteredParts(_ parts: [Part], selectedType: String? = nil, selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Part] {
+        parts.filter {
+            matchesType($0.type, selectedType: selectedType) &&
+                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter)
+        }
+    }
+
+    func sortedParts(_ parts: [Part], sortOrderRaw: String, sortDirectionRaw: String) -> [Part] {
+        AccessoryItemSort.sorted(
+            parts,
+            by: selectedItemSortOrder(from: sortOrderRaw),
+            direction: selectedItemSortDirection(sortOrderRaw: sortOrderRaw, sortDirectionRaw: sortDirectionRaw)
+        )
     }
 
     func groupedParts(_ parts: [Part], sortOrderRaw: String, sortDirectionRaw: String) -> [String: [Part]] {
@@ -37,8 +48,19 @@ final class AccessoryInventoryListViewModel {
         PartType(rawValue: typeID)?.displayName ?? typeID
     }
 
-    func filteredOptics(_ optics: [Optic], selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Optic] {
-        optics.filter { matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter) }
+    func filteredOptics(_ optics: [Optic], selectedType: String? = nil, selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Optic] {
+        optics.filter {
+            matchesType($0.type, selectedType: selectedType) &&
+                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter)
+        }
+    }
+
+    func sortedOptics(_ optics: [Optic], sortOrderRaw: String, sortDirectionRaw: String) -> [Optic] {
+        AccessoryItemSort.sorted(
+            optics,
+            by: selectedItemSortOrder(from: sortOrderRaw),
+            direction: selectedItemSortDirection(sortOrderRaw: sortOrderRaw, sortDirectionRaw: sortDirectionRaw)
+        )
     }
 
     func groupedOptics(_ optics: [Optic], sortOrderRaw: String, sortDirectionRaw: String) -> [String: [Optic]] {
@@ -59,8 +81,19 @@ final class AccessoryInventoryListViewModel {
         OpticType(rawValue: typeID)?.displayName ?? typeID
     }
 
-    func filteredAttachments(_ attachments: [Attachment], selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Attachment] {
-        attachments.filter { matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter) }
+    func filteredAttachments(_ attachments: [Attachment], selectedType: String? = nil, selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Attachment] {
+        attachments.filter {
+            matchesType($0.type, selectedType: selectedType) &&
+                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter)
+        }
+    }
+
+    func sortedAttachments(_ attachments: [Attachment], sortOrderRaw: String, sortDirectionRaw: String) -> [Attachment] {
+        AccessoryItemSort.sorted(
+            attachments,
+            by: selectedItemSortOrder(from: sortOrderRaw),
+            direction: selectedItemSortDirection(sortOrderRaw: sortOrderRaw, sortDirectionRaw: sortDirectionRaw)
+        )
     }
 
     func groupedAttachments(_ attachments: [Attachment], sortOrderRaw: String, sortDirectionRaw: String) -> [String: [Attachment]] {
@@ -210,6 +243,13 @@ final class AccessoryInventoryListViewModel {
         case .unlinked:
             return !isLinked
         }
+    }
+
+    private func matchesType(_ type: String, selectedType: String?) -> Bool {
+        guard let selectedType else {
+            return true
+        }
+        return type == selectedType
     }
 
     private func resequence<T: AccessoryInventorySortable>(_ items: [T]) {
