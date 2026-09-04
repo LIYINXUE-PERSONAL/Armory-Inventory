@@ -271,6 +271,41 @@ final class AccessoryInventoryListViewModelTests: XCTestCase {
         )
     }
 
+    func testMultiSelectTypeAndStatusFiltering() {
+        let viewModel = AccessoryInventoryListViewModel()
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 120_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let linkedTrigger = Part(brand: "Apex", modelName: "Trigger", type: .trigger, purchasePriceCents: 12_000, firearm: firearm)
+        let unlinkedTrigger = Part(brand: "Geissele", modelName: "SSA", type: .trigger, purchasePriceCents: 24_000)
+        let unlinkedBarrel = Part(brand: "Criterion", modelName: "Core", type: .barrel, purchasePriceCents: 29_000)
+        let unlinkedLight = Attachment(brand: "SureFire", modelName: "M640", type: .light, purchasePriceCents: 32_000)
+        let unlinkedGrip = Attachment(brand: "BCM", modelName: "Mod 3", type: .grip, purchasePriceCents: 2_000)
+
+        XCTAssertEqual(
+            viewModel.filteredParts(
+                [linkedTrigger, unlinkedTrigger, unlinkedBarrel],
+                selectedTypes: [PartType.trigger.rawValue, PartType.barrel.rawValue],
+                selectedStatusFilters: [.unlinked],
+                kits: []
+            ).map(\.displayName),
+            ["Geissele SSA", "Criterion Core"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredAttachments(
+                [unlinkedLight, unlinkedGrip],
+                selectedTypes: [AttachmentType.light.rawValue, AttachmentType.grip.rawValue],
+                selectedStatusFilters: [.linked, .unlinked],
+                kits: []
+            ).map(\.displayName),
+            ["SureFire M640", "BCM Mod 3"]
+        )
+    }
+
     func testFlatAccessorySortingUsesSelectedSortOrder() {
         let viewModel = AccessoryInventoryListViewModel()
         let lowerValue = Part(brand: "Aero", modelName: "M4E1", type: .lowerReceiver, purchasePriceCents: 12_000)

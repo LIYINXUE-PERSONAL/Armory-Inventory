@@ -16,8 +16,8 @@ struct KitsView: View {
     @State private var showingAddKit = false
     @State private var selectedKit: Kit?
     @State private var showingFilters = false
-    @State private var selectedKind: KitKind?
-    @State private var selectedStatusFilter: AccessoryLinkStatusFilter = .all
+    @State private var selectedKinds: Set<KitKind> = []
+    @State private var selectedStatusFilters: Set<AccessoryLinkStatusFilter> = []
     @State private var searchText = ""
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
@@ -38,8 +38,6 @@ struct KitsView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
-                        filtersCard
-
                         if filteredKits.isEmpty {
                             ContentUnavailableView(
                                 "No Matching Kits",
@@ -107,6 +105,10 @@ struct KitsView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                InventoryFilterToolbarButton(activeFilterCount: activeFilterCount) {
+                    showingFilters = true
+                }
+
                 Button {
                     withAnimation(.snappy(duration: 0.24, extraBounce: 0)) {
                         showsExpandedCards.toggle()
@@ -126,6 +128,21 @@ struct KitsView: View {
             AddKitView(viewModel: AddKitViewModel())
                 .presentationDetents([.large])
         }
+        .sheet(isPresented: $showingFilters) {
+            InventoryFiltersSheet(hasActiveFilters: hasActiveFilters, clearFilters: clearFilters) {
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Kind"),
+                    options: kindFilterOptions,
+                    selection: $selectedKinds
+                )
+
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Status"),
+                    options: statusFilterOptions,
+                    selection: $selectedStatusFilters
+                )
+            }
+        }
         .sheet(item: $selectedKit) { kit in
             AddKitView(kit: kit, viewModel: AddKitViewModel())
                 .presentationDetents([.large])
@@ -139,46 +156,11 @@ struct KitsView: View {
         }
     }
 
-    @ViewBuilder
-    private var filtersCard: some View {
-        InventoryFiltersCard(isExpanded: $showingFilters) {
-            filterControls
-        }
-    }
-
-    private var filterControls: some View {
-        InventoryFilterControls {
-            InventoryFilterMenu(
-                selectionTitle: selectedKind?.displayName ?? String(localized: "All Kinds"),
-                isActive: selectedKind != nil
-            ) {
-                Button(allKindsCountText) {
-                    selectedKind = nil
-                }
-
-                ForEach(KitKind.allCases) { kind in
-                    Button(viewModel.filterCountText(title: kind.displayName, count: viewModel.countForKind(kind, in: kits))) {
-                        selectedKind = kind
-                    }
-                }
-            }
-
-            AccessoryLinkStatusFilterMenu(selectedStatusFilter: $selectedStatusFilter)
-
-            if selectedKind != nil || selectedStatusFilter != .all {
-                InventoryClearFiltersButton {
-                    selectedKind = nil
-                    selectedStatusFilter = .all
-                }
-            }
-        }
-    }
-
     private var filteredKits: [Kit] {
         viewModel.filteredKits(
             kits,
-            selectedKind: selectedKind,
-            selectedStatusFilter: selectedStatusFilter,
+            selectedKinds: selectedKinds,
+            selectedStatusFilters: selectedStatusFilters,
             searchText: searchText
         )
     }
@@ -187,8 +169,30 @@ struct KitsView: View {
         viewModel.totalValueText(for: filteredKits)
     }
 
-    private var allKindsCountText: String {
-        viewModel.allKindsCountText(for: kits)
+    private var kindFilterOptions: [InventoryFilterOption<KitKind>] {
+        KitKind.allCases.map {
+            InventoryFilterOption(id: $0, title: $0.displayName, count: viewModel.countForKind($0, in: kits))
+        }
+    }
+
+    private var statusFilterOptions: [InventoryFilterOption<AccessoryLinkStatusFilter>] {
+        [
+            InventoryFilterOption(id: .linked, title: AccessoryLinkStatusFilter.linked.displayName, count: kits.count { $0.firearm != nil }),
+            InventoryFilterOption(id: .unlinked, title: AccessoryLinkStatusFilter.unlinked.displayName, count: kits.count { $0.firearm == nil })
+        ]
+    }
+
+    private var activeFilterCount: Int {
+        selectedKinds.count + selectedStatusFilters.count
+    }
+
+    private var hasActiveFilters: Bool {
+        activeFilterCount > 0
+    }
+
+    private func clearFilters() {
+        selectedKinds.removeAll()
+        selectedStatusFilters.removeAll()
     }
 
     private var alertBinding: Binding<Bool> {
@@ -202,8 +206,8 @@ struct KitsView: View {
         let result = viewModel.moveKits(
             allKits: kits,
             filteredKits: filteredKits,
-            selectedKind: selectedKind,
-            selectedStatusFilter: selectedStatusFilter,
+            selectedKinds: selectedKinds,
+            selectedStatusFilters: selectedStatusFilters,
             searchText: searchText,
             source: source,
             destination: destination,

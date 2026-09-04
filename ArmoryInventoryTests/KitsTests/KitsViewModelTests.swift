@@ -105,6 +105,39 @@ final class KitsViewModelTests: XCTestCase {
         )
     }
 
+    func testMultiSelectKindAndStatusFiltering() {
+        let viewModel = KitsViewModel()
+        let firearm = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 100_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let linkedUpper = Kit(name: "Range Upper", kind: .upperReceiver, firearm: firearm)
+        let unlinkedOptic = Kit(name: "Dot Package", kind: .optics)
+        let unlinkedLower = Kit(name: "Lower Build", kind: .lowerReceiver)
+
+        XCTAssertEqual(
+            viewModel.filteredKits(
+                [linkedUpper, unlinkedOptic, unlinkedLower],
+                selectedKinds: [.upperReceiver, .optics],
+                selectedStatusFilters: [.linked, .unlinked],
+                searchText: ""
+            ).map(\.name),
+            ["Range Upper", "Dot Package"]
+        )
+        XCTAssertEqual(
+            viewModel.filteredKits(
+                [linkedUpper, unlinkedOptic, unlinkedLower],
+                selectedKinds: [.upperReceiver, .optics],
+                selectedStatusFilters: [.unlinked],
+                searchText: ""
+            ).map(\.name),
+            ["Dot Package"]
+        )
+    }
+
     @MainActor
     func testReorderOnlyAppliesWithinFilteredKits() {
         let viewModel = KitsViewModel()

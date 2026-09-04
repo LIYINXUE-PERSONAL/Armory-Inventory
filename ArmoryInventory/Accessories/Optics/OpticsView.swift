@@ -21,8 +21,8 @@ struct OpticsView: View {
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
     @State private var showingFilters = false
-    @State private var selectedType: String?
-    @State private var selectedStatusFilter: AccessoryLinkStatusFilter = .all
+    @State private var selectedTypes: Set<String> = []
+    @State private var selectedStatusFilters: Set<AccessoryLinkStatusFilter> = []
 
     private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
@@ -38,13 +38,6 @@ struct OpticsView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
-                        AccessoryLinkStatusFiltersCard(
-                            isExpanded: $showingFilters,
-                            typeOptions: typeFilterOptions,
-                            selectedType: $selectedType,
-                            selectedStatusFilter: $selectedStatusFilter
-                        )
-
                         if filteredOptics.isEmpty {
                             ContentUnavailableView(
                                 "No Matching Optics",
@@ -92,6 +85,10 @@ struct OpticsView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                InventoryFilterToolbarButton(activeFilterCount: activeFilterCount) {
+                    showingFilters = true
+                }
+
                 Button {
                     showingAddOptic = true
                 } label: {
@@ -102,6 +99,21 @@ struct OpticsView: View {
         .sheet(isPresented: $showingAddOptic) {
             AddOpticView(viewModel: AddOpticViewModel())
                 .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showingFilters) {
+            InventoryFiltersSheet(hasActiveFilters: hasActiveFilters, clearFilters: clearFilters) {
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Type"),
+                    options: typeFilterOptions,
+                    selection: $selectedTypes
+                )
+
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Status"),
+                    options: statusFilterOptions,
+                    selection: $selectedStatusFilters
+                )
+            }
         }
         .sheet(item: $selectedOptic) { optic in
             AddOpticView(optic: optic, viewModel: AddOpticViewModel())
@@ -168,15 +180,41 @@ struct OpticsView: View {
 
     private var filteredOptics: [Optic] {
         viewModel.sortedOptics(
-            viewModel.filteredOptics(optics, selectedType: selectedType, selectedStatusFilter: selectedStatusFilter, kits: kits),
+            viewModel.filteredOptics(optics, selectedTypes: selectedTypes, selectedStatusFilters: selectedStatusFilters, kits: kits),
             sortOrderRaw: itemSortOrder,
             sortDirectionRaw: itemSortDirectionRaw
         )
     }
 
-    private var typeFilterOptions: [InventoryTypeFilterOption] {
+    private var typeFilterOptions: [InventoryFilterOption<String>] {
         viewModel.groupedOpticTypes(from: viewModel.groupedOptics(optics, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw))
-            .map { InventoryTypeFilterOption(id: $0, displayName: opticTypeDisplayName(for: $0)) }
+            .map { typeID in
+                InventoryFilterOption(
+                    id: typeID,
+                    title: opticTypeDisplayName(for: typeID),
+                    count: optics.count { $0.type == typeID }
+                )
+            }
+    }
+
+    private var statusFilterOptions: [InventoryFilterOption<AccessoryLinkStatusFilter>] {
+        [
+            InventoryFilterOption(id: .linked, title: AccessoryLinkStatusFilter.linked.displayName, count: optics.count { viewModel.linkedFirearm(for: $0, kits: kits) != nil }),
+            InventoryFilterOption(id: .unlinked, title: AccessoryLinkStatusFilter.unlinked.displayName, count: optics.count { viewModel.linkedFirearm(for: $0, kits: kits) == nil })
+        ]
+    }
+
+    private var activeFilterCount: Int {
+        selectedTypes.count + selectedStatusFilters.count
+    }
+
+    private var hasActiveFilters: Bool {
+        activeFilterCount > 0
+    }
+
+    private func clearFilters() {
+        selectedTypes.removeAll()
+        selectedStatusFilters.removeAll()
     }
 
     private var groupedOptics: [String: [Optic]] {

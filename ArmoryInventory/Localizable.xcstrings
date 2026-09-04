@@ -227,6 +227,34 @@
         }
       }
     },
+    "%@ selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ selected"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ seleccionado(s)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选择 %@ 个"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選擇 %@ 個"
+          }
+        }
+      }
+    },
     "%lld Rounds" : {
       "localizations" : {
         "en" : {
@@ -1278,6 +1306,7 @@
       }
     },
     "All Actions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -1357,6 +1386,7 @@
       }
     },
     "All Calibers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -1436,6 +1466,7 @@
       }
     },
     "All Kinds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -1568,6 +1599,7 @@
       }
     },
     "All Types" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -2638,6 +2670,7 @@
       }
     },
     "Clear Filters" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -9297,6 +9330,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "起始數量"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estado"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態"
           }
         }
       }

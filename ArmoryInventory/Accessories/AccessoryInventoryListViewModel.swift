@@ -16,9 +16,23 @@ final class AccessoryInventoryListViewModel {
     }
 
     func filteredParts(_ parts: [Part], selectedType: String? = nil, selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Part] {
+        filteredParts(
+            parts,
+            selectedTypes: Set(selectedType.map { [$0] } ?? []),
+            selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter],
+            kits: kits
+        )
+    }
+
+    func filteredParts(
+        _ parts: [Part],
+        selectedTypes: Set<String>,
+        selectedStatusFilters: Set<AccessoryLinkStatusFilter>,
+        kits: [Kit]
+    ) -> [Part] {
         parts.filter {
-            matchesType($0.type, selectedType: selectedType) &&
-                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter)
+            matchesType($0.type, selectedTypes: selectedTypes) &&
+                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilters: selectedStatusFilters)
         }
     }
 
@@ -49,9 +63,23 @@ final class AccessoryInventoryListViewModel {
     }
 
     func filteredOptics(_ optics: [Optic], selectedType: String? = nil, selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Optic] {
+        filteredOptics(
+            optics,
+            selectedTypes: Set(selectedType.map { [$0] } ?? []),
+            selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter],
+            kits: kits
+        )
+    }
+
+    func filteredOptics(
+        _ optics: [Optic],
+        selectedTypes: Set<String>,
+        selectedStatusFilters: Set<AccessoryLinkStatusFilter>,
+        kits: [Kit]
+    ) -> [Optic] {
         optics.filter {
-            matchesType($0.type, selectedType: selectedType) &&
-                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter)
+            matchesType($0.type, selectedTypes: selectedTypes) &&
+                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilters: selectedStatusFilters)
         }
     }
 
@@ -82,9 +110,23 @@ final class AccessoryInventoryListViewModel {
     }
 
     func filteredAttachments(_ attachments: [Attachment], selectedType: String? = nil, selectedStatusFilter: AccessoryLinkStatusFilter, kits: [Kit]) -> [Attachment] {
+        filteredAttachments(
+            attachments,
+            selectedTypes: Set(selectedType.map { [$0] } ?? []),
+            selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter],
+            kits: kits
+        )
+    }
+
+    func filteredAttachments(
+        _ attachments: [Attachment],
+        selectedTypes: Set<String>,
+        selectedStatusFilters: Set<AccessoryLinkStatusFilter>,
+        kits: [Kit]
+    ) -> [Attachment] {
         attachments.filter {
-            matchesType($0.type, selectedType: selectedType) &&
-                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilter: selectedStatusFilter)
+            matchesType($0.type, selectedTypes: selectedTypes) &&
+                matchesStatus(linkedFirearm(for: $0, kits: kits) != nil, selectedStatusFilters: selectedStatusFilters)
         }
     }
 
@@ -234,22 +276,16 @@ final class AccessoryInventoryListViewModel {
         return AccessoryItemSortDirection(rawValue: sortDirectionRaw) ?? AccessoryItemSort.preferredDirection(for: sortOrder)
     }
 
-    private func matchesStatus(_ isLinked: Bool, selectedStatusFilter: AccessoryLinkStatusFilter) -> Bool {
-        switch selectedStatusFilter {
-        case .all:
+    private func matchesStatus(_ isLinked: Bool, selectedStatusFilters: Set<AccessoryLinkStatusFilter>) -> Bool {
+        guard !selectedStatusFilters.isEmpty else {
             return true
-        case .linked:
-            return isLinked
-        case .unlinked:
-            return !isLinked
         }
+        return (isLinked && selectedStatusFilters.contains(.linked)) ||
+            (!isLinked && selectedStatusFilters.contains(.unlinked))
     }
 
-    private func matchesType(_ type: String, selectedType: String?) -> Bool {
-        guard let selectedType else {
-            return true
-        }
-        return type == selectedType
+    private func matchesType(_ type: String, selectedTypes: Set<String>) -> Bool {
+        selectedTypes.isEmpty || selectedTypes.contains(type)
     }
 
     private func resequence<T: AccessoryInventorySortable>(_ items: [T]) {

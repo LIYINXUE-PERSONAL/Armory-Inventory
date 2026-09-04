@@ -21,8 +21,8 @@ struct AttachmentsView: View {
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
     @State private var showingFilters = false
-    @State private var selectedType: String?
-    @State private var selectedStatusFilter: AccessoryLinkStatusFilter = .all
+    @State private var selectedTypes: Set<String> = []
+    @State private var selectedStatusFilters: Set<AccessoryLinkStatusFilter> = []
 
     private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
@@ -38,13 +38,6 @@ struct AttachmentsView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
-                        AccessoryLinkStatusFiltersCard(
-                            isExpanded: $showingFilters,
-                            typeOptions: typeFilterOptions,
-                            selectedType: $selectedType,
-                            selectedStatusFilter: $selectedStatusFilter
-                        )
-
                         if filteredAttachments.isEmpty {
                             ContentUnavailableView(
                                 "No Matching Attachments",
@@ -89,6 +82,10 @@ struct AttachmentsView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                InventoryFilterToolbarButton(activeFilterCount: activeFilterCount) {
+                    showingFilters = true
+                }
+
                 Button {
                     showingAddAttachment = true
                 } label: {
@@ -99,6 +96,21 @@ struct AttachmentsView: View {
         .sheet(isPresented: $showingAddAttachment) {
             AddAttachmentView(viewModel: AddAttachmentViewModel())
                 .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showingFilters) {
+            InventoryFiltersSheet(hasActiveFilters: hasActiveFilters, clearFilters: clearFilters) {
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Type"),
+                    options: typeFilterOptions,
+                    selection: $selectedTypes
+                )
+
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Status"),
+                    options: statusFilterOptions,
+                    selection: $selectedStatusFilters
+                )
+            }
         }
         .sheet(item: $selectedAttachment) { attachment in
             AddAttachmentView(attachment: attachment, viewModel: AddAttachmentViewModel())
@@ -148,15 +160,41 @@ struct AttachmentsView: View {
 
     private var filteredAttachments: [Attachment] {
         viewModel.sortedAttachments(
-            viewModel.filteredAttachments(attachments, selectedType: selectedType, selectedStatusFilter: selectedStatusFilter, kits: kits),
+            viewModel.filteredAttachments(attachments, selectedTypes: selectedTypes, selectedStatusFilters: selectedStatusFilters, kits: kits),
             sortOrderRaw: itemSortOrder,
             sortDirectionRaw: itemSortDirectionRaw
         )
     }
 
-    private var typeFilterOptions: [InventoryTypeFilterOption] {
+    private var typeFilterOptions: [InventoryFilterOption<String>] {
         viewModel.groupedAttachmentTypes(from: viewModel.groupedAttachments(attachments, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw))
-            .map { InventoryTypeFilterOption(id: $0, displayName: attachmentTypeDisplayName(for: $0)) }
+            .map { typeID in
+                InventoryFilterOption(
+                    id: typeID,
+                    title: attachmentTypeDisplayName(for: typeID),
+                    count: attachments.count { $0.type == typeID }
+                )
+            }
+    }
+
+    private var statusFilterOptions: [InventoryFilterOption<AccessoryLinkStatusFilter>] {
+        [
+            InventoryFilterOption(id: .linked, title: AccessoryLinkStatusFilter.linked.displayName, count: attachments.count { viewModel.linkedFirearm(for: $0, kits: kits) != nil }),
+            InventoryFilterOption(id: .unlinked, title: AccessoryLinkStatusFilter.unlinked.displayName, count: attachments.count { viewModel.linkedFirearm(for: $0, kits: kits) == nil })
+        ]
+    }
+
+    private var activeFilterCount: Int {
+        selectedTypes.count + selectedStatusFilters.count
+    }
+
+    private var hasActiveFilters: Bool {
+        activeFilterCount > 0
+    }
+
+    private func clearFilters() {
+        selectedTypes.removeAll()
+        selectedStatusFilters.removeAll()
     }
 
     private var groupedAttachments: [String: [Attachment]] {

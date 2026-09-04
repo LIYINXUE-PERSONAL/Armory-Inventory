@@ -21,8 +21,8 @@ struct PartsView: View {
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
     @State private var showingFilters = false
-    @State private var selectedType: String?
-    @State private var selectedStatusFilter: AccessoryLinkStatusFilter = .all
+    @State private var selectedTypes: Set<String> = []
+    @State private var selectedStatusFilters: Set<AccessoryLinkStatusFilter> = []
 
     private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
@@ -38,13 +38,6 @@ struct PartsView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 16) {
-                        AccessoryLinkStatusFiltersCard(
-                            isExpanded: $showingFilters,
-                            typeOptions: typeFilterOptions,
-                            selectedType: $selectedType,
-                            selectedStatusFilter: $selectedStatusFilter
-                        )
-
                         if filteredParts.isEmpty {
                             ContentUnavailableView(
                                 "No Matching Parts",
@@ -92,6 +85,10 @@ struct PartsView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
+                InventoryFilterToolbarButton(activeFilterCount: activeFilterCount) {
+                    showingFilters = true
+                }
+
                 Button {
                     showingAddPart = true
                 } label: {
@@ -102,6 +99,21 @@ struct PartsView: View {
         .sheet(isPresented: $showingAddPart) {
             AddPartView(viewModel: AddPartViewModel())
                 .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showingFilters) {
+            InventoryFiltersSheet(hasActiveFilters: hasActiveFilters, clearFilters: clearFilters) {
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Type"),
+                    options: typeFilterOptions,
+                    selection: $selectedTypes
+                )
+
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Status"),
+                    options: statusFilterOptions,
+                    selection: $selectedStatusFilters
+                )
+            }
         }
         .sheet(item: $selectedPart) { part in
             AddPartView(part: part, viewModel: AddPartViewModel())
@@ -151,15 +163,41 @@ struct PartsView: View {
 
     private var filteredParts: [Part] {
         viewModel.sortedParts(
-            viewModel.filteredParts(parts, selectedType: selectedType, selectedStatusFilter: selectedStatusFilter, kits: kits),
+            viewModel.filteredParts(parts, selectedTypes: selectedTypes, selectedStatusFilters: selectedStatusFilters, kits: kits),
             sortOrderRaw: itemSortOrder,
             sortDirectionRaw: itemSortDirectionRaw
         )
     }
 
-    private var typeFilterOptions: [InventoryTypeFilterOption] {
+    private var typeFilterOptions: [InventoryFilterOption<String>] {
         viewModel.groupedPartTypes(from: viewModel.groupedParts(parts, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw))
-            .map { InventoryTypeFilterOption(id: $0, displayName: partTypeDisplayName(for: $0)) }
+            .map { typeID in
+                InventoryFilterOption(
+                    id: typeID,
+                    title: partTypeDisplayName(for: typeID),
+                    count: parts.count { $0.type == typeID }
+                )
+            }
+    }
+
+    private var statusFilterOptions: [InventoryFilterOption<AccessoryLinkStatusFilter>] {
+        [
+            InventoryFilterOption(id: .linked, title: AccessoryLinkStatusFilter.linked.displayName, count: parts.count { viewModel.linkedFirearm(for: $0, kits: kits) != nil }),
+            InventoryFilterOption(id: .unlinked, title: AccessoryLinkStatusFilter.unlinked.displayName, count: parts.count { viewModel.linkedFirearm(for: $0, kits: kits) == nil })
+        ]
+    }
+
+    private var activeFilterCount: Int {
+        selectedTypes.count + selectedStatusFilters.count
+    }
+
+    private var hasActiveFilters: Bool {
+        activeFilterCount > 0
+    }
+
+    private func clearFilters() {
+        selectedTypes.removeAll()
+        selectedStatusFilters.removeAll()
     }
 
     private var groupedParts: [String: [Part]] {

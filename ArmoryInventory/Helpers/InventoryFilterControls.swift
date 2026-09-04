@@ -7,208 +7,132 @@
 
 import SwiftUI
 
-struct InventoryFiltersCard<Content: View>: View {
-    @Binding var isExpanded: Bool
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    isExpanded.toggle()
-                }
-            } label: {
-                HStack {
-                    Text("Filters")
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                        .animation(.easeInOut(duration: 0.2), value: isExpanded)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            TopAlignedExpandableContent(isExpanded: isExpanded) {
-                content()
-                    .padding(.top, 12)
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .animation(.easeInOut(duration: 0.2), value: isExpanded)
-    }
+struct InventoryFilterOption<ID: Hashable>: Identifiable {
+    let id: ID
+    let title: String
+    let count: Int?
 }
 
-struct InventoryFilterControls<Content: View>: View {
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                content()
-            }
-        }
-    }
-}
-
-struct InventoryFilterMenu<Content: View>: View {
-    let selectionTitle: String
-    let isActive: Bool
-    @ViewBuilder let content: () -> Content
-
-    var body: some View {
-        Menu {
-            content()
-        } label: {
-            HStack(spacing: 8) {
-                Text(selectionTitle)
-                    .font(.subheadline)
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-            }
-            .foregroundStyle(isActive ? .primary : .secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(isActive ? Color(.tertiarySystemFill) : Color(.secondarySystemFill), in: Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-struct InventoryClearFiltersButton: View {
+struct InventoryFilterToolbarButton: View {
+    let activeFilterCount: Int
     let action: () -> Void
 
     var body: some View {
-        Button("Clear Filters", action: action)
-            .font(.subheadline.weight(.semibold))
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(Color(.tertiarySystemFill), in: Capsule())
-    }
-}
+        Button(action: action) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: activeFilterCount > 0 ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                    .font(.title3)
 
-struct AccessoryLinkStatusFilterMenu: View {
-    @Binding var selectedStatusFilter: AccessoryLinkStatusFilter
-
-    var body: some View {
-        InventoryFilterMenu(
-            selectionTitle: selectedStatusFilter == .all ? String(localized: "All Statuses") : selectedStatusFilter.displayName,
-            isActive: selectedStatusFilter != .all
-        ) {
-            ForEach(AccessoryLinkStatusFilter.allCases) { status in
-                Button(status.displayName) {
-                    selectedStatusFilter = status
+                if activeFilterCount > 0 {
+                    Text(activeFilterCount.localizedCountString)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(.blue, in: Capsule())
+                        .offset(x: 10, y: -8)
+                        .accessibilityHidden(true)
                 }
             }
         }
+        .accessibilityLabel("Filters")
     }
 }
 
-struct AccessoryLinkStatusFiltersCard: View {
-    @Binding var isExpanded: Bool
-    var typeOptions: [InventoryTypeFilterOption] = []
-    @Binding var selectedType: String?
-    @Binding var selectedStatusFilter: AccessoryLinkStatusFilter
+struct InventoryFiltersSheet<Content: View>: View {
+    let hasActiveFilters: Bool
+    let clearFilters: () -> Void
+    @ViewBuilder let content: () -> Content
 
-    init(isExpanded: Binding<Bool>, selectedStatusFilter: Binding<AccessoryLinkStatusFilter>) {
-        self._isExpanded = isExpanded
-        self.typeOptions = []
-        self._selectedType = .constant(nil)
-        self._selectedStatusFilter = selectedStatusFilter
-    }
-
-    init(
-        isExpanded: Binding<Bool>,
-        typeOptions: [InventoryTypeFilterOption],
-        selectedType: Binding<String?>,
-        selectedStatusFilter: Binding<AccessoryLinkStatusFilter>
-    ) {
-        self._isExpanded = isExpanded
-        self.typeOptions = typeOptions
-        self._selectedType = selectedType
-        self._selectedStatusFilter = selectedStatusFilter
-    }
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        InventoryFiltersCard(isExpanded: $isExpanded) {
-            InventoryFilterControls {
-                if !typeOptions.isEmpty {
-                    InventoryTypeFilterMenu(options: typeOptions, selectedType: $selectedType)
+        NavigationStack {
+            List {
+                content()
+            }
+            .navigationTitle("Filters")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Clear") {
+                        clearFilters()
+                    }
+                    .disabled(!hasActiveFilters)
                 }
 
-                AccessoryLinkStatusFilterMenu(selectedStatusFilter: $selectedStatusFilter)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+}
 
-                if selectedType != nil || selectedStatusFilter != .all {
-                    InventoryClearFiltersButton {
-                        selectedType = nil
-                        selectedStatusFilter = .all
+struct InventoryMultiSelectFilterSection<ID: Hashable>: View {
+    let title: String
+    let options: [InventoryFilterOption<ID>]
+    @Binding var selection: Set<ID>
+
+    var body: some View {
+        Section {
+            ForEach(options) { option in
+                Button {
+                    toggle(option.id)
+                } label: {
+                    HStack {
+                        Text(option.title)
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        if let count = option.count {
+                            Text(count.localizedCountString)
+                                .foregroundStyle(.secondary)
+                                .monospacedDigit()
+                        }
+
+                        if selection.contains(option.id) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.blue)
+                                .imageScale(.large)
+                        } else {
+                            Image(systemName: "circle")
+                                .foregroundStyle(.tertiary)
+                                .imageScale(.large)
+                        }
                     }
                 }
             }
-        }
-    }
-}
-
-struct InventoryTypeFilterOption: Identifiable, Hashable {
-    let id: String
-    let displayName: String
-}
-
-struct InventoryTypeFilterMenu: View {
-    let options: [InventoryTypeFilterOption]
-    @Binding var selectedType: String?
-
-    private var selectedTitle: String {
-        guard let selectedType,
-              let option = options.first(where: { $0.id == selectedType }) else {
-            return String(localized: "All Types")
-        }
-        return option.displayName
-    }
-
-    var body: some View {
-        InventoryFilterMenu(
-            selectionTitle: selectedTitle,
-            isActive: selectedType != nil
-        ) {
-            Button("All Types") {
-                selectedType = nil
-            }
-
-            ForEach(options) { option in
-                Button(option.displayName) {
-                    selectedType = option.id
+        } header: {
+            HStack {
+                Text(title)
+                Spacer()
+                if !selection.isEmpty {
+                    Text(selectedCountText)
+                        .textCase(nil)
                 }
             }
         }
     }
-}
 
-private struct TopAlignedExpandableContent<Content: View>: View {
-    let isExpanded: Bool
-    @ViewBuilder let content: () -> Content
+    private var selectedCountText: String {
+        String.localizedStringWithFormat(
+            String(localized: "%@ selected"),
+            selection.count.localizedCountString
+        )
+    }
 
-    @State private var contentHeight: CGFloat = .zero
-
-    var body: some View {
-        content()
-            .fixedSize(horizontal: false, vertical: true)
-            .background(
-                GeometryReader { proxy in
-                    Color.clear
-                        .onAppear {
-                            contentHeight = proxy.size.height
-                        }
-                        .onChange(of: proxy.size.height) {
-                            contentHeight = proxy.size.height
-                        }
-                }
-            )
-            .frame(height: isExpanded ? max(contentHeight, 1) : 0, alignment: .top)
-            .clipped()
-            .opacity(isExpanded ? 1 : 0)
-            .accessibilityHidden(!isExpanded)
+    private func toggle(_ optionID: ID) {
+        if selection.contains(optionID) {
+            selection.remove(optionID)
+        } else {
+            selection.insert(optionID)
+        }
     }
 }
