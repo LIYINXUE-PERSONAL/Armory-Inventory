@@ -19,29 +19,25 @@ final class KitsViewModel {
     func filteredKits(
         _ kits: [Kit],
         selectedKind: KitKind?,
-        selectedStatusFilter: AccessoryLinkStatusFilter,
-        searchText: String
+        selectedStatusFilter: AccessoryLinkStatusFilter
     ) -> [Kit] {
         filteredKits(
             kits,
             selectedKinds: Set(selectedKind.map { [$0] } ?? []),
-            selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter],
-            searchText: searchText
+            selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter]
         )
     }
 
     func filteredKits(
         _ kits: [Kit],
         selectedKinds: Set<KitKind>,
-        selectedStatusFilters: Set<AccessoryLinkStatusFilter>,
-        searchText: String
+        selectedStatusFilters: Set<AccessoryLinkStatusFilter>
     ) -> [Kit] {
         kits.filter {
             matchesFilters(
                 $0,
                 selectedKinds: selectedKinds,
-                selectedStatusFilters: selectedStatusFilters,
-                searchText: searchText
+                selectedStatusFilters: selectedStatusFilters
             )
         }
     }
@@ -49,32 +45,23 @@ final class KitsViewModel {
     func matchesFilters(
         _ kit: Kit,
         selectedKind: KitKind?,
-        selectedStatusFilter: AccessoryLinkStatusFilter,
-        searchText: String
+        selectedStatusFilter: AccessoryLinkStatusFilter
     ) -> Bool {
         matchesFilters(
             kit,
             selectedKinds: Set(selectedKind.map { [$0] } ?? []),
-            selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter],
-            searchText: searchText
+            selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter]
         )
     }
 
     func matchesFilters(
         _ kit: Kit,
         selectedKinds: Set<KitKind>,
-        selectedStatusFilters: Set<AccessoryLinkStatusFilter>,
-        searchText: String
+        selectedStatusFilters: Set<AccessoryLinkStatusFilter>
     ) -> Bool {
         let matchesKind = selectedKinds.isEmpty || selectedKinds.contains(kit.kitKind)
         let matchesStatus = matchesStatus(kit.firearm != nil, selectedStatusFilters: selectedStatusFilters)
-        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        let matchesSearch = query.isEmpty ||
-            kit.displayName.localizedCaseInsensitiveContains(query) ||
-            kit.kitKind.displayName.localizedCaseInsensitiveContains(query) ||
-            (kit.firearm?.displayName.localizedCaseInsensitiveContains(query) ?? false) ||
-            kit.components.contains { $0.displayName.localizedCaseInsensitiveContains(query) }
-        return matchesKind && matchesStatus && matchesSearch
+        return matchesKind && matchesStatus
     }
 
     func totalValueText(for kits: [Kit]) -> String {
@@ -114,7 +101,6 @@ final class KitsViewModel {
         filteredKits: [Kit],
         selectedKind: KitKind?,
         selectedStatusFilter: AccessoryLinkStatusFilter,
-        searchText: String,
         source: IndexSet,
         destination: Int
     ) -> [Kit] {
@@ -123,7 +109,6 @@ final class KitsViewModel {
             filteredKits: filteredKits,
             selectedKinds: Set(selectedKind.map { [$0] } ?? []),
             selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter],
-            searchText: searchText,
             source: source,
             destination: destination
         )
@@ -134,7 +119,6 @@ final class KitsViewModel {
         filteredKits: [Kit],
         selectedKinds: Set<KitKind>,
         selectedStatusFilters: Set<AccessoryLinkStatusFilter>,
-        searchText: String,
         source: IndexSet,
         destination: Int
     ) -> [Kit] {
@@ -145,8 +129,7 @@ final class KitsViewModel {
             guard matchesFilters(
                 kit,
                 selectedKinds: selectedKinds,
-                selectedStatusFilters: selectedStatusFilters,
-                searchText: searchText
+                selectedStatusFilters: selectedStatusFilters
             ) else {
                 return kit
             }
@@ -166,7 +149,6 @@ final class KitsViewModel {
         filteredKits: [Kit],
         selectedKind: KitKind?,
         selectedStatusFilter: AccessoryLinkStatusFilter,
-        searchText: String,
         source: IndexSet,
         destination: Int,
         in context: ModelContext
@@ -176,7 +158,6 @@ final class KitsViewModel {
             filteredKits: filteredKits,
             selectedKinds: Set(selectedKind.map { [$0] } ?? []),
             selectedStatusFilters: selectedStatusFilter == .all ? [] : [selectedStatusFilter],
-            searchText: searchText,
             source: source,
             destination: destination,
             in: context
@@ -188,7 +169,6 @@ final class KitsViewModel {
         filteredKits: [Kit],
         selectedKinds: Set<KitKind>,
         selectedStatusFilters: Set<AccessoryLinkStatusFilter>,
-        searchText: String,
         source: IndexSet,
         destination: Int,
         in context: ModelContext
@@ -198,7 +178,6 @@ final class KitsViewModel {
             filteredKits: filteredKits,
             selectedKinds: selectedKinds,
             selectedStatusFilters: selectedStatusFilters,
-            searchText: searchText,
             source: source,
             destination: destination
         )

@@ -18,7 +18,6 @@ struct KitsView: View {
     @State private var showingFilters = false
     @State private var selectedKinds: Set<KitKind> = []
     @State private var selectedStatusFilters: Set<AccessoryLinkStatusFilter> = []
-    @State private var searchText = ""
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
     @State private var showsExpandedCards = false
@@ -83,7 +82,6 @@ struct KitsView: View {
                     }
                     .padding()
                 }
-                .searchable(text: $searchText)
             }
         }
         .navigationTitle("Kits")
@@ -160,8 +158,7 @@ struct KitsView: View {
         viewModel.filteredKits(
             kits,
             selectedKinds: selectedKinds,
-            selectedStatusFilters: selectedStatusFilters,
-            searchText: searchText
+            selectedStatusFilters: selectedStatusFilters
         )
     }
 
@@ -208,7 +205,6 @@ struct KitsView: View {
             filteredKits: filteredKits,
             selectedKinds: selectedKinds,
             selectedStatusFilters: selectedStatusFilters,
-            searchText: searchText,
             source: source,
             destination: destination,
             in: context

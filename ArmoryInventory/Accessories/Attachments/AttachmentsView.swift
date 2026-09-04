@@ -63,7 +63,6 @@ struct AttachmentsView: View {
             }
         }
         .navigationTitle("Attachments")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             reloadAttachments()
         }

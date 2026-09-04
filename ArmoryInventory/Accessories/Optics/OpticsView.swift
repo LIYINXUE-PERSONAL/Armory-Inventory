@@ -63,7 +63,6 @@ struct OpticsView: View {
             }
         }
         .navigationTitle("Optics")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             reloadOptics()
         }

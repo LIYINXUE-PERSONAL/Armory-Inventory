@@ -54,8 +54,7 @@ final class KitsViewModelTests: XCTestCase {
             viewModel.filteredKits(
                 [upperKit, opticKit],
                 selectedKind: .upperReceiver,
-                selectedStatusFilter: .all,
-                searchText: ""
+                selectedStatusFilter: .all
             ).map(\.name),
             ["Range Upper"]
         )
@@ -63,17 +62,7 @@ final class KitsViewModelTests: XCTestCase {
             viewModel.filteredKits(
                 [upperKit, opticKit],
                 selectedKind: nil,
-                selectedStatusFilter: .all,
-                searchText: "aimpoint"
-            ).map(\.name),
-            ["Dot Package"]
-        )
-        XCTAssertEqual(
-            viewModel.filteredKits(
-                [upperKit, opticKit],
-                selectedKind: nil,
-                selectedStatusFilter: .all,
-                searchText: "ddm4"
+                selectedStatusFilter: .linked
             ).map(\.name),
             ["Range Upper"]
         )
@@ -81,17 +70,7 @@ final class KitsViewModelTests: XCTestCase {
             viewModel.filteredKits(
                 [upperKit, opticKit],
                 selectedKind: nil,
-                selectedStatusFilter: .linked,
-                searchText: ""
-            ).map(\.name),
-            ["Range Upper"]
-        )
-        XCTAssertEqual(
-            viewModel.filteredKits(
-                [upperKit, opticKit],
-                selectedKind: nil,
-                selectedStatusFilter: .unlinked,
-                searchText: ""
+                selectedStatusFilter: .unlinked
             ).map(\.name),
             ["Dot Package"]
         )
@@ -122,8 +101,7 @@ final class KitsViewModelTests: XCTestCase {
             viewModel.filteredKits(
                 [linkedUpper, unlinkedOptic, unlinkedLower],
                 selectedKinds: [.upperReceiver, .optics],
-                selectedStatusFilters: [.linked, .unlinked],
-                searchText: ""
+                selectedStatusFilters: [.linked, .unlinked]
             ).map(\.name),
             ["Range Upper", "Dot Package"]
         )
@@ -131,8 +109,7 @@ final class KitsViewModelTests: XCTestCase {
             viewModel.filteredKits(
                 [linkedUpper, unlinkedOptic, unlinkedLower],
                 selectedKinds: [.upperReceiver, .optics],
-                selectedStatusFilters: [.unlinked],
-                searchText: ""
+                selectedStatusFilters: [.unlinked]
             ).map(\.name),
             ["Dot Package"]
         )
@@ -148,8 +125,7 @@ final class KitsViewModelTests: XCTestCase {
         let filteredKits = viewModel.filteredKits(
             allKits,
             selectedKind: .upperReceiver,
-            selectedStatusFilter: .all,
-            searchText: ""
+            selectedStatusFilter: .all
         )
 
         let reordered = viewModel.reorderedKits(
@@ -157,7 +133,6 @@ final class KitsViewModelTests: XCTestCase {
             filteredKits: filteredKits,
             selectedKind: .upperReceiver,
             selectedStatusFilter: .all,
-            searchText: "",
             source: IndexSet(integer: 1),
             destination: 0
         )

@@ -29,60 +29,39 @@ struct MagazinesView: View {
                     description: Text("Add your first magazine to track capacity, supported calibers, and linked firearms.")
                 )
             } else {
-                List {
-                    ForEach(groupedMagazines) { group in
-                        Section {
-                            ForEach(group.magazines) { magazine in
-                                Button {
-                                    selectedMagazine = magazine
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(magazine.displayName)
-                                            .font(.headline)
-
-                                        HStack {
-                                            Text(magazine.caliberDisplayText)
-                                            Text("•")
-                                            Text(magazine.countCapacityText)
-                                        }
-                                        .font(.subheadline)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 16) {
+                        ForEach(groupedMagazines) { group in
+                            VStack(alignment: .leading, spacing: 10) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(group.displayName)
+                                        .font(.headline)
+                                    Text(group.summaryText)
+                                        .font(.caption)
                                         .foregroundStyle(.secondary)
-
-                                        if showValueInCard, magazine.purchasePriceCents > 0 {
-                                            LabeledContent("Value", value: magazine.purchasePriceText)
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                    .contentShape(Rectangle())
+                                    Text(group.linkedFirearmsText)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .buttonStyle(.plain)
-                            }
-                            .onDelete { offsets in
-                                deleteMagazines(in: group.magazines, at: offsets)
-                            }
-                        } header: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(group.displayName)
-                                Text(group.summaryText)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(group.linkedFirearmsText)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
+                                .padding(.horizontal, 4)
 
-                    if showTotalValue {
-                        Section {
+                                ForEach(group.magazines) { magazine in
+                                    magazineRow(magazine)
+                                }
+                            }
+                        }
+
+                        if showTotalValue {
                             LabeledContent("Total Value", value: totalValueText)
+                                .padding(16)
+                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
+                    .padding()
                 }
             }
         }
         .navigationTitle("Magazines")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             reloadMagazines()
         }
@@ -101,8 +80,6 @@ struct MagazinesView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                EditButton()
-
                 Button {
                     showingAddMagazine = true
                 } label: {
@@ -120,10 +97,41 @@ struct MagazinesView: View {
         }
     }
 
-    private func deleteMagazines(in group: [Magazine], at offsets: IndexSet) {
-        for index in offsets {
-            context.delete(group[index])
+    private func magazineRow(_ magazine: Magazine) -> some View {
+        Button {
+            selectedMagazine = magazine
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(magazine.displayName)
+                    .font(.headline)
+
+                HStack {
+                    Text(magazine.caliberDisplayText)
+                    Text("•")
+                    Text(magazine.countCapacityText)
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+                if showValueInCard, magazine.purchasePriceCents > 0 {
+                    LabeledContent("Value", value: magazine.purchasePriceText)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                deleteMagazine(magazine)
+            }
+        }
+    }
+
+    private func deleteMagazine(_ magazine: Magazine) {
+        context.delete(magazine)
         resequenceMagazines()
 
         do {

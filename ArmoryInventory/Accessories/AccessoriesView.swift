@@ -18,26 +18,37 @@ struct AccessoriesView: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Accessory Types")
+                            .font(.headline)
+
+                        Text("Track the major components you swap between firearms.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+
                     ForEach(viewModel.topLevelCategories) { category in
                         NavigationLink {
                             destination(for: category)
                         } label: {
                             AccessoryCategoryRow(category: category)
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .contentShape(Rectangle())
                         }
+                        .buttonStyle(.plain)
                     }
-                } header: {
-                    Text("Accessory Types")
-                } footer: {
-                    Text("Track the major components you swap between firearms.")
-                }
 
-                if showTotalValue {
-                    Section {
+                    if showTotalValue {
                         LabeledContent("Total Value", value: totalValueText)
+                            .padding(16)
+                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     }
                 }
+                .padding()
             }
             .navigationTitle("Accessories")
         }
@@ -84,7 +95,6 @@ private struct AccessoryCategoryRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.vertical, 4)
     }
 }
 

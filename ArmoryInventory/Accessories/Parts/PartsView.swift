@@ -63,7 +63,6 @@ struct PartsView: View {
             }
         }
         .navigationTitle("Parts")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             reloadParts()
         }

@@ -1,0 +1,9 @@
+{
+  "id" : "59de5f10-122b-42e4-8012-4c98c0273f47",
+  "targets" : [
+    {
+      "id" : "152DF7A8-E7D1-48C2-95D7-0B4272D24853",
+      "name" : "ArmoryInventory"
+    }
+  ]
+}
