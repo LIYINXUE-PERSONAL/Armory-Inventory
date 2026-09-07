@@ -20,6 +20,9 @@ struct PartsView: View {
     @State private var parts: [Part] = []
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
+    @State private var showingFilters = false
+    @State private var selectedTypes: Set<String> = []
+    @State private var selectedStatusFilters: Set<AccessoryLinkStatusFilter> = []
 
     private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
@@ -33,50 +36,33 @@ struct PartsView: View {
                     description: Text("Add your first part to track barrels, triggers, receivers, recoil systems, and other swap-ready components.")
                 )
             } else {
-                List {
-                    ForEach(groupedPartTypes, id: \.self) { typeID in
-                        Section(partTypeDisplayName(for: typeID)) {
-                            ForEach(groupedParts[typeID] ?? []) { part in
-                                Button {
-                                    selectedPart = part
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(part.displayName)
-                                            .font(.headline)
-
-                                        if showValueInCard, part.purchasePriceCents > 0 {
-                                            LabeledContent("Value", value: part.purchasePriceText)
-                                        }
-
-                                        if let firearm = viewModel.linkedFirearm(for: part, kits: kits) {
-                                            LabeledContent("Linked Firearm", value: firearm.displayName)
-                                        }
-
-                                        if let kit = viewModel.linkedKit(for: part, kits: kits) {
-                                            LabeledContent("Linked Kit", value: kit.displayName)
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 16) {
+                        if filteredParts.isEmpty {
+                            ContentUnavailableView(
+                                "No Matching Parts",
+                                systemImage: "line.3.horizontal.decrease.circle",
+                                description: Text("No parts match the selected filters.")
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 32)
+                        } else {
+                            ForEach(filteredParts) { part in
+                                partRow(part)
                             }
-                            .onDelete { offsets in
-                                deleteParts(at: offsets, in: typeID)
+
+                            if showTotalValue {
+                                LabeledContent("Total Value", value: totalValueText)
+                                    .padding(16)
+                                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
                         }
                     }
-
-                    if showTotalValue {
-                        Section {
-                            LabeledContent("Total Value", value: totalValueText)
-                        }
-                    }
+                    .padding()
                 }
             }
         }
         .navigationTitle("Parts")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             reloadParts()
         }
@@ -98,7 +84,9 @@ struct PartsView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                EditButton()
+                InventoryFilterToolbarButton(activeFilterCount: activeFilterCount) {
+                    showingFilters = true
+                }
 
                 Button {
                     showingAddPart = true
@@ -110,6 +98,21 @@ struct PartsView: View {
         .sheet(isPresented: $showingAddPart) {
             AddPartView(viewModel: AddPartViewModel())
                 .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showingFilters) {
+            InventoryFiltersSheet(hasActiveFilters: hasActiveFilters, clearFilters: clearFilters) {
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Type"),
+                    options: typeFilterOptions,
+                    selection: $selectedTypes
+                )
+
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Status"),
+                    options: statusFilterOptions,
+                    selection: $selectedStatusFilters
+                )
+            }
         }
         .sheet(item: $selectedPart) { part in
             AddPartView(part: part, viewModel: AddPartViewModel())
@@ -124,12 +127,80 @@ struct PartsView: View {
         }
     }
 
-    private var groupedParts: [String: [Part]] {
-        viewModel.groupedParts(parts, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
+    private func partRow(_ part: Part) -> some View {
+        Button {
+            selectedPart = part
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(part.displayName)
+                    .font(.headline)
+
+                if showValueInCard, part.purchasePriceCents > 0 {
+                    LabeledContent("Value", value: part.purchasePriceText)
+                }
+
+                if let firearm = viewModel.linkedFirearm(for: part, kits: kits) {
+                    LabeledContent("Linked Firearm", value: firearm.displayName)
+                }
+
+                if let kit = viewModel.linkedKit(for: part, kits: kits) {
+                    LabeledContent("Linked Kit", value: kit.displayName)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                deletePart(part)
+            }
+        }
     }
 
-    private var groupedPartTypes: [String] {
-        viewModel.groupedPartTypes(from: groupedParts)
+    private var filteredParts: [Part] {
+        viewModel.sortedParts(
+            viewModel.filteredParts(parts, selectedTypes: selectedTypes, selectedStatusFilters: selectedStatusFilters, kits: kits),
+            sortOrderRaw: itemSortOrder,
+            sortDirectionRaw: itemSortDirectionRaw
+        )
+    }
+
+    private var typeFilterOptions: [InventoryFilterOption<String>] {
+        viewModel.groupedPartTypes(from: viewModel.groupedParts(parts, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw))
+            .map { typeID in
+                InventoryFilterOption(
+                    id: typeID,
+                    title: partTypeDisplayName(for: typeID),
+                    count: parts.count { $0.type == typeID }
+                )
+            }
+    }
+
+    private var statusFilterOptions: [InventoryFilterOption<AccessoryLinkStatusFilter>] {
+        [
+            InventoryFilterOption(id: .linked, title: AccessoryLinkStatusFilter.linked.displayName, count: parts.count { viewModel.linkedFirearm(for: $0, kits: kits) != nil }),
+            InventoryFilterOption(id: .unlinked, title: AccessoryLinkStatusFilter.unlinked.displayName, count: parts.count { viewModel.linkedFirearm(for: $0, kits: kits) == nil })
+        ]
+    }
+
+    private var activeFilterCount: Int {
+        selectedTypes.count + selectedStatusFilters.count
+    }
+
+    private var hasActiveFilters: Bool {
+        activeFilterCount > 0
+    }
+
+    private func clearFilters() {
+        selectedTypes.removeAll()
+        selectedStatusFilters.removeAll()
+    }
+
+    private var groupedParts: [String: [Part]] {
+        viewModel.groupedParts(filteredParts, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
     }
 
     private func deleteParts(at offsets: IndexSet, in type: String) {
@@ -149,6 +220,13 @@ struct PartsView: View {
         }
     }
 
+    private func deletePart(_ part: Part) {
+        guard let index = groupedParts[part.type]?.firstIndex(where: { $0.persistentModelID == part.persistentModelID }) else {
+            return
+        }
+        deleteParts(at: IndexSet(integer: index), in: part.type)
+    }
+
     private func reloadParts() {
         do {
             parts = try inventoryListService.fetchParts(in: context)
@@ -159,7 +237,7 @@ struct PartsView: View {
     }
 
     private var totalValueText: String {
-        viewModel.totalValueText(for: parts)
+        viewModel.totalValueText(for: filteredParts)
     }
 
     private func partTypeDisplayName(for typeID: String) -> String {

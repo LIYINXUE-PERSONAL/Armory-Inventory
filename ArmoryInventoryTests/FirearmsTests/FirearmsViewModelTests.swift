@@ -233,6 +233,54 @@ final class FirearmsViewModelTests: XCTestCase {
         )
     }
 
+    func testMultiSelectTypeActionAndCaliberFiltering() {
+        let viewModel = FirearmsViewModel()
+        let rifleCaliber = Caliber(name: "5.56 NATO")
+        let pistolCaliber = Caliber(name: "9mm")
+        let shotgunCaliber = Caliber(name: "12 Gauge")
+        let rifle = Firearm(
+            brand: "Daniel Defense",
+            modelName: "DDM4",
+            purchasePriceCents: 100_000,
+            type: .rifle,
+            action: .semiAuto,
+            caliber: rifleCaliber
+        )
+        let pistol = Firearm(
+            brand: "Glock",
+            modelName: "19",
+            purchasePriceCents: 50_000,
+            type: .pistol,
+            action: .semiAuto,
+            caliber: pistolCaliber
+        )
+        let shotgun = Firearm(
+            brand: "Mossberg",
+            modelName: "590",
+            purchasePriceCents: 40_000,
+            type: .shotgun,
+            action: .pump,
+            caliber: shotgunCaliber
+        )
+
+        XCTAssertEqual(
+            viewModel.filteredFirearms(
+                [rifle, pistol, shotgun],
+                kits: [],
+                magazines: [],
+                selectedTypeFilters: [.rifle, .pistol],
+                selectedActionFilters: [.semiAuto],
+                selectedCaliberFilters: [
+                    rifleCaliber.persistentModelID,
+                    pistolCaliber.persistentModelID
+                ],
+                sortOrder: .manual,
+                sortDirection: .ascending
+            ).map(\.displayName),
+            ["Daniel Defense DDM4", "Glock 19"]
+        )
+    }
+
     @MainActor
     func testReorderOnlyAppliesWithinFilteredManualList() throws {
         let container = try makeInMemoryContainer()

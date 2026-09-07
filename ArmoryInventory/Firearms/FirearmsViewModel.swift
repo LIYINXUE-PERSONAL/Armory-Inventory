@@ -38,12 +38,34 @@ final class FirearmsViewModel {
         sortOrder: FirearmSortOrder,
         sortDirection: FirearmSortDirection
     ) -> [Firearm] {
+        filteredFirearms(
+            firearms,
+            kits: kits,
+            magazines: magazines,
+            selectedTypeFilters: Set(selectedTypeFilter.map { [$0] } ?? []),
+            selectedActionFilters: Set(selectedActionFilter.map { [$0] } ?? []),
+            selectedCaliberFilters: Set(selectedCaliberFilter.map { [$0.persistentModelID] } ?? []),
+            sortOrder: sortOrder,
+            sortDirection: sortDirection
+        )
+    }
+
+    func filteredFirearms(
+        _ firearms: [Firearm],
+        kits: [Kit],
+        magazines: [Magazine],
+        selectedTypeFilters: Set<FirearmType>,
+        selectedActionFilters: Set<FirearmAction>,
+        selectedCaliberFilters: Set<PersistentIdentifier>,
+        sortOrder: FirearmSortOrder,
+        sortDirection: FirearmSortDirection
+    ) -> [Firearm] {
         let filtered = firearms.filter {
             matchesFilters(
                 $0,
-                selectedTypeFilter: selectedTypeFilter,
-                selectedActionFilter: selectedActionFilter,
-                selectedCaliberFilter: selectedCaliberFilter
+                selectedTypeFilters: selectedTypeFilters,
+                selectedActionFilters: selectedActionFilters,
+                selectedCaliberFilters: selectedCaliberFilters
             )
         }
 
@@ -110,9 +132,23 @@ final class FirearmsViewModel {
         selectedActionFilter: FirearmAction?,
         selectedCaliberFilter: Caliber?
     ) -> Bool {
-        let matchesType = selectedTypeFilter == nil || firearm.firearmType == selectedTypeFilter
-        let matchesAction = selectedActionFilter == nil || firearm.firearmAction == selectedActionFilter
-        let matchesCaliber = selectedCaliberFilter == nil || firearm.caliber?.persistentModelID == selectedCaliberFilter?.persistentModelID
+        matchesFilters(
+            firearm,
+            selectedTypeFilters: Set(selectedTypeFilter.map { [$0] } ?? []),
+            selectedActionFilters: Set(selectedActionFilter.map { [$0] } ?? []),
+            selectedCaliberFilters: Set(selectedCaliberFilter.map { [$0.persistentModelID] } ?? [])
+        )
+    }
+
+    func matchesFilters(
+        _ firearm: Firearm,
+        selectedTypeFilters: Set<FirearmType>,
+        selectedActionFilters: Set<FirearmAction>,
+        selectedCaliberFilters: Set<PersistentIdentifier>
+    ) -> Bool {
+        let matchesType = selectedTypeFilters.isEmpty || selectedTypeFilters.contains(firearm.firearmType)
+        let matchesAction = selectedActionFilters.isEmpty || selectedActionFilters.contains(firearm.firearmAction)
+        let matchesCaliber = selectedCaliberFilters.isEmpty || (firearm.caliber.map { selectedCaliberFilters.contains($0.persistentModelID) } ?? false)
         return matchesType && matchesAction && matchesCaliber
     }
 
@@ -203,6 +239,30 @@ final class FirearmsViewModel {
         destination: Int,
         in context: ModelContext
     ) -> KitValidationResult {
+        moveFirearms(
+            allFirearms: firearms,
+            filteredFirearms: filteredFirearms,
+            selectedTypeFilters: Set(selectedTypeFilter.map { [$0] } ?? []),
+            selectedActionFilters: Set(selectedActionFilter.map { [$0] } ?? []),
+            selectedCaliberFilters: Set(selectedCaliberFilter.map { [$0.persistentModelID] } ?? []),
+            sortOrder: sortOrder,
+            source: source,
+            destination: destination,
+            in: context
+        )
+    }
+
+    func moveFirearms(
+        allFirearms firearms: [Firearm],
+        filteredFirearms: [Firearm],
+        selectedTypeFilters: Set<FirearmType>,
+        selectedActionFilters: Set<FirearmAction>,
+        selectedCaliberFilters: Set<PersistentIdentifier>,
+        sortOrder: FirearmSortOrder,
+        source: IndexSet,
+        destination: Int,
+        in context: ModelContext
+    ) -> KitValidationResult {
         guard sortOrder == .manual else {
             return .valid
         }
@@ -210,9 +270,9 @@ final class FirearmsViewModel {
         let reorderedFirearms = reorderedFirearms(
             allFirearms: firearms,
             filteredFirearms: filteredFirearms,
-            selectedTypeFilter: selectedTypeFilter,
-            selectedActionFilter: selectedActionFilter,
-            selectedCaliberFilter: selectedCaliberFilter,
+            selectedTypeFilters: selectedTypeFilters,
+            selectedActionFilters: selectedActionFilters,
+            selectedCaliberFilters: selectedCaliberFilters,
             source: source,
             destination: destination
         )
@@ -236,15 +296,35 @@ final class FirearmsViewModel {
         source: IndexSet,
         destination: Int
     ) -> [Firearm] {
+        reorderedFirearms(
+            allFirearms: firearms,
+            filteredFirearms: filteredFirearms,
+            selectedTypeFilters: Set(selectedTypeFilter.map { [$0] } ?? []),
+            selectedActionFilters: Set(selectedActionFilter.map { [$0] } ?? []),
+            selectedCaliberFilters: Set(selectedCaliberFilter.map { [$0.persistentModelID] } ?? []),
+            source: source,
+            destination: destination
+        )
+    }
+
+    func reorderedFirearms(
+        allFirearms firearms: [Firearm],
+        filteredFirearms: [Firearm],
+        selectedTypeFilters: Set<FirearmType>,
+        selectedActionFilters: Set<FirearmAction>,
+        selectedCaliberFilters: Set<PersistentIdentifier>,
+        source: IndexSet,
+        destination: Int
+    ) -> [Firearm] {
         let reorderedFilteredFirearms = movingItems(in: filteredFirearms, from: source, to: destination)
 
         var reorderedFilteredIterator = reorderedFilteredFirearms.makeIterator()
         return firearms.map { firearm in
             guard matchesFilters(
                 firearm,
-                selectedTypeFilter: selectedTypeFilter,
-                selectedActionFilter: selectedActionFilter,
-                selectedCaliberFilter: selectedCaliberFilter
+                selectedTypeFilters: selectedTypeFilters,
+                selectedActionFilters: selectedActionFilters,
+                selectedCaliberFilters: selectedCaliberFilters
             ) else {
                 return firearm
             }

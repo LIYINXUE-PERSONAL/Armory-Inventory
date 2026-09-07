@@ -20,6 +20,9 @@ struct OpticsView: View {
     @State private var optics: [Optic] = []
     @State private var kits: [Kit] = []
     @State private var alertMessage: String?
+    @State private var showingFilters = false
+    @State private var selectedTypes: Set<String> = []
+    @State private var selectedStatusFilters: Set<AccessoryLinkStatusFilter> = []
 
     private let viewModel = AccessoryInventoryListViewModel()
     private let inventoryListService: InventoryListServicing = AppServices.shared.resolve(InventoryListServicing.self)
@@ -33,67 +36,33 @@ struct OpticsView: View {
                     description: Text("Add your first optic to start tracking mounts, magnification, and purchase cost.")
                 )
             } else {
-                List {
-                    ForEach(groupedOpticTypes, id: \.self) { typeID in
-                        Section(opticTypeDisplayName(for: typeID)) {
-                            ForEach(groupedOptics[typeID] ?? []) { optic in
-                                Button {
-                                    selectedOptic = optic
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        HStack(alignment: .firstTextBaseline) {
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(optic.displayName)
-                                                    .font(.headline)
-                                                Text(optic.magnificationText)
-                                                    .font(.subheadline)
-                                                    .foregroundStyle(.secondary)
-                                            }
-                                        }
-
-                                        LabeledContent("Footprint", value: optic.footprintDisplayName)
-
-                                        if let tubeSizeText = optic.tubeSizeText {
-                                            LabeledContent("Tube", value: tubeSizeText)
-                                        }
-
-                                        if let focalPlane = optic.opticFocalPlane {
-                                            LabeledContent("Focal Plane", value: focalPlane.displayName)
-                                        }
-
-                                        if showValueInCard, optic.purchasePriceCents > 0 {
-                                            LabeledContent("Value", value: optic.purchasePriceText)
-                                        }
-
-                                        if let firearm = viewModel.linkedFirearm(for: optic, kits: kits) {
-                                            LabeledContent("Linked Firearm", value: firearm.displayName)
-                                        }
-
-                                        if let kit = viewModel.linkedKit(for: optic, kits: kits) {
-                                            LabeledContent("Linked Kit", value: kit.displayName)
-                                        }
-                                    }
-                                    .padding(.vertical, 6)
-                                    .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.plain)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 16) {
+                        if filteredOptics.isEmpty {
+                            ContentUnavailableView(
+                                "No Matching Optics",
+                                systemImage: "line.3.horizontal.decrease.circle",
+                                description: Text("No optics match the selected filters.")
+                            )
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 32)
+                        } else {
+                            ForEach(filteredOptics) { optic in
+                                opticRow(optic)
                             }
-                            .onDelete { offsets in
-                                deleteOptics(at: offsets, in: typeID)
+
+                            if showTotalValue {
+                                LabeledContent("Total Value", value: totalValueText)
+                                    .padding(16)
+                                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
                         }
                     }
-
-                    if showTotalValue {
-                        Section {
-                            LabeledContent("Total Value", value: totalValueText)
-                        }
-                    }
+                    .padding()
                 }
             }
         }
         .navigationTitle("Optics")
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             reloadOptics()
         }
@@ -115,7 +84,9 @@ struct OpticsView: View {
         }
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
-                EditButton()
+                InventoryFilterToolbarButton(activeFilterCount: activeFilterCount) {
+                    showingFilters = true
+                }
 
                 Button {
                     showingAddOptic = true
@@ -127,6 +98,21 @@ struct OpticsView: View {
         .sheet(isPresented: $showingAddOptic) {
             AddOpticView(viewModel: AddOpticViewModel())
                 .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showingFilters) {
+            InventoryFiltersSheet(hasActiveFilters: hasActiveFilters, clearFilters: clearFilters) {
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Type"),
+                    options: typeFilterOptions,
+                    selection: $selectedTypes
+                )
+
+                InventoryMultiSelectFilterSection(
+                    title: String(localized: "Status"),
+                    options: statusFilterOptions,
+                    selection: $selectedStatusFilters
+                )
+            }
         }
         .sheet(item: $selectedOptic) { optic in
             AddOpticView(optic: optic, viewModel: AddOpticViewModel())
@@ -141,12 +127,97 @@ struct OpticsView: View {
         }
     }
 
-    private var groupedOptics: [String: [Optic]] {
-        viewModel.groupedOptics(optics, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
+    private func opticRow(_ optic: Optic) -> some View {
+        Button {
+            selectedOptic = optic
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(optic.displayName)
+                            .font(.headline)
+                        Text(optic.magnificationText)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                LabeledContent("Footprint", value: optic.footprintDisplayName)
+
+                if let tubeSizeText = optic.tubeSizeText {
+                    LabeledContent("Tube", value: tubeSizeText)
+                }
+
+                if let focalPlane = optic.opticFocalPlane {
+                    LabeledContent("Focal Plane", value: focalPlane.displayName)
+                }
+
+                if showValueInCard, optic.purchasePriceCents > 0 {
+                    LabeledContent("Value", value: optic.purchasePriceText)
+                }
+
+                if let firearm = viewModel.linkedFirearm(for: optic, kits: kits) {
+                    LabeledContent("Linked Firearm", value: firearm.displayName)
+                }
+
+                if let kit = viewModel.linkedKit(for: optic, kits: kits) {
+                    LabeledContent("Linked Kit", value: kit.displayName)
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                deleteOptic(optic)
+            }
+        }
     }
 
-    private var groupedOpticTypes: [String] {
-        viewModel.groupedOpticTypes(from: groupedOptics)
+    private var filteredOptics: [Optic] {
+        viewModel.sortedOptics(
+            viewModel.filteredOptics(optics, selectedTypes: selectedTypes, selectedStatusFilters: selectedStatusFilters, kits: kits),
+            sortOrderRaw: itemSortOrder,
+            sortDirectionRaw: itemSortDirectionRaw
+        )
+    }
+
+    private var typeFilterOptions: [InventoryFilterOption<String>] {
+        viewModel.groupedOpticTypes(from: viewModel.groupedOptics(optics, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw))
+            .map { typeID in
+                InventoryFilterOption(
+                    id: typeID,
+                    title: opticTypeDisplayName(for: typeID),
+                    count: optics.count { $0.type == typeID }
+                )
+            }
+    }
+
+    private var statusFilterOptions: [InventoryFilterOption<AccessoryLinkStatusFilter>] {
+        [
+            InventoryFilterOption(id: .linked, title: AccessoryLinkStatusFilter.linked.displayName, count: optics.count { viewModel.linkedFirearm(for: $0, kits: kits) != nil }),
+            InventoryFilterOption(id: .unlinked, title: AccessoryLinkStatusFilter.unlinked.displayName, count: optics.count { viewModel.linkedFirearm(for: $0, kits: kits) == nil })
+        ]
+    }
+
+    private var activeFilterCount: Int {
+        selectedTypes.count + selectedStatusFilters.count
+    }
+
+    private var hasActiveFilters: Bool {
+        activeFilterCount > 0
+    }
+
+    private func clearFilters() {
+        selectedTypes.removeAll()
+        selectedStatusFilters.removeAll()
+    }
+
+    private var groupedOptics: [String: [Optic]] {
+        viewModel.groupedOptics(filteredOptics, sortOrderRaw: itemSortOrder, sortDirectionRaw: itemSortDirectionRaw)
     }
 
     private func deleteOptics(at offsets: IndexSet, in type: String) {
@@ -166,6 +237,13 @@ struct OpticsView: View {
         }
     }
 
+    private func deleteOptic(_ optic: Optic) {
+        guard let index = groupedOptics[optic.type]?.firstIndex(where: { $0.persistentModelID == optic.persistentModelID }) else {
+            return
+        }
+        deleteOptics(at: IndexSet(integer: index), in: optic.type)
+    }
+
     private func reloadOptics() {
         do {
             optics = try inventoryListService.fetchOptics(in: context)
@@ -176,7 +254,7 @@ struct OpticsView: View {
     }
 
     private var totalValueText: String {
-        viewModel.totalValueText(for: optics)
+        viewModel.totalValueText(for: filteredOptics)
     }
 
     private func opticTypeDisplayName(for typeID: String) -> String {

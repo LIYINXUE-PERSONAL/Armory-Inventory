@@ -227,6 +227,34 @@
         }
       }
     },
+    "%@ selected" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ selected"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ seleccionado(s)"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选择 %@ 个"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選擇 %@ 個"
+          }
+        }
+      }
+    },
     "%lld Rounds" : {
       "localizations" : {
         "en" : {
@@ -1278,6 +1306,7 @@
       }
     },
     "All Actions" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -1357,6 +1386,7 @@
       }
     },
     "All Calibers" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -1436,6 +1466,7 @@
       }
     },
     "All Kinds" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -1545,7 +1576,30 @@
         }
       }
     },
+    "All Statuses" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los estados"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有状态"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有狀態"
+          }
+        }
+      }
+    },
     "All Types" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -2616,6 +2670,7 @@
       }
     },
     "Clear Filters" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -3050,6 +3105,28 @@
         }
       }
     },
+    "Currently inherited from %@. Changes to the firearm's stored value may not be displayed while this part is attached." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualmente se hereda de %@. Es posible que los cambios en el valor guardado del arma de fuego no se muestren mientras esta pieza esté acoplada."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "当前继承自%@。只要此部件仍处于安装状态，对枪械所存值的更改可能不会显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "目前繼承自%@。只要此零件仍處於安裝狀態，對槍械所儲存值的變更可能不會顯示。"
+          }
+        }
+      }
+    },
     "Custom" : {
       "localizations" : {
         "es" : {
@@ -3468,28 +3545,6 @@
         }
       }
     },
-    "Discard Kit" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Descartar kit"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "丢弃套件"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "丟棄套件"
-          }
-        }
-      }
-    },
     "Disassemble or edit the built/linked kit using %@ before deleting it." : {
       "localizations" : {
         "es" : {
@@ -3508,6 +3563,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除前，請先拆解或編輯正在使用 %@ 的已建立/已連結套件。"
+          }
+        }
+      }
+    },
+    "Discard Kit" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Descartar kit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "丢弃套件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "丟棄套件"
           }
         }
       }
@@ -6484,6 +6561,28 @@
         }
       }
     },
+    "No attachments match the selected filters." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay accesorios que coincidan con los filtros seleccionados."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有附件符合所选筛选条件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有附件符合所選篩選條件。"
+          }
+        }
+      }
+    },
     "No attachments selected." : {
       "localizations" : {
         "es" : {
@@ -6660,6 +6759,28 @@
         }
       }
     },
+    "No kits match the selected filters." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay kits que coincidan con los filtros seleccionados."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有套件符合所选筛选条件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有套件符合所選篩選條件。"
+          }
+        }
+      }
+    },
     "No Kits Yet" : {
       "localizations" : {
         "es" : {
@@ -6770,6 +6891,94 @@
         }
       }
     },
+    "No Matching Attachments" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay accesorios coincidentes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有匹配的附件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有相符的附件"
+          }
+        }
+      }
+    },
+    "No Matching Kits" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay kits coincidentes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有匹配的套件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有相符的套件"
+          }
+        }
+      }
+    },
+    "No Matching Optics" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay ópticas coincidentes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有匹配的瞄具"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有相符的瞄具"
+          }
+        }
+      }
+    },
+    "No Matching Parts" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay piezas coincidentes"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有匹配的零件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有相符的零件"
+          }
+        }
+      }
+    },
     "No Optics Available" : {
       "localizations" : {
         "es" : {
@@ -6810,6 +7019,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未連結任何瞄具。"
+          }
+        }
+      }
+    },
+    "No optics match the selected filters." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay ópticas que coincidan con los filtros seleccionados."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有瞄具符合所选筛选条件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有瞄具符合所選篩選條件。"
           }
         }
       }
@@ -6898,6 +7129,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "未連結任何零件。"
+          }
+        }
+      }
+    },
+    "No parts match the selected filters." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay piezas que coincidan con los filtros seleccionados."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有零件符合所选筛选条件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有零件符合所選篩選條件。"
           }
         }
       }
@@ -8729,28 +8982,6 @@
         }
       }
     },
-    "Size" : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tamaño"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尺寸"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "尺寸"
-          }
-        }
-      }
-    },
     "Show Total Value" : {
       "localizations" : {
         "es" : {
@@ -8857,6 +9088,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "單發"
+          }
+        }
+      }
+    },
+    "Size" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamaño"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尺寸"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尺寸"
           }
         }
       }
@@ -9077,6 +9330,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "起始數量"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estado"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "状态"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "狀態"
           }
         }
       }
@@ -10310,28 +10585,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "備份檔已成功建立。"
-          }
-        }
-      }
-    },
-    "Currently inherited from %@. Changes to the firearm's stored value may not be displayed while this part is attached." : {
-      "localizations" : {
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Actualmente se hereda de %@. Es posible que los cambios en el valor guardado del arma de fuego no se muestren mientras esta pieza esté acoplada."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前继承自%@。只要此部件仍处于安装状态，对枪械所存值的更改可能不会显示。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前繼承自%@。只要此零件仍處於安裝狀態，對槍械所儲存值的變更可能不會顯示。"
           }
         }
       }

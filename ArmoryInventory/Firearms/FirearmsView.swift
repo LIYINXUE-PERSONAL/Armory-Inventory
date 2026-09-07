@@ -19,9 +19,9 @@ struct FirearmsView: View {
     @State private var selectedFirearm: Firearm?
     @State private var selectedCaliber: Caliber?
     @State private var showingFilters = false
-    @State private var selectedTypeFilter: FirearmType?
-    @State private var selectedActionFilter: FirearmAction?
-    @State private var selectedCaliberFilter: Caliber?
+    @State private var selectedTypeFilters: Set<FirearmType> = []
+    @State private var selectedActionFilters: Set<FirearmAction> = []
+    @State private var selectedCaliberFilters: Set<PersistentIdentifier> = []
     @State private var firearms: [Firearm] = []
     @State private var kits: [Kit] = []
     @State private var magazines: [Magazine] = []
@@ -43,8 +43,6 @@ struct FirearmsView: View {
                 } else {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 16) {
-                            filtersCard
-
                             ForEach(filteredFirearms) { firearm in
                                 FirearmCardView(
                                     firearm: firearm,
@@ -108,6 +106,10 @@ struct FirearmsView: View {
             }
             .toolbar {
                 ToolbarItemGroup(placement: .topBarTrailing) {
+                    InventoryFilterToolbarButton(activeFilterCount: activeFilterCount) {
+                        showingFilters = true
+                    }
+
                     Button {
                         withAnimation(.snappy(duration: 0.24, extraBounce: 0)) {
                             showsExpandedCards.toggle()
@@ -127,6 +129,27 @@ struct FirearmsView: View {
                 AddFirearmView(viewModel: AddFirearmViewModel())
                     .presentationDetents([.large])
             }
+            .sheet(isPresented: $showingFilters) {
+                InventoryFiltersSheet(hasActiveFilters: hasActiveFilters, clearFilters: clearFilters) {
+                    InventoryMultiSelectFilterSection(
+                        title: String(localized: "Type"),
+                        options: typeFilterOptions,
+                        selection: $selectedTypeFilters
+                    )
+
+                    InventoryMultiSelectFilterSection(
+                        title: String(localized: "Action"),
+                        options: actionFilterOptions,
+                        selection: $selectedActionFilters
+                    )
+
+                    InventoryMultiSelectFilterSection(
+                        title: String(localized: "Caliber"),
+                        options: caliberFilterOptions,
+                        selection: $selectedCaliberFilters
+                    )
+                }
+            }
             .sheet(item: $selectedFirearm) { firearm in
                 AddFirearmView(firearm: firearm, viewModel: AddFirearmViewModel())
                     .presentationDetents([.large])
@@ -137,105 +160,14 @@ struct FirearmsView: View {
         }
     }
 
-    @ViewBuilder
-    private var filtersCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showingFilters.toggle()
-                }
-            } label: {
-                HStack {
-                    Text("Filters")
-                    Spacer()
-                    Image(systemName: "chevron.down")
-                        .rotationEffect(.degrees(showingFilters ? 180 : 0))
-                        .animation(.easeInOut(duration: 0.2), value: showingFilters)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            if showingFilters {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        filterMenu(
-                            selectionTitle: selectedTypeFilter?.displayName ?? String(localized: "All Types"),
-                            isActive: selectedTypeFilter != nil
-                        ) {
-                            Button(allTypesCountText) {
-                                selectedTypeFilter = nil
-                            }
-
-                            ForEach(FirearmType.allCases) { firearmType in
-                                Button(viewModel.filterCountText(title: firearmType.displayName, count: viewModel.countForType(firearmType, in: firearms))) {
-                                    selectedTypeFilter = firearmType
-                                }
-                            }
-                        }
-
-                        filterMenu(
-                            selectionTitle: selectedActionFilter?.displayName ?? String(localized: "All Actions"),
-                            isActive: selectedActionFilter != nil
-                        ) {
-                            Button(allActionsCountText) {
-                                selectedActionFilter = nil
-                            }
-
-                            ForEach(FirearmAction.allCases) { action in
-                                Button(viewModel.filterCountText(title: action.displayName, count: viewModel.countForAction(action, in: firearms))) {
-                                    selectedActionFilter = action
-                                }
-                            }
-                        }
-
-                        filterMenu(
-                            selectionTitle: selectedCaliberFilter?.name ?? String(localized: "All Calibers"),
-                            isActive: selectedCaliberFilter != nil
-                        ) {
-                            Button(allCalibersCountText) {
-                                selectedCaliberFilter = nil
-                            }
-
-                            ForEach(viewModel.availableCalibers(from: firearms)) { caliber in
-                                Button(viewModel.filterCountText(title: caliber.name, count: viewModel.countForCaliber(caliber, in: firearms))) {
-                                    selectedCaliberFilter = caliber
-                                }
-                            }
-                        }
-
-                        if selectedTypeFilter != nil || selectedActionFilter != nil || selectedCaliberFilter != nil {
-                            Button("Clear Filters") {
-                                selectedTypeFilter = nil
-                                selectedActionFilter = nil
-                                selectedCaliberFilter = nil
-                            }
-                            .font(.subheadline.weight(.semibold))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 10)
-                            .background(Color(.tertiarySystemFill), in: Capsule())
-                        }
-                    }
-                }
-                .transition(.modifier(
-                    active: TopAnchoredStretchModifier(progress: 0.01),
-                    identity: TopAnchoredStretchModifier(progress: 1)
-                ))
-            }
-        }
-        .padding(16)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .animation(.easeInOut(duration: 0.2), value: showingFilters)
-    }
-
     private var filteredFirearms: [Firearm] {
         viewModel.filteredFirearms(
             firearms,
             kits: kits,
             magazines: magazines,
-            selectedTypeFilter: selectedTypeFilter,
-            selectedActionFilter: selectedActionFilter,
-            selectedCaliberFilter: selectedCaliberFilter,
+            selectedTypeFilters: selectedTypeFilters,
+            selectedActionFilters: selectedActionFilters,
+            selectedCaliberFilters: selectedCaliberFilters,
             sortOrder: selectedSortOrder,
             sortDirection: selectedSortDirection
         )
@@ -245,9 +177,9 @@ struct FirearmsView: View {
         let result = viewModel.moveFirearms(
             allFirearms: firearms,
             filteredFirearms: filteredFirearms,
-            selectedTypeFilter: selectedTypeFilter,
-            selectedActionFilter: selectedActionFilter,
-            selectedCaliberFilter: selectedCaliberFilter,
+            selectedTypeFilters: selectedTypeFilters,
+            selectedActionFilters: selectedActionFilters,
+            selectedCaliberFilters: selectedCaliberFilters,
             sortOrder: selectedSortOrder,
             source: source,
             destination: destination,
@@ -270,43 +202,40 @@ struct FirearmsView: View {
         }
     }
 
-    @ViewBuilder
-    private func filterMenu<Content: View>(
-        selectionTitle: String,
-        isActive: Bool,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        Menu {
-            content()
-        } label: {
-            HStack(spacing: 8) {
-                Text(selectionTitle)
-                    .font(.subheadline)
-                Image(systemName: "chevron.down")
-                    .font(.caption.weight(.semibold))
-            }
-            .foregroundStyle(isActive ? .primary : .secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(isActive ? Color(.tertiarySystemFill) : Color(.secondarySystemFill), in: Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-
     private var totalValueText: String {
         viewModel.totalValueText(for: filteredFirearms, kits: kits, magazines: magazines)
     }
 
-    private var allTypesCountText: String {
-        viewModel.allTypesCountText(for: firearms)
+    private var typeFilterOptions: [InventoryFilterOption<FirearmType>] {
+        FirearmType.allCases.map {
+            InventoryFilterOption(id: $0, title: $0.displayName, count: viewModel.countForType($0, in: firearms))
+        }
     }
 
-    private var allActionsCountText: String {
-        viewModel.allActionsCountText(for: firearms)
+    private var actionFilterOptions: [InventoryFilterOption<FirearmAction>] {
+        FirearmAction.allCases.map {
+            InventoryFilterOption(id: $0, title: $0.displayName, count: viewModel.countForAction($0, in: firearms))
+        }
     }
 
-    private var allCalibersCountText: String {
-        viewModel.allCalibersCountText(for: firearms)
+    private var caliberFilterOptions: [InventoryFilterOption<PersistentIdentifier>] {
+        viewModel.availableCalibers(from: firearms).map {
+            InventoryFilterOption(id: $0.persistentModelID, title: $0.name, count: viewModel.countForCaliber($0, in: firearms))
+        }
+    }
+
+    private var activeFilterCount: Int {
+        selectedTypeFilters.count + selectedActionFilters.count + selectedCaliberFilters.count
+    }
+
+    private var hasActiveFilters: Bool {
+        activeFilterCount > 0
+    }
+
+    private func clearFilters() {
+        selectedTypeFilters.removeAll()
+        selectedActionFilters.removeAll()
+        selectedCaliberFilters.removeAll()
     }
 
     private var selectedSortOrder: FirearmSortOrder {
@@ -315,17 +244,6 @@ struct FirearmsView: View {
 
     private var selectedSortDirection: FirearmSortDirection {
         viewModel.selectedSortDirection(from: firearmSortDirectionRaw, sortOrder: selectedSortOrder)
-    }
-}
-
-private struct TopAnchoredStretchModifier: ViewModifier {
-    let progress: CGFloat
-
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(x: 1, y: progress, anchor: .top)
-            .opacity(progress)
-            .clipped()
     }
 }
 
