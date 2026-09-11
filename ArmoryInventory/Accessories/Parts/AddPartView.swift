@@ -29,8 +29,10 @@ struct AddPartView: View {
     @State private var selectedCaliber: Caliber?
     @State private var unlinkFirearm = false
     @State private var isEditing = false
+    @State private var deletionErrorMessage: String?
 
     let viewModel: AddPartViewModel
+    private let inventoryViewModel = AccessoryInventoryListViewModel()
 
     init(part: Part? = nil, viewModel: AddPartViewModel) {
         self.part = part
@@ -148,6 +150,14 @@ struct AddPartView: View {
                         }
                     }
                 }
+
+                if part != nil {
+                    Section {
+                        Button("Delete Part", role: .destructive) {
+                            deletePart()
+                        }
+                    }
+                }
             }
             .navigationTitle(part == nil ? "New Part" : "Part Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -159,6 +169,11 @@ struct AddPartView: View {
                     Button(primaryButtonTitle) { handlePrimaryAction() }
                         .disabled(isEditing && !canAdd)
                 }
+            }
+            .alert("Part Cannot Be Deleted", isPresented: deletionErrorBinding) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deletionErrorMessage ?? "")
             }
         }
     }
@@ -217,6 +232,23 @@ struct AddPartView: View {
             purchasePriceText: purchasePriceText,
             barrelLengthText: barrelLengthText
         )
+    }
+
+    private var deletionErrorBinding: Binding<Bool> {
+        Binding(
+            get: { deletionErrorMessage != nil },
+            set: { if !$0 { deletionErrorMessage = nil } }
+        )
+    }
+
+    private func deletePart() {
+        guard let part else { return }
+        let result = inventoryViewModel.deletePart(part, in: context)
+        if result.isValid {
+            dismiss()
+        } else {
+            deletionErrorMessage = result.message
+        }
     }
 
     private func savePart() {

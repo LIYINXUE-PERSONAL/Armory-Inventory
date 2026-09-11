@@ -29,6 +29,7 @@ struct AddMagazineView: View {
     @State private var notes = ""
     @State private var unlinkFirearm = false
     @State private var isEditing = false
+    @State private var deletionErrorMessage: String?
     @State private var calibers: [Caliber] = []
     @State private var savedCustomPatterns: [MagazinePattern] = []
     @State private var editingCustomPatternID: UUID?
@@ -266,6 +267,13 @@ struct AddMagazineView: View {
                         }
                     }
                 }
+                if magazine != nil {
+                    Section {
+                        Button("Delete Magazine", role: .destructive) {
+                            deleteMagazine()
+                        }
+                    }
+                }
             }
             .navigationTitle(magazine == nil ? "New Magazine" : "Magazine Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -281,11 +289,33 @@ struct AddMagazineView: View {
                         .disabled(isEditing && !canAdd)
                 }
             }
+            .alert("Magazine Cannot Be Deleted", isPresented: deletionErrorBinding) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deletionErrorMessage ?? "")
+            }
         }
     }
 
     private var resolvedColorDetail: String? {
         viewModel.resolvedColorDetail(selectedColor: selectedColor, customColor: customColor)
+    }
+
+    private func deleteMagazine() {
+        guard let magazine else { return }
+        let result = viewModel.deleteMagazine(magazine, in: context)
+        if result.isValid {
+            dismiss()
+        } else {
+            deletionErrorMessage = result.message
+        }
+    }
+
+    private var deletionErrorBinding: Binding<Bool> {
+        Binding(
+            get: { deletionErrorMessage != nil },
+            set: { if !$0 { deletionErrorMessage = nil } }
+        )
     }
 
     private var resolvedCount: Int? {

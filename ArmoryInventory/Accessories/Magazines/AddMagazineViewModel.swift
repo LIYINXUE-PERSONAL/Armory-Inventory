@@ -64,6 +64,23 @@ final class AddMagazineViewModel {
         } ?? "0.00"
     }
 
+    func deleteMagazine(_ magazine: Magazine, in context: ModelContext) -> KitValidationResult {
+        do {
+            let magazines = try context.fetch(FetchDescriptor<Magazine>(sortBy: [SortDescriptor(\.sortOrder)]))
+            context.delete(magazine)
+            for (index, remainingMagazine) in magazines
+                .filter({ $0.persistentModelID != magazine.persistentModelID })
+                .enumerated() {
+                remainingMagazine.sortOrder = index
+            }
+            try context.save()
+            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
+            return .valid
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
+    }
+
     func trimmedValue(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
     }

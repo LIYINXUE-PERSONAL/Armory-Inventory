@@ -26,8 +26,10 @@ struct AddAttachmentView: View {
     @State private var notes = ""
     @State private var unlinkFirearm = false
     @State private var isEditing = false
+    @State private var deletionErrorMessage: String?
 
     let viewModel: AddAttachmentViewModel
+    private let inventoryViewModel = AccessoryInventoryListViewModel()
 
     init(attachment: Attachment? = nil, viewModel: AddAttachmentViewModel) {
         self.attachment = attachment
@@ -127,6 +129,14 @@ struct AddAttachmentView: View {
                         }
                     }
                 }
+
+                if attachment != nil {
+                    Section {
+                        Button("Delete Attachment", role: .destructive) {
+                            deleteAttachment()
+                        }
+                    }
+                }
             }
             .navigationTitle(attachment == nil ? "New Attachment" : "Attachment Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -138,6 +148,11 @@ struct AddAttachmentView: View {
                     Button(primaryButtonTitle) { handlePrimaryAction() }
                         .disabled(isEditing && !canAdd)
                 }
+            }
+            .alert("Attachment Cannot Be Deleted", isPresented: deletionErrorBinding) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deletionErrorMessage ?? "")
             }
         }
     }
@@ -191,6 +206,23 @@ struct AddAttachmentView: View {
             colorDetail: resolvedColorDetail,
             purchasePriceText: purchasePriceText
         )
+    }
+
+    private var deletionErrorBinding: Binding<Bool> {
+        Binding(
+            get: { deletionErrorMessage != nil },
+            set: { if !$0 { deletionErrorMessage = nil } }
+        )
+    }
+
+    private func deleteAttachment() {
+        guard let attachment else { return }
+        let result = inventoryViewModel.deleteAttachment(attachment, in: context)
+        if result.isValid {
+            dismiss()
+        } else {
+            deletionErrorMessage = result.message
+        }
     }
 
     private func saveAttachment() {

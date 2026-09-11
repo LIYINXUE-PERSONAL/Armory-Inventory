@@ -785,4 +785,35 @@ final class AddMagazineViewModelTests: XCTestCase {
         XCTAssertEqual(siblingMagazine.supportedCaliberNames, [".357 SIG", "9mm"])
         XCTAssertEqual(firearm.supportedMagazinePatterns.first?.displayName, "P320 Legion Multi-Cal")
     }
+
+    @MainActor
+    func testDeleteMagazineRemovesMagazineAndResequencesRemainingInventory() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddMagazineViewModel()
+        let deletedMagazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG 30",
+            capacity: 30,
+            purchasePriceCents: 1_200,
+            sortOrder: 0
+        )
+        let remainingMagazine = Magazine(
+            brand: "Lancer",
+            modelName: "L5AWM",
+            capacity: 30,
+            purchasePriceCents: 1_800,
+            sortOrder: 4
+        )
+        context.insert(deletedMagazine)
+        context.insert(remainingMagazine)
+        try context.save()
+
+        let result = viewModel.deleteMagazine(deletedMagazine, in: context)
+        let magazines = try context.fetch(FetchDescriptor<Magazine>())
+
+        XCTAssertTrue(result.isValid)
+        XCTAssertEqual(magazines.map(\.displayName), ["Lancer L5AWM"])
+        XCTAssertEqual(remainingMagazine.sortOrder, 0)
+    }
 }
