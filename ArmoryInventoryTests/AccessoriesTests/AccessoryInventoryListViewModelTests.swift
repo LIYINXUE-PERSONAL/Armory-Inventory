@@ -419,4 +419,33 @@ final class AccessoryInventoryListViewModelTests: XCTestCase {
         XCTAssertTrue(try context.fetch(FetchDescriptor<Optic>()).isEmpty)
         XCTAssertTrue(try context.fetch(FetchDescriptor<Attachment>()).isEmpty)
     }
+
+    @MainActor
+    func testDetailDeletionAPIsDeleteUnreservedAccessories() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AccessoryInventoryListViewModel()
+        let part = Part(brand: "Aero", modelName: "M4E1", type: .lowerReceiver, purchasePriceCents: 12_000)
+        let optic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000
+        )
+        let attachment = Attachment(brand: "BCM", modelName: "KAG", type: .handStop, purchasePriceCents: 2_000)
+        context.insert(part)
+        context.insert(optic)
+        context.insert(attachment)
+        try context.save()
+
+        XCTAssertTrue(viewModel.deletePart(part, in: context).isValid)
+        XCTAssertTrue(viewModel.deleteOptic(optic, in: context).isValid)
+        XCTAssertTrue(viewModel.deleteAttachment(attachment, in: context).isValid)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Part>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Optic>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Attachment>()).isEmpty)
+    }
 }

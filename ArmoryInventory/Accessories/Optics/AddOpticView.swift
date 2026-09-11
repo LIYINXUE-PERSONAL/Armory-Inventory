@@ -37,8 +37,10 @@ struct AddOpticView: View {
     @State private var unlinkFirearm = false
     @State private var isEditing = false
     @State private var existingOptics: [Optic] = []
+    @State private var deletionErrorMessage: String?
 
     let viewModel: AddOpticViewModel
+    private let inventoryViewModel = AccessoryInventoryListViewModel()
     private let opticLookupService: OpticLookupServicing
 
     init(
@@ -243,6 +245,14 @@ struct AddOpticView: View {
                         }
                     }
                 }
+
+                if optic != nil {
+                    Section {
+                        Button("Delete Optic", role: .destructive) {
+                            deleteOptic()
+                        }
+                    }
+                }
             }
             .navigationTitle(optic == nil ? "New Optic" : "Optic Details")
             .navigationBarTitleDisplayMode(.inline)
@@ -266,6 +276,11 @@ struct AddOpticView: View {
                     Button(primaryButtonTitle) { handlePrimaryAction() }
                         .disabled(isEditing && !canAdd)
                 }
+            }
+            .alert("Optic Cannot Be Deleted", isPresented: deletionErrorBinding) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deletionErrorMessage ?? "")
             }
         }
     }
@@ -324,6 +339,23 @@ struct AddOpticView: View {
 
     private var duplicateExists: Bool {
         viewModel.duplicateExists(serialNumber: serialNumber, excluding: optic, in: existingOptics)
+    }
+
+    private var deletionErrorBinding: Binding<Bool> {
+        Binding(
+            get: { deletionErrorMessage != nil },
+            set: { if !$0 { deletionErrorMessage = nil } }
+        )
+    }
+
+    private func deleteOptic() {
+        guard let optic else { return }
+        let result = inventoryViewModel.deleteOptic(optic, in: context)
+        if result.isValid {
+            dismiss()
+        } else {
+            deletionErrorMessage = result.message
+        }
     }
 
     private var showsFocalPlane: Bool {

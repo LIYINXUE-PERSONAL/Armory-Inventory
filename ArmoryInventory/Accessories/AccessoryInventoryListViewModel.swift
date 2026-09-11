@@ -217,6 +217,29 @@ final class AccessoryInventoryListViewModel {
         return save(context: context, blockedMessage: blockedMessage)
     }
 
+    func deletePart(_ part: Part, in context: ModelContext) -> KitValidationResult {
+        do {
+            let allParts = try context.fetch(FetchDescriptor<Part>(sortBy: [SortDescriptor(\.sortOrder)]))
+            let groupedParts = Dictionary(grouping: allParts, by: \.type)
+            let kits = try context.fetch(FetchDescriptor<Kit>())
+            guard let index = groupedParts[part.type]?.firstIndex(where: {
+                $0.persistentModelID == part.persistentModelID
+            }) else {
+                return .valid
+            }
+            return deleteParts(
+                at: IndexSet(integer: index),
+                in: part.type,
+                groupedParts: groupedParts,
+                allParts: allParts,
+                kits: kits,
+                context: context
+            )
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
+    }
+
     func deleteOptics(
         at offsets: IndexSet,
         in type: String,
@@ -242,6 +265,29 @@ final class AccessoryInventoryListViewModel {
         return save(context: context, blockedMessage: blockedMessage)
     }
 
+    func deleteOptic(_ optic: Optic, in context: ModelContext) -> KitValidationResult {
+        do {
+            let allOptics = try context.fetch(FetchDescriptor<Optic>(sortBy: [SortDescriptor(\.sortOrder)]))
+            let groupedOptics = Dictionary(grouping: allOptics, by: \.type)
+            let kits = try context.fetch(FetchDescriptor<Kit>())
+            guard let index = groupedOptics[optic.type]?.firstIndex(where: {
+                $0.persistentModelID == optic.persistentModelID
+            }) else {
+                return .valid
+            }
+            return deleteOptics(
+                at: IndexSet(integer: index),
+                in: optic.type,
+                groupedOptics: groupedOptics,
+                allOptics: allOptics,
+                kits: kits,
+                context: context
+            )
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
+    }
+
     func deleteAttachments(
         at offsets: IndexSet,
         in type: String,
@@ -265,6 +311,29 @@ final class AccessoryInventoryListViewModel {
         }
         resequence(allAttachments)
         return save(context: context, blockedMessage: blockedMessage)
+    }
+
+    func deleteAttachment(_ attachment: Attachment, in context: ModelContext) -> KitValidationResult {
+        do {
+            let allAttachments = try context.fetch(FetchDescriptor<Attachment>(sortBy: [SortDescriptor(\.sortOrder)]))
+            let groupedAttachments = Dictionary(grouping: allAttachments, by: \.type)
+            let kits = try context.fetch(FetchDescriptor<Kit>())
+            guard let index = groupedAttachments[attachment.type]?.firstIndex(where: {
+                $0.persistentModelID == attachment.persistentModelID
+            }) else {
+                return .valid
+            }
+            return deleteAttachments(
+                at: IndexSet(integer: index),
+                in: attachment.type,
+                groupedAttachments: groupedAttachments,
+                allAttachments: allAttachments,
+                kits: kits,
+                context: context
+            )
+        } catch {
+            return .invalid(error.localizedDescription)
+        }
     }
 
     private func selectedItemSortOrder(from rawValue: String) -> AccessoryItemSortOrder {

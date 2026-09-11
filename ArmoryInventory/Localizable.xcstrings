@@ -3413,6 +3413,9 @@
         }
       }
     },
+    "Delete Attachment" : {
+
+    },
     "Delete Caliber" : {
       "localizations" : {
         "es" : {
@@ -3456,6 +3459,15 @@
           }
         }
       }
+    },
+    "Delete Magazine" : {
+
+    },
+    "Delete Optic" : {
+
+    },
+    "Delete Part" : {
+
     },
     "DeltaPoint Pro" : {
       "localizations" : {
@@ -5330,6 +5342,9 @@
           }
         }
       }
+    },
+    "Magazine Cannot Be Deleted" : {
+
     },
     "Magazine Count" : {
       "extractionState" : "stale",
