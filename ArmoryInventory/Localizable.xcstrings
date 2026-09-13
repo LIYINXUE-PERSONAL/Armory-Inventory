@@ -3479,6 +3479,72 @@
         }
       }
     },
+    "Delete Firearm?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar arma de fuego?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除枪械？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除槍械？"
+          }
+        }
+      }
+    },
+    "Delete Kit" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar kit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除套件"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除套件"
+          }
+        }
+      }
+    },
+    "Delete Kit?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Eliminar kit?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "删除套件？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "刪除套件？"
+          }
+        }
+      }
+    },
     "Delete Magazine" : {
       "localizations" : {
         "es" : {
@@ -3612,6 +3678,7 @@
       }
     },
     "Disassemble Kit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -3656,6 +3723,7 @@
       }
     },
     "Discard Kit" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -3673,6 +3741,50 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "丟棄套件"
+          }
+        }
+      }
+    },
+    "Do you also want to delete the linked kits, optics, attachments, and parts? Magazines will not be deleted because they are linked through patterns." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿También quieres eliminar los kits, las ópticas, los accesorios y las piezas vinculados? Los cargadores no se eliminarán porque están vinculados mediante patrones de cargador."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是否还要删除关联的套件、瞄具、附件和零件？弹匣不会被删除，因为它们通过弹匣规格关联。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是否也要刪除已連結的套件、瞄具、配件和零件？彈匣不會被刪除，因為它們是透過彈匣規格連結的。"
+          }
+        }
+      }
+    },
+    "Do you also want to delete the linked optics, attachments, and parts? Magazines will not be deleted because they are linked through patterns." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿También quieres eliminar las ópticas, los accesorios y las piezas vinculados? Los cargadores no se eliminarán porque están vinculados mediante patrones de cargador."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是否还要删除关联的瞄具、附件和零件？弹匣不会被删除，因为它们通过弹匣规格关联。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是否也要刪除已連結的瞄具、配件和零件？彈匣不會被刪除，因為它們是透過彈匣規格連結的。"
           }
         }
       }
@@ -6579,6 +6691,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暱稱"
+          }
+        }
+      }
+    },
+    "No" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "否"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "否"
           }
         }
       }
@@ -10673,6 +10807,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "含 %1$@%% 配件稅：%2$@"
+          }
+        }
+      }
+    },
+    "Yes" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sí"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "是"
           }
         }
       }

@@ -46,6 +46,7 @@ struct AddFirearmView: View {
     @State private var lookupData = AddFirearmLookupData()
     @State private var hasLoadedInitialKits = false
     @State private var snapshotErrorMessage: String?
+    @State private var showingDeleteConfirmation = false
 
     let viewModel: AddFirearmViewModel
     private let lookupService: AddFirearmLookupServicing
@@ -474,8 +475,19 @@ struct AddFirearmView: View {
                 if firearm != nil {
                     Section {
                         Button("Delete Firearm", role: .destructive) {
-                            deleteFirearm()
+                            showingDeleteConfirmation = true
                         }
+                    }
+                    .alert("Delete Firearm?", isPresented: $showingDeleteConfirmation) {
+                        Button("Yes", role: .destructive) {
+                            deleteFirearm(deleteLinkedItems: true)
+                        }
+                        Button("No", role: .destructive) {
+                            deleteFirearm(deleteLinkedItems: false)
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("Do you also want to delete the linked kits, optics, attachments, and parts? Magazines will not be deleted because they are linked through patterns.")
                     }
                 }
             }
@@ -1068,12 +1080,16 @@ struct AddFirearmView: View {
         }
     }
 
-    private func deleteFirearm() {
+    private func deleteFirearm(deleteLinkedItems: Bool) {
         guard let firearm else {
             return
         }
 
-        let result = viewModel.deleteFirearm(firearm, in: context)
+        let result = viewModel.deleteFirearm(
+            firearm,
+            deleteLinkedItems: deleteLinkedItems,
+            in: context
+        )
         if result.isValid {
             dismiss()
         } else {

@@ -29,6 +29,7 @@ struct AddKitView: View {
     @State private var showingOpticsPicker = false
     @State private var showingAttachmentsPicker = false
     @State private var alertMessage: String?
+    @State private var showingDeleteConfirmation = false
 
     init(
         kit: Kit? = nil,
@@ -118,14 +119,22 @@ struct AddKitView: View {
                     }
                 }
 
-                if viewModel.shouldShowDisassembleButton(for: kit) {
+                if viewModel.shouldShowDeleteButton(for: kit) {
                     Section {
-                        Button("Disassemble Kit", role: .destructive) {
-                            disassembleKit()
+                        Button("Delete Kit", role: .destructive) {
+                            showingDeleteConfirmation = true
                         }
-                        Button("Discard Kit", role: .destructive) {
-                            discardKit()
+                    }
+                    .alert("Delete Kit?", isPresented: $showingDeleteConfirmation) {
+                        Button("Yes", role: .destructive) {
+                            deleteKit(deleteLinkedItems: true)
                         }
+                        Button("No", role: .destructive) {
+                            deleteKit(deleteLinkedItems: false)
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("Do you also want to delete the linked optics, attachments, and parts? Magazines will not be deleted because they are linked through patterns.")
                     }
                 }
             }
@@ -240,18 +249,17 @@ struct AddKitView: View {
         handle(result)
     }
 
-    private func disassembleKit() {
+    private func deleteKit(deleteLinkedItems: Bool) {
         guard let kit else {
             return
         }
-        handle(viewModel.disassembleKit(kit, in: context))
-    }
-
-    private func discardKit() {
-        guard let kit else {
-            return
-        }
-        handle(viewModel.discardKit(kit, in: context))
+        handle(
+            viewModel.deleteKit(
+                kit,
+                deleteLinkedItems: deleteLinkedItems,
+                in: context
+            )
+        )
     }
 
     private func handle(_ result: KitValidationResult) {

@@ -63,7 +63,7 @@ final class AddKitViewModel {
         kit == nil ? String(localized: "Build Kit") : String(localized: "Save")
     }
 
-    func shouldShowDisassembleButton(for kit: Kit?) -> Bool {
+    func shouldShowDeleteButton(for kit: Kit?) -> Bool {
         guard let kit else {
             return false
         }
@@ -417,23 +417,14 @@ final class AddKitViewModel {
         }
     }
 
-    func disassembleKit(_ kit: Kit, in context: ModelContext) -> KitValidationResult {
-        kit.firearm = nil
-        context.delete(kit)
-
-        do {
-            try context.save()
-            UserDefaults.standard.set(Date(), forKey: "LastModelSaveDate")
-            return .valid
-        } catch {
-            return .invalid(error.localizedDescription)
-        }
-    }
-
-    func discardKit(_ kit: Kit, in context: ModelContext) -> KitValidationResult {
-        let parts = uniqueModels(kit.components.compactMap(\.part))
-        let optics = uniqueModels(kit.components.compactMap(\.optic))
-        let attachments = uniqueModels(kit.components.compactMap(\.attachment))
+    func deleteKit(
+        _ kit: Kit,
+        deleteLinkedItems: Bool,
+        in context: ModelContext
+    ) -> KitValidationResult {
+        let parts = deleteLinkedItems ? uniqueModels(kit.components.compactMap(\.part)) : []
+        let optics = deleteLinkedItems ? uniqueModels(kit.components.compactMap(\.optic)) : []
+        let attachments = deleteLinkedItems ? uniqueModels(kit.components.compactMap(\.attachment)) : []
 
         kit.firearm = nil
         context.delete(kit)

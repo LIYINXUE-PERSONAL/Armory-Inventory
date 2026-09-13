@@ -624,7 +624,7 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.managingKitName(for: Attachment(brand: "Loose", modelName: "Grip", type: .grip, purchasePriceCents: 1), kits: []), "Kit")
         XCTAssertEqual(viewModel.managingKitName(for: Part(brand: "Loose", modelName: "Part", type: .other, purchasePriceCents: 1), kits: []), "Kit")
 
-        let deleteResult = viewModel.deleteFirearm(firearm, in: context)
+        let deleteResult = viewModel.deleteFirearm(firearm, deleteLinkedItems: false, in: context)
 
         XCTAssertTrue(deleteResult.isValid)
         XCTAssertTrue(try context.fetch(FetchDescriptor<Firearm>()).isEmpty)
@@ -632,6 +632,72 @@ final class AddFirearmViewModelTests: XCTestCase {
         XCTAssertNil(remainingKit.firearm)
         XCTAssertEqual(remainingKit.kitStatus, .built)
         XCTAssertGreaterThan(remainingKit.updatedAt, staleUpdatedAt)
+    }
+
+    @MainActor
+    func testDeleteFirearmWithLinkedItemsDeletesEverythingExceptMagazines() throws {
+        let container = try makeInMemoryContainer()
+        let context = container.mainContext
+        let viewModel = AddFirearmViewModel()
+        let firearm = Firearm(
+            brand: "Aero",
+            modelName: "M4E1",
+            purchasePriceCents: 80_000,
+            type: .rifle,
+            action: .semiAuto
+        )
+        let directPart = Part(brand: "Geissele", modelName: "Trigger", type: .trigger, purchasePriceCents: 20_000, firearm: firearm)
+        let kitPart = Part(brand: "BCM", modelName: "BCG", type: .boltCarrierGroup, purchasePriceCents: 18_000)
+        let optic = Optic(
+            brand: "Aimpoint",
+            modelName: "T-2",
+            type: .redDot,
+            minMagnification: 1,
+            maxMagnification: 1,
+            footprint: .aimpointMicro,
+            purchasePriceCents: 70_000,
+            firearm: firearm
+        )
+        let attachment = Attachment(
+            brand: "BCM",
+            modelName: "KAG",
+            type: .handStop,
+            purchasePriceCents: 2_000,
+            firearm: firearm
+        )
+        let magazine = Magazine(
+            brand: "Magpul",
+            modelName: "PMAG",
+            patternID: "catalog:ar15-stanag-223-556-300blk",
+            patternKind: .catalog,
+            capacity: 30,
+            purchasePriceCents: 1_500,
+            firearm: firearm
+        )
+        let kit = Kit(name: "Upper Kit", kind: .upperReceiver, status: .linked, firearm: firearm)
+        let component = KitComponent(category: .part, part: kitPart)
+        kit.components = [component]
+
+        context.insert(firearm)
+        context.insert(directPart)
+        context.insert(kitPart)
+        context.insert(optic)
+        context.insert(attachment)
+        context.insert(magazine)
+        context.insert(kit)
+        context.insert(component)
+        try context.save()
+
+        let result = viewModel.deleteFirearm(firearm, deleteLinkedItems: true, in: context)
+
+        XCTAssertTrue(result.isValid)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Firearm>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Kit>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Part>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Optic>()).isEmpty)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<Attachment>()).isEmpty)
+        let remainingMagazine = try XCTUnwrap(context.fetch(FetchDescriptor<Magazine>()).first)
+        XCTAssertNil(remainingMagazine.firearm)
     }
 
     @MainActor
