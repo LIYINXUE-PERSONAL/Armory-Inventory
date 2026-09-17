@@ -25,9 +25,9 @@ final class AddKitViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.navigationTitle(for: kit), "Kit Details")
         XCTAssertEqual(viewModel.primarySaveTitle(for: nil), "Build Kit")
         XCTAssertEqual(viewModel.primarySaveTitle(for: kit), "Save")
-        XCTAssertTrue(viewModel.shouldShowDisassembleButton(for: kit))
-        XCTAssertTrue(viewModel.shouldShowDisassembleButton(for: linkedKit))
-        XCTAssertFalse(viewModel.shouldShowDisassembleButton(for: nil))
+        XCTAssertTrue(viewModel.shouldShowDeleteButton(for: kit))
+        XCTAssertTrue(viewModel.shouldShowDeleteButton(for: linkedKit))
+        XCTAssertFalse(viewModel.shouldShowDeleteButton(for: nil))
         XCTAssertEqual(viewModel.optionalValue("  Notes  "), "Notes")
         XCTAssertNil(viewModel.optionalValue("   "))
         XCTAssertEqual(viewModel.displayName(name: "  ", kind: .optics), "Optics Kit")
@@ -167,7 +167,7 @@ final class AddKitViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testAvailabilityValidationSaveAndDisassemble() throws {
+    func testAvailabilityValidationSaveAndDeleteWhileKeepingComponents() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
         let viewModel = AddKitViewModel()
@@ -243,10 +243,10 @@ final class AddKitViewModelTests: XCTestCase {
         XCTAssertEqual(kits[0].kitKind, .custom)
         XCTAssertEqual(kits[0].components.count, 1)
 
-        let disassembleResult = viewModel.disassembleKit(kits[0], in: context)
+        let deleteResult = viewModel.deleteKit(kits[0], deleteLinkedItems: false, in: context)
         let remainingKits = try context.fetch(FetchDescriptor<Kit>())
 
-        XCTAssertTrue(disassembleResult.isValid)
+        XCTAssertTrue(deleteResult.isValid)
         XCTAssertTrue(remainingKits.isEmpty)
         XCTAssertEqual(try context.fetch(FetchDescriptor<Part>()).map(\.displayName).sorted(), ["Aero M4E1", "BCM Linked", "BCM Selected"])
         XCTAssertEqual(try context.fetch(FetchDescriptor<Optic>()).map(\.displayName), ["Aimpoint T-2"])
@@ -254,7 +254,7 @@ final class AddKitViewModelTests: XCTestCase {
     }
 
     @MainActor
-    func testDiscardDeletesKitAndLinkedComponents() throws {
+    func testDeleteKitWithLinkedItemsDeletesKitAndComponents() throws {
         let container = try makeInMemoryContainer()
         let context = container.mainContext
         let viewModel = AddKitViewModel()
@@ -293,7 +293,7 @@ final class AddKitViewModelTests: XCTestCase {
         let kit = try XCTUnwrap(context.fetch(FetchDescriptor<Kit>()).first)
 
         XCTAssertTrue(saveResult.isValid)
-        XCTAssertTrue(viewModel.discardKit(kit, in: context).isValid)
+        XCTAssertTrue(viewModel.deleteKit(kit, deleteLinkedItems: true, in: context).isValid)
         XCTAssertTrue(try context.fetch(FetchDescriptor<Kit>()).isEmpty)
         XCTAssertEqual(try context.fetch(FetchDescriptor<Part>()).map(\.displayName), ["Aero Lower"])
         XCTAssertTrue(try context.fetch(FetchDescriptor<Optic>()).isEmpty)

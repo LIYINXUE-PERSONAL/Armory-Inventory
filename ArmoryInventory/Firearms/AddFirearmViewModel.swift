@@ -726,16 +726,37 @@ final class AddFirearmViewModel {
         }
     }
 
-    func deleteFirearm(_ firearm: Firearm, in context: ModelContext) -> KitValidationResult {
+    func deleteFirearm(
+        _ firearm: Firearm,
+        deleteLinkedItems: Bool,
+        in context: ModelContext
+    ) -> KitValidationResult {
         do {
             let linkedKits = try context.fetch(FetchDescriptor<Kit>()).filter {
                 $0.firearm?.persistentModelID == firearm.persistentModelID
             }
 
-            for kit in linkedKits {
-                kit.firearm = nil
-                kit.status = KitStatus.built.rawValue
-                kit.updatedAt = .now
+            // Magazines are associated through patterns and always remain in inventory.
+            firearm.magazines.forEach { $0.firearm = nil }
+
+            if deleteLinkedItems {
+                let kitParts = linkedKits.flatMap(\.components).compactMap(\.part)
+                let kitOptics = linkedKits.flatMap(\.components).compactMap(\.optic)
+                let kitAttachments = linkedKits.flatMap(\.components).compactMap(\.attachment)
+
+                linkedKits.forEach(context.delete)
+                uniqueModels(firearm.parts + kitParts).forEach(context.delete)
+                uniqueModels(firearm.optics + kitOptics).forEach(context.delete)
+                uniqueModels(firearm.attachments + kitAttachments).forEach(context.delete)
+            } else {
+                firearm.parts.forEach { $0.firearm = nil }
+                firearm.optics.forEach { $0.firearm = nil }
+                firearm.attachments.forEach { $0.firearm = nil }
+                for kit in linkedKits {
+                    kit.firearm = nil
+                    kit.status = KitStatus.built.rawValue
+                    kit.updatedAt = .now
+                }
             }
 
             context.delete(firearm)
@@ -744,6 +765,13 @@ final class AddFirearmViewModel {
             return .valid
         } catch {
             return .invalid(error.localizedDescription)
+        }
+    }
+
+    private func uniqueModels<T: PersistentModel>(_ models: [T]) -> [T] {
+        var seenIDs = Set<PersistentIdentifier>()
+        return models.filter { model in
+            seenIDs.insert(model.persistentModelID).inserted
         }
     }
 
