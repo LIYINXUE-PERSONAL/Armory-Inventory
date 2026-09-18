@@ -18,6 +18,9 @@ struct UserDataSettingsView: View {
     @State private var pendingImportURL: URL?
     @State private var isShowingImportConfirmation = false
     @State private var isShowingClearConfirmation = false
+#if DEBUG
+    @State private var isShowingDebugImportConfirmation = false
+#endif
     @State private var statusMessage: StatusMessage?
     @State private var alertMessage: String?
 
@@ -44,6 +47,13 @@ struct UserDataSettingsView: View {
                     isImporting = true
                 }
                 .tint(.orange)
+
+#if DEBUG
+                Button("Import Debug Data", systemImage: "ladybug") {
+                    isShowingDebugImportConfirmation = true
+                }
+                .tint(.orange)
+#endif
             }
 
             Section("Danger Zone") {
@@ -102,6 +112,17 @@ struct UserDataSettingsView: View {
         } message: {
             Text("Importing a backup will replace your current inventory and managed settings.")
         }
+#if DEBUG
+        .alert("Import Debug Data", isPresented: $isShowingDebugImportConfirmation) {
+            Button("Cancel", role: .cancel) {}
+
+            Button("Import", role: .destructive) {
+                importDebugData()
+            }
+        } message: {
+            Text("Importing DebugData.json will replace your current inventory and managed settings.")
+        }
+#endif
         .alert("Clear All Data", isPresented: $isShowingClearConfirmation) {
             Button("Cancel", role: .cancel) {}
 
@@ -165,6 +186,23 @@ struct UserDataSettingsView: View {
             alertMessage = error.localizedDescription
         }
     }
+
+#if DEBUG
+    private func importDebugData() {
+        do {
+            try DebugDataInjector.inject(
+                into: context,
+                using: userDataTransferService
+            )
+            statusMessage = StatusMessage(
+                title: String(localized: "Import Complete"),
+                message: String(localized: "DebugData.json replaced your current inventory and settings.")
+            )
+        } catch {
+            alertMessage = error.localizedDescription
+        }
+    }
+#endif
 
     private func clearAllData() {
         do {

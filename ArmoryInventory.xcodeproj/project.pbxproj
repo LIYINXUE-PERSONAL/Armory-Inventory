@@ -352,6 +352,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 20260404.2;
+				DEVELOPMENT_ASSET_PATHS = "\"ArmoryInventory/Debug\"";
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 62D8XKPUT6;
 				ENABLE_APP_SANDBOX = YES;
@@ -407,6 +408,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 20260404.2;
+				DEVELOPMENT_ASSET_PATHS = "\"ArmoryInventory/Debug\"";
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 62D8XKPUT6;
 				ENABLE_APP_SANDBOX = YES;
