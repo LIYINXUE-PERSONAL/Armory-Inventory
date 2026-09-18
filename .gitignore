@@ -26,3 +26,6 @@ fastlane/screenshots/
 
 # macOS
 .DS_Store
+
+# Debug Data
+ArmoryInventory/Debug/DebugData.json
