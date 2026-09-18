@@ -70,7 +70,7 @@ final class KitUserDataTransferTests: XCTestCase {
 
         let data = try UserDataTransferService().exportData(from: sourceContext)
         let jsonObject = try JSONSerialization.jsonObject(with: data) as? [String: Any]
-        XCTAssertEqual(jsonObject?["version"] as? Int, 2)
+        XCTAssertEqual(jsonObject?["version"] as? Int, 3)
 
         let destinationContainer = try makeInMemoryContainer()
         let destinationContext = destinationContainer.mainContext

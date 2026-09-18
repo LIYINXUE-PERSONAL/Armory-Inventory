@@ -134,6 +134,7 @@ final class UserDataTransferService: UserDataTransferServicing {
                     nickname: $0.nickname,
                     serialNumber: $0.serialNumber,
                     purchaseDate: $0.purchaseDate,
+                    lastCleanedDate: $0.lastCleanedDate,
                     purchasePriceCents: $0.purchasePriceCents,
                     type: $0.type,
                     action: $0.action,
@@ -224,8 +225,10 @@ final class UserDataTransferService: UserDataTransferServicing {
                     purchaseDate: $0.purchaseDate,
                     purchasePriceCents: $0.purchasePriceCents,
                     notes: $0.notes,
+                    barrelLengthInches: $0.barrelLengthInches,
                     sortOrder: $0.sortOrder,
                     createdAt: $0.createdAt,
+                    caliberName: $0.caliber?.name,
                     firearmID: $0.firearm?.id
                 )
             },
@@ -281,6 +284,7 @@ final class UserDataTransferService: UserDataTransferServicing {
                 nickname: snapshot.nickname,
                 serialNumber: snapshot.serialNumber,
                 purchaseDate: snapshot.purchaseDate,
+                lastCleanedDate: snapshot.lastCleanedDate,
                 purchasePriceCents: snapshot.purchasePriceCents,
                 type: FirearmType(rawValue: snapshot.type) ?? .other,
                 action: FirearmAction(rawValue: snapshot.action) ?? .other,
@@ -402,6 +406,8 @@ final class UserDataTransferService: UserDataTransferServicing {
                 purchaseDate: snapshot.purchaseDate,
                 purchasePriceCents: snapshot.purchasePriceCents,
                 notes: snapshot.notes,
+                barrelLengthInches: snapshot.barrelLengthInches,
+                caliber: snapshot.caliberName.flatMap { calibers[$0] },
                 firearm: snapshot.firearmID.flatMap { firearms[$0] },
                 sortOrder: snapshot.sortOrder,
                 createdAt: snapshot.createdAt
@@ -547,8 +553,8 @@ final class UserDataTransferService: UserDataTransferServicing {
 }
 
 private struct UserDataSnapshot: Codable {
-    static let currentVersion = 2
-    static let supportedVersions: Set<Int> = [1, 2]
+    static let currentVersion = 3
+    static let supportedVersions: Set<Int> = [1, 2, 3]
 
     private enum CodingKeys: String, CodingKey {
         case version
@@ -655,6 +661,7 @@ private struct FirearmSnapshot: Codable {
         case nickname
         case serialNumber
         case purchaseDate
+        case lastCleanedDate
         case purchasePriceCents
         case type
         case action
@@ -675,6 +682,7 @@ private struct FirearmSnapshot: Codable {
     let nickname: String?
     let serialNumber: String?
     let purchaseDate: Date
+    let lastCleanedDate: Date?
     let purchasePriceCents: Int
     let type: String
     let action: String
@@ -695,6 +703,7 @@ private struct FirearmSnapshot: Codable {
         nickname: String?,
         serialNumber: String?,
         purchaseDate: Date,
+        lastCleanedDate: Date?,
         purchasePriceCents: Int,
         type: String,
         action: String,
@@ -714,6 +723,7 @@ private struct FirearmSnapshot: Codable {
         self.nickname = nickname
         self.serialNumber = serialNumber
         self.purchaseDate = purchaseDate
+        self.lastCleanedDate = lastCleanedDate
         self.purchasePriceCents = purchasePriceCents
         self.type = type
         self.action = action
@@ -736,6 +746,7 @@ private struct FirearmSnapshot: Codable {
         nickname = try container.decodeIfPresent(String.self, forKey: .nickname)
         serialNumber = try container.decodeIfPresent(String.self, forKey: .serialNumber)
         purchaseDate = try container.decode(Date.self, forKey: .purchaseDate)
+        lastCleanedDate = try container.decodeIfPresent(Date.self, forKey: .lastCleanedDate)
         purchasePriceCents = try container.decode(Int.self, forKey: .purchasePriceCents)
         type = try container.decode(String.self, forKey: .type)
         action = try container.decode(String.self, forKey: .action)
@@ -823,8 +834,10 @@ private struct PartSnapshot: Codable {
     let purchaseDate: Date
     let purchasePriceCents: Int
     let notes: String?
+    let barrelLengthInches: Double?
     let sortOrder: Int
     let createdAt: Date
+    let caliberName: String?
     let firearmID: UUID?
 }
 
