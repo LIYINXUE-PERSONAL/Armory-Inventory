@@ -26,6 +26,7 @@ final class UserDataTransferServiceTests: XCTestCase {
             nickname: "Carry",
             serialNumber: "ABC123",
             purchaseDate: Date(timeIntervalSince1970: 1_000),
+            lastCleanedDate: Date(timeIntervalSince1970: 1_500),
             purchasePriceCents: 50_000,
             type: .pistol,
             action: .semiAuto,
@@ -157,6 +158,7 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertEqual(importedRecords.count, 1)
         XCTAssertEqual(importedFirearms.first?.id, firearmID)
         XCTAssertEqual(importedFirearms.first?.caliber?.name, "9mm")
+        XCTAssertEqual(importedFirearms.first?.lastCleanedDate, Date(timeIntervalSince1970: 1_500))
         XCTAssertEqual(
             importedFirearms.first?.supportedMagazinePatterns,
             [
@@ -241,6 +243,47 @@ final class UserDataTransferServiceTests: XCTestCase {
 
         XCTAssertEqual(importedCalibers.map(\.name), [".223 Rem"])
         XCTAssertEqual(importedFirearms.map(\.brand), ["Daniel Defense"])
+    }
+
+    @MainActor
+    func testExportAndImportPreservesConfigurationForConfigurableParts() throws {
+        let sourceContainer = try makeInMemoryContainer()
+        let sourceContext = sourceContainer.mainContext
+        let configurations: [(PartType, String, Double)] = [
+            (.barrel, "9mm", 4.5),
+            (.slide, ".45 ACP", 5),
+            (.upperReceiver, ".223 Rem", 16)
+        ]
+
+        for (type, caliberName, barrelLength) in configurations {
+            let caliber = Caliber(name: caliberName)
+            sourceContext.insert(caliber)
+            sourceContext.insert(
+                Part(
+                    brand: "Test",
+                    modelName: type.rawValue,
+                    type: type,
+                    purchasePriceCents: 10_000,
+                    barrelLengthInches: barrelLength,
+                    caliber: caliber
+                )
+            )
+        }
+        try sourceContext.save()
+
+        let data = try UserDataTransferService().exportData(from: sourceContext)
+        let destinationContainer = try makeInMemoryContainer()
+        let destinationContext = destinationContainer.mainContext
+        try UserDataTransferService().importData(data, into: destinationContext)
+
+        let importedParts = try destinationContext.fetch(FetchDescriptor<Part>())
+        XCTAssertEqual(importedParts.count, configurations.count)
+
+        for (type, caliberName, barrelLength) in configurations {
+            let importedPart = try XCTUnwrap(importedParts.first { $0.partType == type })
+            XCTAssertEqual(importedPart.caliber?.name, caliberName)
+            XCTAssertEqual(importedPart.barrelLengthInches, barrelLength)
+        }
     }
 
     @MainActor
