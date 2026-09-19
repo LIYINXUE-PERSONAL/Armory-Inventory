@@ -11,17 +11,16 @@ struct AmmoCardView: View {
     @AppStorage(InventorySettingsKeys.showValueInCard) private var showValueInCard = true
 
     let ammo: AmmoType
-    let backgroundStyle: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(brandLine)
                     .font(.headline)
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(.primary)
                 Text(ammo.loadDescription)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.78))
+                    .foregroundStyle(.secondary)
             }
 
             Spacer(minLength: 0)
@@ -29,18 +28,18 @@ struct AmmoCardView: View {
             if ammo.quantity > 0 {
                 Text(AmmoType.roundsText(for: ammo.quantity))
                     .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
             }
 
             if showValueInCard, ammo.centsPerRound > 0, ammo.quantity > 0 {
                 Text(ammo.totalValueText)
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(backgroundStyle.gradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var brandLine: String {
@@ -48,18 +47,5 @@ struct AmmoCardView: View {
             return "\(ammo.brand) \(productName)"
         }
         return ammo.brand
-    }
-
-    static func backgroundStyle(for ammo: AmmoType) -> Color {
-        let palette: [Color] = [
-            Color(red: 0.14, green: 0.36, blue: 0.60),
-            Color(red: 0.10, green: 0.52, blue: 0.44),
-            Color(red: 0.69, green: 0.44, blue: 0.12),
-            Color(red: 0.45, green: 0.28, blue: 0.70),
-            Color(red: 0.66, green: 0.20, blue: 0.32),
-            Color(red: 0.28, green: 0.42, blue: 0.23)
-        ]
-        let hashValue = abs("\(ammo.brand)-\(ammo.bulletType)-\(ammo.grain)".hashValue)
-        return palette[hashValue % palette.count]
     }
 }

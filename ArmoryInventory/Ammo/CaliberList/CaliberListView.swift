@@ -92,10 +92,7 @@ struct CaliberListView: View {
                                                         Button {
                                                             selectedAmmoForAdjustment = ammo
                                                         } label: {
-                                                            AmmoCardView(
-                                                                ammo: ammo,
-                                                                backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
-                                                            )
+                                                            AmmoCardView(ammo: ammo)
                                                         }
                                                         .buttonStyle(.plain)
                                                         .accessibilityHint("Opens ammo details for editing")
@@ -110,19 +107,20 @@ struct CaliberListView: View {
                                     }
                                 }
                                 .padding(16)
-                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
 
                             if showTotalValue {
                                 LabeledContent("Total Value", value: totalValueText)
                                     .padding(16)
-                                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                    .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
                         }
                         .padding()
                     }
                 }
             }
+            .background(Color("InventoryBackground").ignoresSafeArea())
             .navigationTitle("Ammunition")
             .onAppear {
                 initializeCollapsedStateIfNeeded()

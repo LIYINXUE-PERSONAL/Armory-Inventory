@@ -53,11 +53,12 @@ struct AmmoHistoryView: View {
                             .foregroundStyle(.secondary)
                     }
                     .padding(16)
-                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
             .padding()
         }
+        .background(Color("InventoryBackground").ignoresSafeArea())
         .navigationTitle("Ammo History")
     }
 
@@ -110,7 +111,7 @@ struct AmmoHistoryView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(16)
-        .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private func historyMetric(title: String, value: Int, amountCents: Int, tint: Color) -> some View {

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @State private var selection: SettingsDestination? = .about
+    @State private var selection: SettingsDestination?
 
     var body: some View {
         NavigationSplitView(columnVisibility: .constant(.all)) {
@@ -58,12 +58,14 @@ struct SettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color(.systemBackground))
+            .background(Color("InventoryBackground").ignoresSafeArea())
             .navigationTitle("Settings")
             .toolbar(removing: .sidebarToggle)
-            .containerBackground(Color(.systemBackground), for: .navigation)
+            .containerBackground(Color("InventoryBackground"), for: .navigation)
         } detail: {
             destination(for: selection ?? .about)
+                .scrollContentBackground(.hidden)
+                .background(Color("InventoryBackground").ignoresSafeArea())
         }
     }
 

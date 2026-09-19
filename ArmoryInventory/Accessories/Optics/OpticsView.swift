@@ -59,13 +59,14 @@ struct OpticsView: View {
                             LabeledContent("Total Value", value: totalValueText)
                                 .padding(16)
                                 .frame(maxWidth: .infinity)
-                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
                     .padding()
                 }
             }
         }
+        .background(Color("InventoryBackground").ignoresSafeArea())
         .navigationTitle("Optics")
         .task {
             reloadOptics()
@@ -170,7 +171,7 @@ struct OpticsView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

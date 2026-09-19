@@ -50,6 +50,7 @@ struct CaliberDetailView: View {
             }
             .padding()
         }
+        .background(Color("InventoryBackground").ignoresSafeArea())
         .navigationTitle(caliber.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -110,10 +111,7 @@ struct CaliberDetailView: View {
                     Button {
                         selectedAmmoForAdjustment = ammo
                     } label: {
-                        AmmoCardView(
-                            ammo: ammo,
-                            backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
-                        )
+                        AmmoCardView(ammo: ammo)
                     }
                     .buttonStyle(.plain)
                     .accessibilityHint("Opens ammo details for editing")
