@@ -8,73 +8,98 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @State private var selection: SettingsDestination? = .about
 
     var body: some View {
-        NavigationStack {
-            List {
+        NavigationSplitView(columnVisibility: .constant(.all)) {
+            List(selection: $selection) {
                 Section("General") {
-                    NavigationLink {
-                        AboutView()
-                    } label: {
+                    NavigationLink(value: SettingsDestination.about) {
                         Label("About", systemImage: "info.circle")
                     }
-                    
-                    NavigationLink {
-                        UserDataSettingsView()
-                    } label: {
+
+                    NavigationLink(value: SettingsDestination.userData) {
                         Label("User Data", systemImage: "externaldrive.badge.person.crop")
                     }
-                    
-                    NavigationLink {
-                        TaxRateSettingsView()
-                    } label: {
+
+                    NavigationLink(value: SettingsDestination.taxRate) {
                         Label("Tax Rate", systemImage: "percent")
                     }
 
-                    NavigationLink {
-                        ValueDisplaySettingsView()
-                    } label: {
+                    NavigationLink(value: SettingsDestination.valueDisplay) {
                         Label("Value Display", systemImage: "dollarsign.circle")
                     }
                 }
-                
+
                 Section("Firearms") {
-                    NavigationLink {
-                        FirearmsSortingView()
-                    } label: {
+                    NavigationLink(value: SettingsDestination.firearmsSorting) {
                         Label("Firearms Sorting", systemImage: "arrow.up.arrow.down")
                     }
                 }
-                
+
                 Section("Ammo") {
-                    NavigationLink {
-                        CaliberRankingSectionView(viewModel: CaliberRankingSectionViewModel())
-                    } label: {
+                    NavigationLink(value: SettingsDestination.caliberSorting) {
                         Label("Caliber Sorting", systemImage: "arrow.up.arrow.down")
                     }
                 }
-                
-                Section("Accessories"){
-                    NavigationLink {
-                        OpticTypeOrderingView(viewModel: OpticTypeOrderingViewModel())
-                    } label: {
+
+                Section("Accessories") {
+                    NavigationLink(value: SettingsDestination.opticsSorting) {
                         Label("Optics Sorting", systemImage: "arrow.up.arrow.down")
                     }
 
-                    NavigationLink {
-                        AttachmentTypeOrderingView(viewModel: AttachmentTypeOrderingViewModel())
-                    } label: {
+                    NavigationLink(value: SettingsDestination.attachmentsSorting) {
                         Label("Attachments Sorting", systemImage: "arrow.up.arrow.down")
                     }
-                    
-                    NavigationLink {
-                        PartTypeOrderingView(viewModel: PartTypeOrderingViewModel())
-                    } label: {
+
+                    NavigationLink(value: SettingsDestination.partsSorting) {
                         Label("Parts Sorting", systemImage: "arrow.up.arrow.down")
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color(.systemBackground))
             .navigationTitle("Settings")
+            .toolbar(removing: .sidebarToggle)
+            .containerBackground(Color(.systemBackground), for: .navigation)
+        } detail: {
+            destination(for: selection ?? .about)
         }
     }
+
+    @ViewBuilder
+    private func destination(for destination: SettingsDestination) -> some View {
+        switch destination {
+        case .about:
+            AboutView()
+        case .userData:
+            UserDataSettingsView()
+        case .taxRate:
+            TaxRateSettingsView()
+        case .valueDisplay:
+            ValueDisplaySettingsView()
+        case .firearmsSorting:
+            FirearmsSortingView()
+        case .caliberSorting:
+            CaliberRankingSectionView(viewModel: CaliberRankingSectionViewModel())
+        case .opticsSorting:
+            OpticTypeOrderingView(viewModel: OpticTypeOrderingViewModel())
+        case .attachmentsSorting:
+            AttachmentTypeOrderingView(viewModel: AttachmentTypeOrderingViewModel())
+        case .partsSorting:
+            PartTypeOrderingView(viewModel: PartTypeOrderingViewModel())
+        }
+    }
+}
+
+private enum SettingsDestination: Hashable {
+    case about
+    case userData
+    case taxRate
+    case valueDisplay
+    case firearmsSorting
+    case caliberSorting
+    case opticsSorting
+    case attachmentsSorting
+    case partsSorting
 }

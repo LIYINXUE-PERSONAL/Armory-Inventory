@@ -37,25 +37,29 @@ struct OpticsView: View {
                 )
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
-                        if filteredOptics.isEmpty {
-                            ContentUnavailableView(
-                                "No Matching Optics",
-                                systemImage: "line.3.horizontal.decrease.circle",
-                                description: Text("No optics match the selected filters.")
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 32)
-                        } else {
-                            ForEach(filteredOptics) { optic in
-                                opticRow(optic)
+                    VStack(spacing: 16) {
+                        AdaptiveMasonryLayout(minimumColumnWidth: 320, spacing: 16) {
+                            if filteredOptics.isEmpty {
+                                ContentUnavailableView(
+                                    "No Matching Optics",
+                                    systemImage: "line.3.horizontal.decrease.circle",
+                                    description: Text("No optics match the selected filters.")
+                                )
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 32)
+                            } else {
+                                ForEach(filteredOptics) { optic in
+                                    opticRow(optic)
+                                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                                }
                             }
+                        }
 
-                            if showTotalValue {
-                                LabeledContent("Total Value", value: totalValueText)
-                                    .padding(16)
-                                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            }
+                        if showTotalValue && !filteredOptics.isEmpty {
+                            LabeledContent("Total Value", value: totalValueText)
+                                .padding(16)
+                                .frame(maxWidth: .infinity)
+                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
                     .padding()
