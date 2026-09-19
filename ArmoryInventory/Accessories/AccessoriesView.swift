@@ -42,7 +42,7 @@ struct AccessoriesView: View {
                             AccessoryCategoryRow(category: category)
                                 .padding(16)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -51,16 +51,16 @@ struct AccessoriesView: View {
                     if showTotalValue {
                         LabeledContent("Total Value", value: totalValueText)
                             .padding(16)
-                            .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                     }
                 }
                 .padding()
             }
-            .background(Color("InventoryBackground").ignoresSafeArea())
+            .background(.background, ignoresSafeAreaEdges: .all)
             .navigationTitle("Accessories")
             .toolbarVisibility(.visible, for: .navigationBar)
             .toolbar(removing: .sidebarToggle)
-            .containerBackground(Color("InventoryBackground"), for: .navigation)
+            .containerBackground(.background, for: .navigation)
         } detail: {
             destination(for: selectedCategoryID)
         }

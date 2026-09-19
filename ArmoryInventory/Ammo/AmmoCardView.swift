@@ -39,7 +39,7 @@ struct AmmoCardView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var brandLine: String {

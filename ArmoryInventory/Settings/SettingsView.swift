@@ -58,14 +58,14 @@ struct SettingsView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color("InventoryBackground").ignoresSafeArea())
+            .background(.background, ignoresSafeAreaEdges: .all)
             .navigationTitle("Settings")
             .toolbar(removing: .sidebarToggle)
-            .containerBackground(Color("InventoryBackground"), for: .navigation)
+            .containerBackground(.background, for: .navigation)
         } detail: {
             destination(for: selection ?? .about)
                 .scrollContentBackground(.hidden)
-                .background(Color("InventoryBackground").ignoresSafeArea())
+                .background(.background, ignoresSafeAreaEdges: .all)
         }
     }
 

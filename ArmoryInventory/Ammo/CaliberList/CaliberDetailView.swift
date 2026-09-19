@@ -50,7 +50,7 @@ struct CaliberDetailView: View {
             }
             .padding()
         }
-        .background(Color("InventoryBackground").ignoresSafeArea())
+        .background(.background, ignoresSafeAreaEdges: .all)
         .navigationTitle(caliber.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

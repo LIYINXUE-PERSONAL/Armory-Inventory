@@ -107,20 +107,20 @@ struct CaliberListView: View {
                                     }
                                 }
                                 .padding(16)
-                                .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
 
                             if showTotalValue {
                                 LabeledContent("Total Value", value: totalValueText)
                                     .padding(16)
-                                    .background(Color("InventoryCardBackground"), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
                         }
                         .padding()
                     }
                 }
             }
-            .background(Color("InventoryBackground").ignoresSafeArea())
+            .background(.background, ignoresSafeAreaEdges: .all)
             .navigationTitle("Ammunition")
             .onAppear {
                 initializeCollapsedStateIfNeeded()
