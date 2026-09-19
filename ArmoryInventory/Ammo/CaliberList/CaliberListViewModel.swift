@@ -89,17 +89,6 @@ final class CaliberListViewModel {
         sortedAmmo(for: caliber).filter { $0.quantity <= 0 }
     }
 
-    func ammoRows(for caliber: Caliber, includeOutOfStock: Bool) -> [[AmmoType]] {
-        let ammo = includeOutOfStock ? sortedAmmo(for: caliber) : inStockSortedAmmo(for: caliber)
-        return ammoRows(for: ammo)
-    }
-
-    func ammoRows(for ammo: [AmmoType]) -> [[AmmoType]] {
-        return stride(from: 0, to: ammo.count, by: 2).map { index in
-            Array(ammo[index..<min(index + 2, ammo.count)])
-        }
-    }
-
     func totalValueText(for calibers: [Caliber], currencyCode: String) -> String {
         let totalCents = calibers
             .flatMap(\.ammoTypes)
