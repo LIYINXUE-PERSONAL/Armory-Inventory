@@ -59,14 +59,13 @@ struct PartsView: View {
                             LabeledContent("Total Value", value: totalValueText)
                                 .padding(16)
                                 .frame(maxWidth: .infinity)
-                                .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
                     .padding()
                 }
             }
         }
-        .background(.background, ignoresSafeAreaEdges: .all)
         .navigationTitle("Parts")
         .task {
             reloadParts()
@@ -154,7 +153,7 @@ struct PartsView: View {
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

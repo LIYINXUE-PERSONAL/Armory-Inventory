@@ -84,14 +84,13 @@ struct FirearmsView: View {
                                 LabeledContent("Total Value", value: totalValueText)
                                     .padding(16)
                                     .frame(maxWidth: .infinity)
-                                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
                         }
                         .padding()
                     }
                 }
             }
-            .background(.background, ignoresSafeAreaEdges: .all)
             .navigationTitle("Firearms")
             .task {
                 reloadFirearms()
@@ -323,7 +322,7 @@ private struct FirearmCardView: View {
             }
         }
         .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
 
