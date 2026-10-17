@@ -3944,6 +3944,7 @@
       }
     },
     "Examples" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -8038,6 +8039,7 @@
       }
     },
     "Overview" : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {
@@ -9799,6 +9801,7 @@
       }
     },
     "The share sheet could not be presented." : {
+      "extractionState" : "stale",
       "localizations" : {
         "es" : {
           "stringUnit" : {

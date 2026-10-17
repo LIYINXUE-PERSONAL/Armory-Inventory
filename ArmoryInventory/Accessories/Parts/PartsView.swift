@@ -37,25 +37,29 @@ struct PartsView: View {
                 )
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
-                        if filteredParts.isEmpty {
-                            ContentUnavailableView(
-                                "No Matching Parts",
-                                systemImage: "line.3.horizontal.decrease.circle",
-                                description: Text("No parts match the selected filters.")
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 32)
-                        } else {
-                            ForEach(filteredParts) { part in
-                                partRow(part)
+                    VStack(spacing: 16) {
+                        AdaptiveMasonryLayout(minimumColumnWidth: 320, spacing: 16) {
+                            if filteredParts.isEmpty {
+                                ContentUnavailableView(
+                                    "No Matching Parts",
+                                    systemImage: "line.3.horizontal.decrease.circle",
+                                    description: Text("No parts match the selected filters.")
+                                )
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 32)
+                            } else {
+                                ForEach(filteredParts) { part in
+                                    partRow(part)
+                                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                                }
                             }
+                        }
 
-                            if showTotalValue {
-                                LabeledContent("Total Value", value: totalValueText)
-                                    .padding(16)
-                                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            }
+                        if showTotalValue && !filteredParts.isEmpty {
+                            LabeledContent("Total Value", value: totalValueText)
+                                .padding(16)
+                                .frame(maxWidth: .infinity)
+                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
                     .padding()

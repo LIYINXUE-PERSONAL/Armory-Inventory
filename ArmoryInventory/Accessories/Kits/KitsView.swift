@@ -36,47 +36,51 @@ struct KitsView: View {
                 )
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
-                        if filteredKits.isEmpty {
-                            ContentUnavailableView(
-                                "No Matching Kits",
-                                systemImage: "line.3.horizontal.decrease.circle",
-                                description: Text("No kits match the selected filters.")
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 32)
-                        } else {
-                            ForEach(filteredKits) { kit in
-                                Button {
-                                    selectedKit = kit
-                                } label: {
-                                    KitCardView(
-                                        kit: kit,
-                                        componentSummaries: viewModel.componentSummaries(for: kit),
-                                        showsExpandedCards: showsExpandedCards,
-                                        showValueInCard: showValueInCard
-                                    )
-                                }
-                                .buttonStyle(.plain)
-                                .onDrag {
-                                    draggedKit = kit
-                                    return NSItemProvider(object: kit.displayName as NSString)
-                                }
-                                .onDrop(
-                                    of: [UTType.text],
-                                    delegate: KitDropDelegate(
-                                        targetKit: kit,
-                                        kits: filteredKits,
-                                        draggedKit: $draggedKit,
-                                        onMove: moveKits
-                                    )
+                    VStack(spacing: 16) {
+                        AdaptiveMasonryLayout(minimumColumnWidth: 320, spacing: 16) {
+                            if filteredKits.isEmpty {
+                                ContentUnavailableView(
+                                    "No Matching Kits",
+                                    systemImage: "line.3.horizontal.decrease.circle",
+                                    description: Text("No kits match the selected filters.")
                                 )
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 32)
+                            } else {
+                                ForEach(filteredKits) { kit in
+                                    Button {
+                                        selectedKit = kit
+                                    } label: {
+                                        KitCardView(
+                                            kit: kit,
+                                            componentSummaries: viewModel.componentSummaries(for: kit),
+                                            showsExpandedCards: showsExpandedCards,
+                                            showValueInCard: showValueInCard
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
+                                    .onDrag {
+                                        draggedKit = kit
+                                        return NSItemProvider(object: kit.displayName as NSString)
+                                    }
+                                    .onDrop(
+                                        of: [UTType.text],
+                                        delegate: KitDropDelegate(
+                                            targetKit: kit,
+                                            kits: filteredKits,
+                                            draggedKit: $draggedKit,
+                                            onMove: moveKits
+                                        )
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                                }
                             }
                         }
 
                         if showTotalValue {
                             LabeledContent("Total Value", value: totalValueText)
                                 .padding(16)
+                                .frame(maxWidth: .infinity)
                                 .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }

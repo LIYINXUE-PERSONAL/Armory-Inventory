@@ -37,25 +37,29 @@ struct AttachmentsView: View {
                 )
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
-                        if filteredAttachments.isEmpty {
-                            ContentUnavailableView(
-                                "No Matching Attachments",
-                                systemImage: "line.3.horizontal.decrease.circle",
-                                description: Text("No attachments match the selected filters.")
-                            )
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 32)
-                        } else {
-                            ForEach(filteredAttachments) { attachment in
-                                attachmentRow(attachment)
+                    VStack(spacing: 16) {
+                        AdaptiveMasonryLayout(minimumColumnWidth: 320, spacing: 16) {
+                            if filteredAttachments.isEmpty {
+                                ContentUnavailableView(
+                                    "No Matching Attachments",
+                                    systemImage: "line.3.horizontal.decrease.circle",
+                                    description: Text("No attachments match the selected filters.")
+                                )
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 32)
+                            } else {
+                                ForEach(filteredAttachments) { attachment in
+                                    attachmentRow(attachment)
+                                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                                }
                             }
+                        }
 
-                            if showTotalValue {
-                                LabeledContent("Total Value", value: totalValueText)
-                                    .padding(16)
-                                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            }
+                        if showTotalValue && !filteredAttachments.isEmpty {
+                            LabeledContent("Total Value", value: totalValueText)
+                                .padding(16)
+                                .frame(maxWidth: .infinity)
+                                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
                     .padding()

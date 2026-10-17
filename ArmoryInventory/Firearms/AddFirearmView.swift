@@ -46,6 +46,7 @@ struct AddFirearmView: View {
     @State private var lookupData = AddFirearmLookupData()
     @State private var hasLoadedInitialKits = false
     @State private var snapshotErrorMessage: String?
+    @State private var sharedSnapshot: SharedSnapshot?
     @State private var showingDeleteConfirmation = false
 
     let viewModel: AddFirearmViewModel
@@ -525,7 +526,7 @@ struct AddFirearmView: View {
             }
             .sheet(isPresented: $showingAddCaliber, onDismiss: reloadLookupData) {
                 AddCaliberView(viewModel: AddCaliberViewModel())
-                    .presentationDetents([.medium])
+                    .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showingOpticsPicker) {
                 NavigationStack {
@@ -788,6 +789,10 @@ struct AddFirearmView: View {
                 }
             } message: {
                 Text(snapshotErrorMessage ?? "")
+            }
+            .sheet(item: $sharedSnapshot) { snapshot in
+                ActivityView(activityItems: [snapshot.image])
+                    .presentationDetents([.medium, .large])
             }
         }
     }
@@ -1196,7 +1201,7 @@ struct AddFirearmView: View {
             return
         }
 
-        presentShareSheet(with: image)
+        sharedSnapshot = SharedSnapshot(image: image)
     }
 
     private func renderSnapshotImage(for firearm: Firearm) -> UIImage? {
@@ -1220,44 +1225,29 @@ struct AddFirearmView: View {
         return renderer.uiImage
     }
 
-    private func presentShareSheet(with image: UIImage) {
-        guard let presentingViewController = UIApplication.topViewController() else {
-            snapshotErrorMessage = FirearmSnapshotError.presentationFailed.localizedDescription
-            return
-        }
-
-        let activityViewController = UIActivityViewController(
-            activityItems: [image],
-            applicationActivities: nil
-        )
-
-        if let popover = activityViewController.popoverPresentationController {
-            popover.sourceView = presentingViewController.view
-            popover.sourceRect = CGRect(
-                x: presentingViewController.view.bounds.midX,
-                y: presentingViewController.view.bounds.midY,
-                width: 1,
-                height: 1
-            )
-            popover.permittedArrowDirections = []
-        }
-
-        presentingViewController.present(activityViewController, animated: true)
-    }
 }
 
 private enum FirearmSnapshotError: LocalizedError {
     case renderFailed
-    case presentationFailed
 
     var errorDescription: String? {
-        switch self {
-        case .renderFailed:
-            return String(localized: "The snapshot image could not be generated.")
-        case .presentationFailed:
-            return String(localized: "The share sheet could not be presented.")
-        }
+        String(localized: "The snapshot image could not be generated.")
     }
+}
+
+private struct SharedSnapshot: Identifiable {
+    let id = UUID()
+    let image: UIImage
+}
+
+private struct ActivityView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) { }
 }
 
 private struct ManagedItemRow: View {
@@ -1282,31 +1272,6 @@ private struct ManagedItemRow: View {
             subtitle,
             kitName
         )
-    }
-}
-
-private extension UIApplication {
-    static func topViewController(
-        base: UIViewController? = UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow)?
-            .rootViewController
-    ) -> UIViewController? {
-        if let navigationController = base as? UINavigationController {
-            return topViewController(base: navigationController.visibleViewController)
-        }
-
-        if let tabBarController = base as? UITabBarController,
-           let selectedViewController = tabBarController.selectedViewController {
-            return topViewController(base: selectedViewController)
-        }
-
-        if let presentedViewController = base?.presentedViewController {
-            return topViewController(base: presentedViewController)
-        }
-
-        return base
     }
 }
 

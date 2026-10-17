@@ -84,26 +84,21 @@ struct CaliberListView: View {
                                                 .frame(maxWidth: .infinity)
                                                 .padding(.vertical, 12)
                                             } else {
-                                                Grid(horizontalSpacing: 12, verticalSpacing: 12) {
-                                                    ForEach(viewModel.ammoRows(for: caliber, includeOutOfStock: false), id: \.self) { row in
-                                                        GridRow {
-                                                            ForEach(row) { ammo in
-                                                                Button {
-                                                                    selectedAmmoForAdjustment = ammo
-                                                                } label: {
-                                                                    AmmoCardView(
-                                                                        ammo: ammo,
-                                                                        backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
-                                                                    )
-                                                                }
-                                                                .buttonStyle(.plain)
-                                                                .accessibilityHint("Opens ammo details for editing")
-                                                            }
-
-                                                            if row.count == 1 {
-                                                                Color.clear
-                                                            }
+                                                LazyVGrid(
+                                                    columns: [GridItem(.adaptive(minimum: 160), spacing: 12)],
+                                                    spacing: 12
+                                                ) {
+                                                    ForEach(viewModel.inStockSortedAmmo(for: caliber)) { ammo in
+                                                        Button {
+                                                            selectedAmmoForAdjustment = ammo
+                                                        } label: {
+                                                            AmmoCardView(
+                                                                ammo: ammo,
+                                                                backgroundStyle: AmmoCardView.backgroundStyle(for: ammo)
+                                                            )
                                                         }
+                                                        .buttonStyle(.plain)
+                                                        .accessibilityHint("Opens ammo details for editing")
                                                     }
                                                 }
                                             }
@@ -152,7 +147,7 @@ struct CaliberListView: View {
             }
             .sheet(isPresented: $showingAddCaliber) {
                 AddCaliberView(viewModel: AddCaliberViewModel())
-                    .presentationDetents([.medium])
+                    .presentationDetents([.medium, .large])
             }
             .sheet(item: $selectedCaliberForAmmo) { caliber in
                 AddAmmoTypeView(caliber: caliber, viewModel: AddAmmoTypeViewModel())

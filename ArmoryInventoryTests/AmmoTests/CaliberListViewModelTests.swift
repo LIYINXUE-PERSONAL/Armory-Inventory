@@ -189,17 +189,9 @@ final class CaliberListViewModelTests: XCTestCase {
             taxRateProvider: FixedInventoryTaxRateProvider()
         )
 
-        let inStockRows = viewModel.ammoRows(for: caliber, includeOutOfStock: false)
-        let allRows = viewModel.ammoRows(for: caliber, includeOutOfStock: true)
-        let outOfStockRows = viewModel.ammoRows(for: viewModel.outOfStockSortedAmmo(for: caliber))
-
-        XCTAssertEqual(inStockRows.count, 1)
-        XCTAssertEqual(inStockRows[0].map(\.brand), ["Federal", "Blazer"])
-        XCTAssertEqual(allRows.count, 2)
-        XCTAssertEqual(allRows[0].map(\.brand), ["Federal", "Blazer"])
-        XCTAssertEqual(allRows[1].map(\.brand), ["AAC", "PMC"])
-        XCTAssertEqual(outOfStockRows.count, 1)
-        XCTAssertEqual(outOfStockRows[0].map(\.brand), ["AAC", "PMC"])
+        XCTAssertEqual(viewModel.inStockSortedAmmo(for: caliber).map(\.brand), ["Federal", "Blazer"])
+        XCTAssertEqual(viewModel.sortedAmmo(for: caliber).map(\.brand), ["Federal", "Blazer", "AAC", "PMC"])
+        XCTAssertEqual(viewModel.outOfStockSortedAmmo(for: caliber).map(\.brand), ["AAC", "PMC"])
     }
 
     @MainActor

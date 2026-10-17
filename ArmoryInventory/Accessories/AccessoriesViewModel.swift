@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct AccessoryCategory: Identifiable {
+struct AccessoryCategory: Identifiable, Hashable {
     let id: String
     let name: String
     let systemImage: String

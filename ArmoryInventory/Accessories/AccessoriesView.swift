@@ -14,10 +14,15 @@ struct AccessoriesView: View {
     @Query private var attachments: [Attachment]
     @Query private var parts: [Part]
     @AppStorage(InventorySettingsKeys.showTotalValue) private var showTotalValue = true
+    @State private var selectedCategoryID: AccessoryCategory.ID = "optics"
+    @State private var preferredCompactColumn = NavigationSplitViewColumn.sidebar
     private let viewModel = AccessoriesViewModel()
 
     var body: some View {
-        NavigationStack {
+        NavigationSplitView(
+            columnVisibility: .constant(.all),
+            preferredCompactColumn: $preferredCompactColumn
+        ) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 8) {
@@ -30,8 +35,9 @@ struct AccessoriesView: View {
                     }
 
                     ForEach(viewModel.topLevelCategories) { category in
-                        NavigationLink {
-                            destination(for: category)
+                        Button {
+                            selectedCategoryID = category.id
+                            preferredCompactColumn = .detail
                         } label: {
                             AccessoryCategoryRow(category: category)
                                 .padding(16)
@@ -51,12 +57,17 @@ struct AccessoriesView: View {
                 .padding()
             }
             .navigationTitle("Accessories")
+            .toolbarVisibility(.visible, for: .navigationBar)
+            .toolbar(removing: .sidebarToggle)
+            .containerBackground(Color(.systemBackground), for: .navigation)
+        } detail: {
+            destination(for: selectedCategoryID)
         }
     }
 
     @ViewBuilder
-    private func destination(for category: AccessoryCategory) -> some View {
-        switch category.id {
+    private func destination(for categoryID: AccessoryCategory.ID) -> some View {
+        switch categoryID {
         case "optics":
             OpticsView()
         case "magazines":
@@ -68,7 +79,7 @@ struct AccessoriesView: View {
         case "kits":
             KitsView()
         default:
-            AccessoryCategoryDetailView(category: category)
+            OpticsView()
         }
     }
 
@@ -95,32 +106,6 @@ private struct AccessoryCategoryRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-    }
-}
-
-private struct AccessoryCategoryDetailView: View {
-    let category: AccessoryCategory
-
-    var body: some View {
-        List {
-            Section {
-                Label(category.name, systemImage: category.systemImage)
-                    .font(.headline)
-
-                Text(category.detailDescription)
-                    .foregroundStyle(.secondary)
-            } header: {
-                Text("Overview")
-            }
-
-            Section("Examples") {
-                ForEach(category.examples, id: \.self) { example in
-                    Text(example)
-                }
-            }
-        }
-        .navigationTitle(category.name)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

@@ -30,30 +30,34 @@ struct MagazinesView: View {
                 )
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 16) {
-                        ForEach(groupedMagazines) { group in
-                            VStack(alignment: .leading, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(group.displayName)
-                                        .font(.headline)
-                                    Text(group.summaryText)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text(group.linkedFirearmsText)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .padding(.horizontal, 4)
+                    VStack(spacing: 16) {
+                        AdaptiveMasonryLayout(minimumColumnWidth: 320, spacing: 16) {
+                            ForEach(groupedMagazines) { group in
+                                VStack(alignment: .leading, spacing: 10) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(group.displayName)
+                                            .font(.headline)
+                                        Text(group.summaryText)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(group.linkedFirearmsText)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(.horizontal, 4)
 
-                                ForEach(group.magazines) { magazine in
-                                    magazineRow(magazine)
+                                    ForEach(group.magazines) { magazine in
+                                        magazineRow(magazine)
+                                    }
                                 }
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
                             }
                         }
 
                         if showTotalValue {
                             LabeledContent("Total Value", value: totalValueText)
                                 .padding(16)
+                                .frame(maxWidth: .infinity)
                                 .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }

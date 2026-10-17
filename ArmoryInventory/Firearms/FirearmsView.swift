@@ -42,44 +42,48 @@ struct FirearmsView: View {
                     )
                 } else {
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 16) {
-                            ForEach(filteredFirearms) { firearm in
-                                FirearmCardView(
-                                    firearm: firearm,
-                                    configuration: firearm.resolvedConfiguration(kits: kits),
-                                    showsExpandedCards: showsExpandedCards,
-                                    showValueInCard: showValueInCard,
-                                    effectiveValueCents: viewModel.effectiveValueCents(for: firearm, kits: kits, magazines: magazines),
-                                    onTap: {
-                                        selectedFirearm = firearm
-                                    },
-                                    onSelectCaliber: {
-                                        if let caliber = firearm.resolvedConfiguration(kits: kits).caliber {
-                                            selectedCaliber = caliber
+                        VStack(spacing: 16) {
+                            AdaptiveMasonryLayout(minimumColumnWidth: 320, spacing: 16) {
+                                ForEach(filteredFirearms) { firearm in
+                                    FirearmCardView(
+                                        firearm: firearm,
+                                        configuration: firearm.resolvedConfiguration(kits: kits),
+                                        showsExpandedCards: showsExpandedCards,
+                                        showValueInCard: showValueInCard,
+                                        effectiveValueCents: viewModel.effectiveValueCents(for: firearm, kits: kits, magazines: magazines),
+                                        onTap: {
+                                            selectedFirearm = firearm
+                                        },
+                                        onSelectCaliber: {
+                                            if let caliber = firearm.resolvedConfiguration(kits: kits).caliber {
+                                                selectedCaliber = caliber
+                                            }
                                         }
-                                    }
-                                )
-                                .onDrag {
-                                    guard selectedSortOrder == .manual else {
-                                        return NSItemProvider()
-                                    }
-                                    draggedFirearm = firearm
-                                    return NSItemProvider(object: firearm.displayName as NSString)
-                                }
-                                .onDrop(
-                                    of: [UTType.text],
-                                    delegate: FirearmDropDelegate(
-                                        targetFirearm: firearm,
-                                        firearms: filteredFirearms,
-                                        draggedFirearm: $draggedFirearm,
-                                        onMove: moveFirearms
                                     )
-                                )
+                                    .onDrag {
+                                        guard selectedSortOrder == .manual else {
+                                            return NSItemProvider()
+                                        }
+                                        draggedFirearm = firearm
+                                        return NSItemProvider(object: firearm.displayName as NSString)
+                                    }
+                                    .onDrop(
+                                        of: [UTType.text],
+                                        delegate: FirearmDropDelegate(
+                                            targetFirearm: firearm,
+                                            firearms: filteredFirearms,
+                                            draggedFirearm: $draggedFirearm,
+                                            onMove: moveFirearms
+                                        )
+                                    )
+                                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                                }
                             }
 
                             if showTotalValue {
                                 LabeledContent("Total Value", value: totalValueText)
                                     .padding(16)
+                                    .frame(maxWidth: .infinity)
                                     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                             }
                         }
