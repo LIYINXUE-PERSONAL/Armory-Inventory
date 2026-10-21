@@ -48,6 +48,8 @@ struct RootTabView: View {
 @main
 struct ArmoryInventory: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var appLockCoordinator = AppLockCoordinator()
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -81,9 +83,22 @@ struct ArmoryInventory: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            ProtectedRootView()
+                .environmentObject(appLockCoordinator)
         }
         .modelContainer(sharedModelContainer)
+        .onChange(of: scenePhase, initial: true) { _, newPhase in
+            switch newPhase {
+            case .active:
+                appLockCoordinator.appDidBecomeActive()
+            case .background:
+                appLockCoordinator.appDidEnterBackground()
+            case .inactive:
+                break
+            @unknown default:
+                break
+            }
+        }
     }
 
     private static func backfillMissingIDs(in container: ModelContainer) {

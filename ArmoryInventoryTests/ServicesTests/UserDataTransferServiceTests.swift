@@ -137,6 +137,7 @@ final class UserDataTransferServiceTests: XCTestCase {
         let destinationContext = destinationContainer.mainContext
         let destinationDefaults = makeUserDefaults()
         destinationDefaults.set(false, forKey: InventorySettingsKeys.showValueInCard)
+        destinationDefaults.set(true, forKey: UserDefaultsAppLockSettingsStore.enabledKey)
 
         let importService = UserDataTransferService(userDefaults: destinationDefaults)
         try importService.importData(data, into: destinationContext)
@@ -156,6 +157,7 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertEqual(importedAttachments.count, 1)
         XCTAssertEqual(importedParts.count, 1)
         XCTAssertEqual(importedRecords.count, 1)
+        XCTAssertTrue(destinationDefaults.bool(forKey: UserDefaultsAppLockSettingsStore.enabledKey))
         XCTAssertEqual(importedFirearms.first?.id, firearmID)
         XCTAssertEqual(importedFirearms.first?.caliber?.name, "9mm")
         XCTAssertEqual(importedFirearms.first?.lastCleanedDate, Date(timeIntervalSince1970: 1_500))
@@ -290,6 +292,7 @@ final class UserDataTransferServiceTests: XCTestCase {
     func testClearAllDataRemovesInventoryAndManagedSettings() throws {
         let defaults = makeUserDefaults()
         seedManagedSettings(in: defaults)
+        defaults.set(true, forKey: UserDefaultsAppLockSettingsStore.enabledKey)
         let service = UserDataTransferService(userDefaults: defaults)
         let container = try makeInMemoryContainer()
         let context = container.mainContext
@@ -321,6 +324,7 @@ final class UserDataTransferServiceTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.partTypeSortOrder))
         XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.partItemSortOrder))
         XCTAssertNil(defaults.object(forKey: InventorySettingsKeys.lastModelSaveDate))
+        XCTAssertTrue(defaults.bool(forKey: UserDefaultsAppLockSettingsStore.enabledKey))
     }
 
     private func makeUserDefaults() -> UserDefaults {

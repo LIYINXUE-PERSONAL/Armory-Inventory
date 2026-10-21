@@ -1,6 +1,6 @@
 # Privacy Policy for Armory Inventory
 
-Last updated: April 10, 2026
+Last updated: October 21, 2026
 
 Armory Inventory is designed to let you track firearms, ammunition, optics, magazines, attachments, parts, and related collection information on your own device.
 
@@ -41,6 +41,10 @@ Armory Inventory does not use third-party analytics, advertising SDKs, or in-app
 ## Data Security
 
 Because your data is stored locally, the security of that data depends in part on the security protections enabled on your device and any locations where you store exported backups.
+
+The app offers an optional App Lock that uses Apple's system authentication, such as Face ID, Touch ID, or the device passcode, to restrict access when the app returns from the background. Authentication is performed by the operating system. The app does not receive or store biometric templates.
+
+App Lock controls access to the app's interface; it does not independently encrypt the local database or exported JSON backup files.
 
 ## Children's Privacy
 
