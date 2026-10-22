@@ -37,13 +37,13 @@ final class AppLockCoordinatorTests: XCTestCase {
         )
 
         coordinator.appDidBecomeActive()
-        await allowAuthenticationTaskToComplete()
+        await allowAuthenticationTaskToComplete(for: coordinator)
 
         XCTAssertEqual(coordinator.state, .unlocked)
         XCTAssertEqual(authenticator.authenticateCallCount, 1)
 
         coordinator.appDidBecomeActive()
-        await allowAuthenticationTaskToComplete()
+        await allowAuthenticationTaskToComplete(for: coordinator)
 
         XCTAssertEqual(authenticator.authenticateCallCount, 1)
     }
@@ -56,13 +56,13 @@ final class AppLockCoordinatorTests: XCTestCase {
         )
 
         coordinator.appDidBecomeActive()
-        await allowAuthenticationTaskToComplete()
+        await allowAuthenticationTaskToComplete(for: coordinator)
 
         XCTAssertEqual(coordinator.state, .unavailable(.userCancelled))
         XCTAssertFalse(coordinator.canRevealProtectedContent)
 
         coordinator.appDidBecomeActive()
-        await allowAuthenticationTaskToComplete()
+        await allowAuthenticationTaskToComplete(for: coordinator)
 
         XCTAssertEqual(authenticator.authenticateCallCount, 1)
     }
@@ -79,7 +79,7 @@ final class AppLockCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.state, .authenticating)
 
         coordinator.appDidEnterBackground()
-        await allowAuthenticationTaskToComplete()
+        await allowAuthenticationTaskToComplete(for: coordinator)
 
         XCTAssertEqual(authenticator.cancelCallCount, 1)
         XCTAssertEqual(coordinator.state, .locked)
@@ -94,10 +94,10 @@ final class AppLockCoordinatorTests: XCTestCase {
         )
 
         coordinator.appDidBecomeActive()
-        await allowAuthenticationTaskToComplete()
+        await allowAuthenticationTaskToComplete(for: coordinator)
         coordinator.appDidEnterBackground()
         coordinator.appDidBecomeActive()
-        await allowAuthenticationTaskToComplete()
+        await allowAuthenticationTaskToComplete(for: coordinator)
 
         XCTAssertEqual(coordinator.state, .unlocked)
         XCTAssertEqual(authenticator.authenticateCallCount, 2)
@@ -164,9 +164,10 @@ final class AppLockCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.state, .disabled)
     }
 
-    private func allowAuthenticationTaskToComplete() async {
-        await Task.yield()
-        await Task.yield()
+    private func allowAuthenticationTaskToComplete(for coordinator: AppLockCoordinator) async {
+        for _ in 0..<20 where coordinator.state == .authenticating {
+            await Task.yield()
+        }
     }
 }
 

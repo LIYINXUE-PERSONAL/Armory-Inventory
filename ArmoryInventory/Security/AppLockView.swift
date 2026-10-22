@@ -88,6 +88,7 @@ struct ProtectedRootView: View {
         .overlay {
             ScenePrivacyShieldProbe(
                 isProtectionEnabled: coordinator.isEnabled,
+                isAuthenticating: coordinator.state == .authenticating || coordinator.isChangingSetting,
                 isSceneActive: scenePhase == .active
             )
             .frame(width: 0, height: 0)

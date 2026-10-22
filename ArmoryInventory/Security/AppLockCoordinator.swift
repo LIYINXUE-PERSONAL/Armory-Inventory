@@ -122,6 +122,7 @@ final class AppLockCoordinator: ObservableObject {
 
         authenticationTask = Task { [weak self] in
             guard let self else { return }
+            await Task.yield()
             let result = await authenticator.authenticate(
                 reason: String(localized: "Unlock Armory Inventory to access your inventory.")
             )
