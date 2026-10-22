@@ -9,6 +9,34 @@ import SwiftUI
 
 struct AppLockView: View {
     @EnvironmentObject private var coordinator: AppLockCoordinator
+
+    var body: some View {
+        AppLockStatusView(
+            isAuthenticating: coordinator.state == .authenticating,
+            statusMessage: statusMessage,
+            focusesHeadingOnAppear: true,
+            unlockAction: coordinator.requestUnlock
+        )
+    }
+
+    private var statusMessage: String {
+        switch coordinator.state {
+        case .authenticating:
+            return String(localized: "Confirm your identity using the system prompt.")
+        case let .unavailable(failure):
+            return failure.recoveryMessage
+        case .disabled, .locked, .unlocked:
+            return String(localized: "Authenticate to access your inventory.")
+        }
+    }
+}
+
+struct AppLockStatusView: View {
+    let isAuthenticating: Bool
+    let statusMessage: String
+    let focusesHeadingOnAppear: Bool
+    let unlockAction: (() -> Void)?
+
     @AccessibilityFocusState private var isHeadingFocused: Bool
 
     var body: some View {
@@ -30,42 +58,37 @@ struct AppLockView: View {
                     .multilineTextAlignment(.center)
             }
 
-            if coordinator.state == .authenticating {
-                ProgressView("Authenticating…")
-                    .accessibilityLabel("Authenticating")
-            } else {
-                Button {
-                    coordinator.requestUnlock()
-                } label: {
-                    Label("Unlock", systemImage: "lock.open")
-                        .frame(maxWidth: 280)
+            ZStack {
+                if isAuthenticating {
+                    ProgressView("Authenticating…")
+                        .accessibilityLabel("Authenticating")
+                } else if let unlockAction {
+                    Button {
+                        unlockAction()
+                    } label: {
+                        Label("Unlock", systemImage: "lock.open")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .accessibilityHint("Shows system authentication")
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .accessibilityHint("Shows system authentication")
             }
+            .frame(maxWidth: 280)
+            .frame(height: 52)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(32)
         .background(Color(.systemBackground))
         .onAppear {
-            isHeadingFocused = true
-        }
-        .onChange(of: coordinator.state) { _, newState in
-            if newState != .authenticating {
+            if focusesHeadingOnAppear {
                 isHeadingFocused = true
             }
         }
-    }
-
-    private var statusMessage: String {
-        switch coordinator.state {
-        case .authenticating:
-            return String(localized: "Confirm your identity using the system prompt.")
-        case let .unavailable(failure):
-            return failure.recoveryMessage
-        case .disabled, .locked, .unlocked:
-            return String(localized: "Authenticate to access your inventory.")
+        .onChange(of: isAuthenticating) { _, isAuthenticating in
+            if focusesHeadingOnAppear && !isAuthenticating {
+                isHeadingFocused = true
+            }
         }
     }
 }

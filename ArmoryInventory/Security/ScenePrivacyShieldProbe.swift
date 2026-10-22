@@ -134,13 +134,14 @@ final class PrivacyShieldProbeView: UIView {
 }
 
 final class PrivacyShieldView: UIView {
-    private let progressView = UIActivityIndicatorView(style: .medium)
-    private let statusLabel = UILabel()
+    private let hostingController: UIHostingController<AppLockStatusView>
 
     init(isAuthenticating: Bool) {
+        hostingController = UIHostingController(
+            rootView: Self.content(isAuthenticating: isAuthenticating)
+        )
         super.init(frame: .zero)
         configureView()
-        configure(isAuthenticating: isAuthenticating)
     }
 
     @available(*, unavailable)
@@ -149,16 +150,7 @@ final class PrivacyShieldView: UIView {
     }
 
     func configure(isAuthenticating: Bool) {
-        statusLabel.text = isAuthenticating
-            ? String(localized: "Confirm your identity using the system prompt.")
-            : String(localized: "Authenticate to access your inventory.")
-
-        if isAuthenticating {
-            progressView.startAnimating()
-        } else {
-            progressView.stopAnimating()
-        }
-        progressView.isHidden = !isAuthenticating
+        hostingController.rootView = Self.content(isAuthenticating: isAuthenticating)
     }
 
     private func configureView() {
@@ -166,43 +158,26 @@ final class PrivacyShieldView: UIView {
         isAccessibilityElement = false
         accessibilityElementsHidden = true
 
-        let iconView = UIImageView(image: UIImage(systemName: "lock.shield.fill"))
-        iconView.preferredSymbolConfiguration = UIImage.SymbolConfiguration(pointSize: 52)
-        iconView.tintColor = tintColor
-        iconView.contentMode = .scaleAspectFit
-
-        let titleLabel = UILabel()
-        titleLabel.text = String(localized: "Armory Inventory Locked")
-        titleLabel.font = .preferredFont(forTextStyle: .title2)
-        titleLabel.adjustsFontForContentSizeCategory = true
-        titleLabel.textAlignment = .center
-        titleLabel.numberOfLines = 0
-
-        statusLabel.font = .preferredFont(forTextStyle: .body)
-        statusLabel.adjustsFontForContentSizeCategory = true
-        statusLabel.textColor = .secondaryLabel
-        statusLabel.textAlignment = .center
-        statusLabel.numberOfLines = 0
-
-        let statusStack = UIStackView(arrangedSubviews: [statusLabel, progressView])
-        statusStack.axis = .vertical
-        statusStack.alignment = .center
-        statusStack.spacing = 12
-
-        let stack = UIStackView(arrangedSubviews: [iconView, titleLabel, statusStack])
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.axis = .vertical
-        stack.alignment = .center
-        stack.spacing = 16
-        addSubview(stack)
+        let hostedView = hostingController.view!
+        hostedView.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(hostedView)
 
         NSLayoutConstraint.activate([
-            iconView.widthAnchor.constraint(equalToConstant: 64),
-            iconView.heightAnchor.constraint(equalToConstant: 64),
-            stack.centerXAnchor.constraint(equalTo: centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: centerYAnchor),
-            stack.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 32),
-            stack.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -32)
+            hostedView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            hostedView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            hostedView.topAnchor.constraint(equalTo: topAnchor),
+            hostedView.bottomAnchor.constraint(equalTo: bottomAnchor)
         ])
+    }
+
+    private static func content(isAuthenticating: Bool) -> AppLockStatusView {
+        AppLockStatusView(
+            isAuthenticating: isAuthenticating,
+            statusMessage: isAuthenticating
+                ? String(localized: "Confirm your identity using the system prompt.")
+                : String(localized: "Authenticate to access your inventory."),
+            focusesHeadingOnAppear: false,
+            unlockAction: nil
+        )
     }
 }
