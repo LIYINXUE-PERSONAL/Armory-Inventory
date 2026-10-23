@@ -164,6 +164,64 @@ final class AppLockCoordinatorTests: XCTestCase {
         XCTAssertEqual(coordinator.state, .disabled)
     }
 
+    func testPrivacyShieldRevealsImmediatelyAfterSuccessfulAuthentication() {
+        var state = PrivacyShieldVisibilityState()
+        state.update(
+            isProtectionEnabled: true,
+            isAuthenticating: true,
+            canRevealProtectedContent: false,
+            isSceneActive: false
+        )
+        XCTAssertTrue(state.shouldShowShield)
+
+        state.update(
+            isProtectionEnabled: true,
+            isAuthenticating: false,
+            canRevealProtectedContent: true,
+            isSceneActive: false
+        )
+
+        XCTAssertFalse(state.shouldShowShield)
+    }
+
+    func testPrivacyShieldRemainsAfterFailedAuthentication() {
+        var state = PrivacyShieldVisibilityState()
+        state.update(
+            isProtectionEnabled: true,
+            isAuthenticating: true,
+            canRevealProtectedContent: false,
+            isSceneActive: false
+        )
+        state.update(
+            isProtectionEnabled: true,
+            isAuthenticating: false,
+            canRevealProtectedContent: false,
+            isSceneActive: false
+        )
+
+        XCTAssertTrue(state.shouldShowShield)
+    }
+
+    func testPrivacyShieldReturnsOnLaterDeactivation() {
+        var state = PrivacyShieldVisibilityState()
+        state.update(
+            isProtectionEnabled: true,
+            isAuthenticating: true,
+            canRevealProtectedContent: false,
+            isSceneActive: false
+        )
+        state.update(
+            isProtectionEnabled: true,
+            isAuthenticating: false,
+            canRevealProtectedContent: true,
+            isSceneActive: false
+        )
+        state.sceneDidActivate()
+        state.sceneWillDeactivate()
+
+        XCTAssertTrue(state.shouldShowShield)
+    }
+
     private func allowAuthenticationTaskToComplete(for coordinator: AppLockCoordinator) async {
         for _ in 0..<20 where coordinator.state == .authenticating {
             await Task.yield()

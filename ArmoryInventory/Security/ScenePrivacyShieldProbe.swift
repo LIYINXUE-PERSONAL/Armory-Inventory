@@ -11,6 +11,7 @@ import UIKit
 struct ScenePrivacyShieldProbe: UIViewRepresentable {
     let isProtectionEnabled: Bool
     let isAuthenticating: Bool
+    let canRevealProtectedContent: Bool
     let isSceneActive: Bool
 
     func makeUIView(context: Context) -> PrivacyShieldProbeView {
@@ -21,22 +22,72 @@ struct ScenePrivacyShieldProbe: UIViewRepresentable {
         view.update(
             isProtectionEnabled: isProtectionEnabled,
             isAuthenticating: isAuthenticating,
+            canRevealProtectedContent: canRevealProtectedContent,
             isSceneActive: isSceneActive
         )
+    }
+}
+
+struct PrivacyShieldVisibilityState {
+    private(set) var isProtectionEnabled = false
+    private(set) var isAuthenticating = false
+    private(set) var isSceneActive = false
+    private var canRevealFollowingAuthentication = false
+
+    var shouldShowShield: Bool {
+        isProtectionEnabled && !isSceneActive && !canRevealFollowingAuthentication
+    }
+
+    mutating func update(
+        isProtectionEnabled: Bool,
+        isAuthenticating: Bool,
+        canRevealProtectedContent: Bool,
+        isSceneActive: Bool
+    ) {
+        let didAuthenticateSuccessfully = self.isAuthenticating
+            && !isAuthenticating
+            && canRevealProtectedContent
+
+        self.isProtectionEnabled = isProtectionEnabled
+        self.isAuthenticating = isAuthenticating
+        self.isSceneActive = isSceneActive
+
+        if isSceneActive {
+            canRevealFollowingAuthentication = false
+        } else if didAuthenticateSuccessfully {
+            canRevealFollowingAuthentication = true
+        }
+    }
+
+    mutating func sceneWillDeactivate() {
+        isSceneActive = false
+        canRevealFollowingAuthentication = false
+    }
+
+    mutating func sceneDidActivate() {
+        isSceneActive = true
+        canRevealFollowingAuthentication = false
+    }
+
+    mutating func sceneDidEnterBackground() {
+        isSceneActive = false
+        canRevealFollowingAuthentication = false
     }
 }
 
 final class PrivacyShieldProbeView: UIView {
     private weak var observedScene: UIScene?
     private var observers: [NSObjectProtocol] = []
-    private var isProtectionEnabled = false
-    private var isAuthenticating = false
-    private var isSceneActive = false
+    private var visibilityState = PrivacyShieldVisibilityState()
     private weak var shieldView: PrivacyShieldView?
 
     override func didMoveToWindow() {
         super.didMoveToWindow()
-        isSceneActive = window?.windowScene?.activationState == .foregroundActive
+        if window?.windowScene?.activationState == .foregroundActive {
+            visibilityState.sceneDidActivate()
+        } else {
+            visibilityState.sceneWillDeactivate()
+        }
         observeCurrentScene()
         synchronizeShield()
     }
@@ -44,12 +95,16 @@ final class PrivacyShieldProbeView: UIView {
     func update(
         isProtectionEnabled: Bool,
         isAuthenticating: Bool,
+        canRevealProtectedContent: Bool,
         isSceneActive: Bool
     ) {
-        self.isProtectionEnabled = isProtectionEnabled
-        self.isAuthenticating = isAuthenticating
-        self.isSceneActive = isSceneActive
-            && window?.windowScene?.activationState == .foregroundActive
+        visibilityState.update(
+            isProtectionEnabled: isProtectionEnabled,
+            isAuthenticating: isAuthenticating,
+            canRevealProtectedContent: canRevealProtectedContent,
+            isSceneActive: isSceneActive
+                && window?.windowScene?.activationState == .foregroundActive
+        )
         shieldView?.configure(isAuthenticating: isAuthenticating)
         observeCurrentScene()
         synchronizeShield()
@@ -75,7 +130,7 @@ final class PrivacyShieldProbeView: UIView {
                 object: scene,
                 queue: .main
             ) { [weak self] _ in
-                self?.isSceneActive = false
+                self?.visibilityState.sceneWillDeactivate()
                 self?.installShieldIfNeeded()
             },
             NotificationCenter.default.addObserver(
@@ -83,7 +138,7 @@ final class PrivacyShieldProbeView: UIView {
                 object: scene,
                 queue: .main
             ) { [weak self] _ in
-                self?.isSceneActive = true
+                self?.visibilityState.sceneDidActivate()
                 self?.synchronizeShield()
             },
             NotificationCenter.default.addObserver(
@@ -91,7 +146,7 @@ final class PrivacyShieldProbeView: UIView {
                 object: scene,
                 queue: .main
             ) { [weak self] _ in
-                self?.isSceneActive = false
+                self?.visibilityState.sceneDidEnterBackground()
                 self?.installShieldIfNeeded()
             }
         ]
@@ -106,7 +161,7 @@ final class PrivacyShieldProbeView: UIView {
     }
 
     private func synchronizeShield() {
-        if isProtectionEnabled && !isSceneActive {
+        if visibilityState.shouldShowShield {
             installShieldIfNeeded()
         } else {
             shieldView?.removeFromSuperview()
@@ -114,13 +169,13 @@ final class PrivacyShieldProbeView: UIView {
     }
 
     private func installShieldIfNeeded() {
-        guard isProtectionEnabled,
+        guard visibilityState.shouldShowShield,
               shieldView == nil,
               let window else {
             return
         }
 
-        let shield = PrivacyShieldView(isAuthenticating: isAuthenticating)
+        let shield = PrivacyShieldView(isAuthenticating: visibilityState.isAuthenticating)
         shield.translatesAutoresizingMaskIntoConstraints = false
         window.addSubview(shield)
         NSLayoutConstraint.activate([
