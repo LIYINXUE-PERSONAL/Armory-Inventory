@@ -95,6 +95,7 @@ struct AppLockStatusView: View {
 
 struct ProtectedRootView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var accessibilityReduceMotion
     @EnvironmentObject private var coordinator: AppLockCoordinator
 
     var body: some View {
@@ -106,8 +107,13 @@ struct ProtectedRootView: View {
 
             if !coordinator.canRevealProtectedContent {
                 AppLockView()
+                    .transition(.opacity)
             }
         }
+        .animation(
+            accessibilityReduceMotion ? nil : .easeInOut(duration: 0.25),
+            value: coordinator.canRevealProtectedContent
+        )
         .overlay {
             ScenePrivacyShieldProbe(
                 isProtectionEnabled: coordinator.isEnabled,
