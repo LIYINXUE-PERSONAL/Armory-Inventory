@@ -1,7 +1,32 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Bundle display name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Armory Inventory"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "ArmoryInventory"
+          }
+        }
+      }
+    },
     "NSFaceIDUsageDescription" : {
+      "comment" : "Privacy - Face ID Usage Description",
       "localizations" : {
         "en" : {
           "stringUnit" : {
