@@ -22,6 +22,10 @@ struct SettingsView: View {
                         Label("User Data", systemImage: "externaldrive.badge.person.crop")
                     }
 
+                    NavigationLink(value: SettingsDestination.appLock) {
+                        Label("App Lock", systemImage: "lock.shield")
+                    }
+
                     NavigationLink(value: SettingsDestination.taxRate) {
                         Label("Tax Rate", systemImage: "percent")
                     }
@@ -71,6 +75,8 @@ struct SettingsView: View {
             AboutView()
         case .userData:
             UserDataSettingsView()
+        case .appLock:
+            AppLockSettingsView()
         case .taxRate:
             TaxRateSettingsView()
         case .valueDisplay:
@@ -92,6 +98,7 @@ struct SettingsView: View {
 private enum SettingsDestination: Hashable {
     case about
     case userData
+    case appLock
     case taxRate
     case valueDisplay
     case firearmsSorting
